@@ -8,7 +8,7 @@ const summaryCheckpointPath = resolve(projectRoot, ".cache/summaries.checkpoint.
 const humanizedCheckpointPath = resolve(projectRoot, ".cache/humanized-summaries.checkpoint.json");
 const humanizerGuidePath = resolve(
   projectRoot,
-  "humanizer-zh-tw/references/economist-research-summary.md",
+  ".agents/skills/humanizer-zh-tw/references/economist-research-summary.md",
 );
 
 function readEnv(path) {
