@@ -6,6 +6,7 @@ const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.
 const outputPath = resolve(projectRoot, process.argv[3] || "docs/data/articles.json");
 const summaryCheckpointPath = resolve(projectRoot, ".cache/summaries.checkpoint.json");
 const humanizedCheckpointPath = resolve(projectRoot, ".cache/humanized-summaries.checkpoint.json");
+const manualSummariesPath = resolve(projectRoot, "scripts/manual-summaries.json");
 const humanizerGuidePath = resolve(
   projectRoot,
   ".agents/skills/humanizer-zh-tw/references/economist-research-summary.md",
@@ -49,101 +50,39 @@ const env = {
 };
 const source = JSON.parse(readFileSync(sourcePath, "utf8"));
 const humanizerGuide = readFileSync(humanizerGuidePath, "utf8");
+const naturalStyleRules = [
+  "直接從具體事件、主張或數據開場，不要固定以『本文指出』『文章聚焦』『作者認為』起句。",
+  "採台灣研究員寫給同事的專業語氣；能用短句與動詞說清楚，就不要堆抽象名詞或轉折詞。",
+  "避免宣傳式形容、職場黑話、否定對仗、三段排比、戲劇化金句與『總之』『未來可期』等昇華式結尾。",
+  "三個重點必須各自提供不同且可核對的資訊，不要把同一結論換句話說三次。",
+  "研究角度要指出可檢查的假設、資料、傳導機制或政策取捨，不要寫『值得深入閱讀』『可供參考』。",
+  "使用台灣常用譯名與用語，例如川普、輝達、日圓、資訊、軟體、線上。",
+].join("\n");
 
 for (const name of ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT"]) {
   if (!env[name]) throw new Error(`尚未填寫 ${name}`);
 }
 
-const preferredTitlesByIssue = {
-  "2026.08.15": [
-    "China has wrested control of oil markets from OPEC",
-    "The yuan is more than a symptom of global imbalances",
-    "Zhu Rongji’s death is a reminder of how much has changed in China",
-    "Taking Taiwan’s democracy hostage",
-    "Donald Trump is getting a new tariff weapon against Russia",
-    "Japan's long-overdue revamp of its intelligence services",
-    "Nvidia’s great silicon showdown",
-    "AI agents lie, cheat and steal. That is putting off users",
-    "China is now the world’s great oil power",
-    "Is China’s debt-bomb squad about to blow up?",
-    "When Japan buys yen, it unwinds a dangerous trade",
-    "Maybe scientific progress isn’t slowing, after all",
-  ],
+const sectionCategories = {
+  "The world this week": "國際與政策",
+  Leaders: "國際與政策",
+  Briefing: "國際與政策",
+  International: "國際與政策",
+  "Finance & economics": "金融與經濟",
+  Business: "產業與科技",
+  "Science & technology": "產業與科技",
+  Asia: "區域政情",
+  China: "區域政情",
+  "United States": "區域政情",
+  "The Americas": "區域政情",
+  "Middle East & Africa": "區域政情",
+  Europe: "區域政情",
+  Britain: "區域政情",
+  "By Invitation": "觀點與文化",
+  Letters: "觀點與文化",
+  Culture: "觀點與文化",
+  Obituary: "觀點與文化",
 };
-
-const sectionWeights = {
-  "Finance & economics": 100,
-  Leaders: 92,
-  China: 88,
-  International: 84,
-  Briefing: 80,
-  Business: 76,
-  "Science & technology": 72,
-  Asia: 62,
-  "United States": 60,
-  Europe: 56,
-  "The Americas": 54,
-  "Middle East & Africa": 54,
-  Britain: 48,
-  "By Invitation": 82,
-};
-
-const researchTerms = [
-  "econom",
-  "market",
-  "bank",
-  "debt",
-  "currency",
-  "yuan",
-  "yen",
-  "oil",
-  "trade",
-  "tariff",
-  "inflation",
-  "interest",
-  "china",
-  "taiwan",
-  "ai ",
-  "nvidia",
-  "technology",
-  "investment",
-  "finance",
-];
-
-function selectFeaturedArticles() {
-  const preferred = preferredTitlesByIssue[source.issueKey];
-  if (preferred) {
-    const titleSet = new Set(preferred);
-    const matches = source.articles.filter((article) => titleSet.has(article.titleEn));
-    if (matches.length === preferred.length) return matches;
-  }
-
-  const ranked = source.articles
-    .filter((article) => !["Letters", "Obituary", "The world this week"].includes(article.section))
-    .map((article, index) => {
-      const haystack = `${article.titleEn} ${article.rubricEn}`.toLowerCase();
-      const termScore = researchTerms.reduce(
-        (score, term) => score + (haystack.includes(term) ? 12 : 0),
-        0,
-      );
-      return {
-        article,
-        score: (sectionWeights[article.section] || 40) + termScore - index / 1000,
-      };
-    })
-    .sort((a, b) => b.score - a.score);
-
-  const sectionCounts = new Map();
-  const selected = [];
-  for (const item of ranked) {
-    const count = sectionCounts.get(item.article.section) || 0;
-    if (count >= 4) continue;
-    selected.push(item.article);
-    sectionCounts.set(item.article.section, count + 1);
-    if (selected.length === 12) break;
-  }
-  return selected;
-}
 
 const endpoint = env.AZURE_OPENAI_ENDPOINT.replace(/\/+$/, "");
 const apiPath = (env.AZURE_OPENAI_API_PATH || "/openai/v1/")
@@ -196,6 +135,27 @@ function isCompleteBrief(value) {
     Array.isArray(value.keywordsZh) &&
     value.keywordsZh.length >= 3
   );
+}
+
+function normalizeTaiwanUsage(brief) {
+  const replacements = [
+    [/特朗普/g, "川普"],
+    [/英偉達/g, "輝達"],
+    [/日元/g, "日圓"],
+    [/信息/g, "資訊"],
+    [/軟件/g, "軟體"],
+    [/在線/g, "線上"],
+  ];
+  const normalize = (value) => replacements.reduce(
+    (text, [pattern, replacement]) => text.replace(pattern, replacement),
+    value,
+  );
+  return {
+    summaryZh: normalize(brief.summaryZh),
+    keyPointsZh: brief.keyPointsZh.map(normalize),
+    researchLensZh: normalize(brief.researchLensZh),
+    keywordsZh: brief.keywordsZh.map(normalize),
+  };
 }
 
 function extractOutputText(payload) {
@@ -278,6 +238,7 @@ function summarize(article) {
       "根據英文文章，以繁體中文（台灣用語）製作第一版研究導讀。",
       "不得補造原文沒有的事實、數字、來源或因果關係。",
       "summaryZh 限 180–240 個中文字；keyPointsZh 剛好三點，每點 45–90 個中文字；researchLensZh 限 60–120 個中文字。",
+      naturalStyleRules,
       "輸出 JSON，不要使用 Markdown。",
     ].join("\n"),
     input: [
@@ -297,6 +258,7 @@ function humanize(article, draft) {
     instructions: [
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
       "必須鎖定英文原文的事實、數字、因果關係與不確定程度，不得新增內容。",
+      naturalStyleRules,
       "保留 JSON 欄位與陣列數量。輸出 JSON，不要使用 Markdown。",
       humanizerGuide,
     ].join("\n\n"),
@@ -313,6 +275,7 @@ function humanize(article, draft) {
 }
 
 async function processWithWorkers({ items, values, label, processItem, checkpointPath }) {
+  const failures = [];
   for (const article of items) {
     if (values[article.id] && !isCompleteBrief(values[article.id])) {
       console.log(`[檢查] 移除不完整暫存：${article.titleEn}`);
@@ -333,49 +296,70 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
       }
       console.log(`[${label} ${index + 1}/${items.length}] 正在處理：${article.titleEn}`);
       for (let attempt = 1; attempt <= 3; attempt += 1) {
-        const result = await processItem(article);
-        if (isCompleteBrief(result)) {
-          values[article.id] = result;
-          break;
+        try {
+          const result = await processItem(article);
+          if (isCompleteBrief(result)) {
+            values[article.id] = result;
+            break;
+          }
+          if (attempt === 3) {
+            failures.push(`${article.titleEn}：輸出未通過完整性與長度檢查`);
+          } else {
+            console.log(`[${label}] 輸出不完整或超長，第 ${attempt + 1} 次嘗試。`);
+          }
+        } catch (error) {
+          if (attempt === 3) {
+            failures.push(`${article.titleEn}：${error.message}`);
+          } else {
+            console.log(`[${label}] 單篇處理失敗，第 ${attempt + 1} 次嘗試：${article.titleEn}`);
+          }
         }
-        if (attempt === 3) {
-          throw new Error(`三次輸出皆未通過完整性與長度檢查：${article.titleEn}`);
-        }
-        console.log(`[${label}] 輸出不完整或超長，第 ${attempt + 1} 次嘗試。`);
       }
-      saveCheckpoint(checkpointPath, values);
+      if (values[article.id]) saveCheckpoint(checkpointPath, values);
     }
   }
   await Promise.all([worker(), worker()]);
+  if (failures.length) {
+    throw new Error(`${label}有 ${failures.length} 篇失敗：\n${failures.join("\n")}`);
+  }
 }
 
-const selected = selectFeaturedArticles();
-if (selected.length !== 12) throw new Error(`精選文章不足：${selected.length}`);
+const articlesToProcess = source.articles;
+const manualSummaries = readCheckpoint(manualSummariesPath);
 
-const summaries = readCheckpoint(summaryCheckpointPath);
+const summaries = {
+  ...readCheckpoint(summaryCheckpointPath),
+  ...manualSummaries,
+};
 await processWithWorkers({
-  items: selected,
+  items: articlesToProcess,
   values: summaries,
   label: "初稿",
   processItem: summarize,
   checkpointPath: summaryCheckpointPath,
 });
 
-const humanizedSummaries = readCheckpoint(humanizedCheckpointPath);
+const humanizedSummaries = {
+  ...readCheckpoint(humanizedCheckpointPath),
+  ...manualSummaries,
+};
 await processWithWorkers({
-  items: selected,
+  items: articlesToProcess,
   values: humanizedSummaries,
   label: "自然化",
   processItem: (article) => humanize(article, summaries[article.id]),
   checkpointPath: humanizedCheckpointPath,
 });
 
-const selectedIds = new Set(selected.map((article) => article.id));
-const articles = source.articles.map((article) => {
-  const summary = selectedIds.has(article.id) ? humanizedSummaries[article.id] : null;
+const currentIssueArticles = source.articles.map((article) => {
+  const storedSummary = humanizedSummaries[article.id];
+  const summary = storedSummary ? normalizeTaiwanUsage(storedSummary) : null;
   return {
     id: article.id,
+    issueKey: source.issueKey,
+    issueDate: source.issueDate,
     section: article.section,
+    categoryZh: sectionCategories[article.section] || "其他",
     titleEn: article.titleEn,
     rubricEn: article.rubricEn,
     publishedEn: article.publishedEn,
@@ -388,6 +372,19 @@ const articles = source.articles.map((article) => {
   };
 });
 
+const previousOutput = existsSync(outputPath)
+  ? JSON.parse(readFileSync(outputPath, "utf8"))
+  : null;
+const previousArticles = (previousOutput?.articles || [])
+  .filter((article) => (article.issueKey || previousOutput.issueKey) !== source.issueKey)
+  .map((article) => ({
+    ...article,
+    issueKey: article.issueKey || previousOutput.issueKey,
+    issueDate: article.issueDate || previousOutput.issueDate,
+    categoryZh: article.categoryZh || sectionCategories[article.section] || "其他",
+  }));
+const articles = [...currentIssueArticles, ...previousArticles];
+
 const output = {
   publication: source.publication,
   issueKey: source.issueKey,
@@ -398,12 +395,13 @@ const output = {
   updateCadenceZh: "每週一期；本站於週五下午至深夜偵測新一期",
   sectionCount: source.sectionCount,
   articleCount: source.articleCount,
-  featuredCount: articles.filter((article) => article.featured).length,
-  sourceRepository: "https://github.com/hehonghui/awesome-english-ebooks",
-  issueRepository: `https://github.com/hehonghui/awesome-english-ebooks/tree/master/01_economist/${source.issueFolder}`,
+  summaryCount: currentIssueArticles.filter((article) => article.summaryZh).length,
+  featuredCount: currentIssueArticles.filter((article) => article.summaryZh).length,
+  totalArticleCount: articles.length,
+  issueCount: new Set(articles.map((article) => article.issueKey)).size,
   articles,
 };
 
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");
-console.log(`完成 ${output.featuredCount} 篇繁中研究導讀與自然化校修。`);
+console.log(`完成本期 ${output.summaryCount} 篇繁中研究摘要與自然化校修。`);

@@ -90,7 +90,10 @@ execFileSync(process.execPath, [
 ], { cwd: projectRoot, stdio: "inherit", env });
 
 const updatedData = JSON.parse(readFileSync(siteDataPath, "utf8"));
-if (updatedData.issueFolder !== latestFolder || updatedData.featuredCount !== 12) {
+if (
+  updatedData.issueFolder !== latestFolder ||
+  updatedData.summaryCount !== updatedData.articleCount
+) {
   throw new Error("新一期資料未完整產生，保留既有發布版本");
 }
 
