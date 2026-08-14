@@ -4,82 +4,151 @@
   "issueFolder": "te_2026.08.15",
   "issueDate": "August 15th 2026",
   "sourceUpdatedAt": "2026-08-14T04:06:48Z",
-  "generatedAt": "2026-08-14T08:13:23.081Z",
+  "generatedAt": "2026-08-14T08:52:16.653Z",
   "updateCadenceZh": "每週一期；本站於週五下午至深夜偵測新一期",
   "sectionCount": 19,
   "articleCount": 74,
-  "featuredCount": 12,
-  "sourceRepository": "https://github.com/hehonghui/awesome-english-ebooks",
-  "issueRepository": "https://github.com/hehonghui/awesome-english-ebooks/tree/master/01_economist/te_2026.08.15",
+  "summaryCount": 74,
+  "featuredCount": 74,
+  "totalArticleCount": 74,
+  "issueCount": 1,
   "articles": [
     {
       "id": "3cd7ab92-99b5-4dba-8b02-f00aa40142eb",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The world this week",
+      "categoryZh": "國際與政策",
       "titleEn": "Politics",
       "rubricEn": "",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-world-this-week/2026/08/13/politics",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "本週「政治」聚焦中東衝突升溫與各國防衛安排。葉門胡塞（由伊朗支持）加強紅海航運攻擊，襲擊埃及船東貨輪並造成6人死亡，屬2月與伊朗戰事展開後首次航運死亡；同時胡塞試圖對沙烏地船隻施加封鎖，並攻擊吉紮港油煉廠。美國也在阿曼灣向一艘前往伊朗港口的船發射飛彈，但美伊和平仍幾乎沒有進展。",
+      "keyPointsZh": [
+        "胡塞攻擊與美國回應並行：打擊埃及船運、並在沙國境內出手，包括試圖封鎖沙烏地船隻與攻擊吉紮港油煉廠；美國則在阿曼灣向前往伊朗港口的船發射飛彈。文中也指出，美伊之間在和平協議上幾乎沒有進展。",
+        "類北約第5條的防衛合作：巴基斯坦、土耳其與沙烏地簽署防衛合作協定，內容被形容為類似北約第5條；巴國已派戰機赴沙國以防範來自伊朗的攻擊。沙方強調該協定不代表特定宗派的「軍事軸心」，其他國家也可加入。",
+        "多國政治安全與治理事件：包含外界披露川普在土耳其北約峰會期間的離場與轉場安排、沙烏地首都利雅德沙發工廠火災造成至少16名孟加拉工人死亡，以及剛果（金）伊波拉死亡數突破2,060等。"
+      ],
+      "researchLensZh": "可從「中東安全」與「國內治理」兩條線讀。前者看紅海航運受襲與美國飛彈回應如何影響地區威懾；後者則留意各國在選舉、司法與公共安全上的處置速度，以及是否引發程序與國際觀感疑慮。",
+      "keywordsZh": [
+        "紅海航運安全",
+        "胡塞與伊朗",
+        "類北約第5條防衛合作",
+        "美伊和平停滯",
+        "伊波拉疫情"
+      ]
     },
     {
       "id": "51e56c83-485f-4cdb-86e4-32d36a2917ef",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The world this week",
+      "categoryZh": "國際與政策",
       "titleEn": "Business",
       "rubricEn": "",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-world-this-week/2026/08/13/business",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "本週商業焦點多落在AI資本與算力供應鏈。Nvidia與BlackRock、Goldman Sachs、KKR等金融機構合作，打算透過「第三方資本」把5000億美元資金導向其客戶，並用於以其晶片擴建AI基礎建設；同時，Alphabet、Amazon、Microsoft等雲端大廠也在設計自家客製AI晶片，可能與Nvidia形成競爭。Intel宣布新股發行從150億美元提高到200億美元以支應AI支出。宏觀方面，美國通膨年增3.4%、核心通膩2.5%，但7月就業出現意外減少；英國GDP第二季年增1.2%。",
+      "keyPointsZh": [
+        "Nvidia與多家金融機構合作，透過第三方資本導入5000億美元資金，支持以其晶片擴建AI基礎建設；但雲端巨頭也在自研客製AI晶片，未來可能搶走部分市場。",
+        "Intel把新股發行金額由150億美元提高到200億美元，支應AI支出；Meta推出可在筆電本地運行的開放權重模型，另有聯邦訴訟指控其平台讓兒童上癮並正在審理。",
+        "宏觀與交易面則包含：美國通膨年增3.4%、核心通膨2.5%但7月就業意外少23,000人；英國第二季GDP年增1.2%，並因世界杯與天氣等因素影響、巴拿馬運河通行費創新高。"
+      ],
+      "researchLensZh": "回到原文可檢查兩個互相扣連的問題：一是AI基礎建設的資金如何被「第三方資本」導入，以及Intel增發與Meta新產品如何改變供給端；二是消費與企業成本環境，如何從美國通膨、就業數據與英國成長訊號被映照出來。",
+      "keywordsZh": [
+        "Nvidia第三方資本5000億美元",
+        "自研AI晶片競逐",
+        "Intel新股發行200億美元",
+        "Meta開放權重本地模型",
+        "美國7月就業意外-23,000"
+      ]
     },
     {
       "id": "f668e91d-02c4-4b08-92c0-b007d41f2edc",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Leaders",
+      "categoryZh": "國際與政策",
       "titleEn": "The Taliban are vile. Democracies must still engage with them",
       "rubricEn": "Five years after America’s exit, the Afghan regime is not going anywhere",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/leaders/2026/08/13/the-taliban-are-vile-democracies-must-still-engage-with-them",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "美國在五年前不受迫地完成阿富汗撤軍後，政府幾乎立刻瓦解、塔利班幾乎不費力就奪權。五年後，作者認為外界若忽視阿富汗，地緣政治麻煩機率仍會升高，而且更可能落入中國或俄羅斯的影響圈。文中描述塔利班以禁止音樂、控制街頭、限制女性就學就業與出行、以及女童因法定童婚而直接被迫進入婚姻等方式維持「冷峻」穩定；並指西方隔離幾乎無效，因其他國家仍在合作。因此主張民主國家應改用更務實的接觸：維持人道援助、重新調整制裁以降低金融排除，並在不等於背書的前提下考慮運作型外交承認。",
+      "keyPointsZh": [
+        "文章回到撤軍時間點：拜登沒有被迫，且未能延續對民主政府的防衛；政府士兵撤離、戰場預期改變，塔利班幾乎不需作戰就上台，並帶來撤離途中死亡等後果。",
+        "作者主張塔利班短期不會消失；西方拒絕承認、凍結海外央行資產與制裁，幾乎沒有改變其立場，俄羅斯與多國也已在礦業、貿易等議題上與之互動。",
+        "文中提出可檢查的調整路線：援助應停止持續下滑（作者稱自2022年後降幅約70%）、制裁應改革以避免把阿富汗鎖在全球金融體系外，必要時再以「建立通道」為目的考慮運作型外交承認。"
+      ],
+      "researchLensZh": "本文把焦點放在「隔離是否能改變政權」與「不介入會不會讓其他強權接手」的權衡。作者認為，資料顯示外部隔離成效有限，且阿富汗更可能因被忽視而靠向俄中；因此主張用人道、金融與外交工具進行漸進式接觸，而非單靠制裁或切斷聯繫。",
+      "keywordsZh": [
+        "阿富汗撤軍",
+        "塔利班政權",
+        "民主國家接觸政策",
+        "人道援助下降",
+        "制裁改革與金融排除"
+      ]
     },
     {
       "id": "e2b9f3f8-8e43-439b-b0a2-b8b4846d412f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Leaders",
+      "categoryZh": "國際與政策",
       "titleEn": "America really might restore democracy to Venezuela",
       "rubricEn": "Thank Marco Rubio, but beware the caprice of his boss",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/leaders/2026/08/12/america-really-might-restore-democracy-to-venezuela",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "1月川普派美軍特種部隊介入委內瑞拉、試圖抓捕獨裁者尼古拉斯・馬杜羅後，重點似乎不在「恢復民主」：他大談自己控制了委內瑞拉的油。外界擔心在缺乏強而明確的美國民主轉型承諾下，舊有的殘酷掠奪體制可能延續。文章稱民主前景確有改善，但不是因川普轉向，而是因為國務卿馬可・魯比奧確實想終結拉美的左派獨裁，並被給了相對充裕的操作空間，以美國影響力推動政權與反對派談判與司法改革。",
+      "keyPointsZh": [
+        "作者認為進展的主因在魯比奧而非川普：魯比奧關注終結左派獨裁，且在追求目標時獲得較大自由度。",
+        "資料顯示，政權與反對派在8月12日完成第一輪談判後，先達成「司法改革」的適度協議（包含最高法院）；作者寫到若繼續談，可能在12月前形成可讓公平選舉的改革。",
+        "文章同時指出風險很多：執政陣營曾破壞允諾、反對派可能被貼上美方傀儡標籤，且若談判拖延，政權更可能逃避承諾、反對派也可能被削弱；因此美方被建議要求2027年總統選舉、揭露與移轉油資，以及讓反對派領袖瑪麗亞・科里納・馬查多盡快返國。"
+      ],
+      "researchLensZh": "本文把焦點放在「美國是否能把談判與轉型承諾落到可檢查的條件」。作者將樂觀根據連到魯比奧的介入與司法改革路徑，同時用川普的反覆表態作為不確定性的來源，並提出以選舉時程、油資資訊揭露與回收控制權、以及反對派領袖能否回國等項目來約束結果。",
+      "keywordsZh": [
+        "委內瑞拉",
+        "恢復民主",
+        "馬可・魯比奧",
+        "司法改革（最高法院）",
+        "2027總統選舉"
+      ]
     },
     {
       "id": "39fd77d4-c9e1-410b-986f-c442ea20285c",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Leaders",
+      "categoryZh": "國際與政策",
       "titleEn": "A bill to punish Putin gives too much power to Donald Trump",
       "rubricEn": "Walloping the global trading system is no way to help Ukraine",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/leaders/2026/08/13/a-bill-to-punish-putin-gives-too-much-power-to-donald-trump",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "8月7日美國參議院通過《林賽·葛雷厄姆制裁俄羅斯與伊朗法》，內容含對普丁及俄羅斯高層的新增制裁，並涵蓋俄羅斯能源專案與金融機構，目的在於在俄方不與烏克蘭停火前，持續加大代價並表明美國不會拋下其受害者。文中同意要施壓，但認為現行版本最大問題，是把對進口商品課徵關稅的權力大幅交給美國總統：對俄羅斯能源前五大進口國及協助俄方規避制裁的國家，關稅可達100%，且可用「美國國家利益」豁免或依各國對俄油氣進口或轉運的「重大步驟」調整；作者擔心這會讓關稅工具重新回到先前被美國最高法院否定的路徑，並恐引發新的貿易摩擦。",
+      "keyPointsZh": [
+        "文中認為，普丁不會停止戰爭，除非他相信繼續作戰的成本會高於停止；因此需要讓俄方認知「不可能取勝」並只會削弱其地位。",
+        "作者主要擔憂是法案賦予總統過多關稅裁量：對俄羅斯能源前五大進口國與協助規避制裁的國家，關稅上限可達100%，並可依「國家利益」豁免或依「重大步驟」調整，等於把判斷權交回行政部門。",
+        "作者提出替代協助烏克蘭的做法：在美國愛國者攔截彈供給不足的情況下，協議授權在烏克蘭生產；同時透過國會更大規模的支持多數，傳遞美國與歐洲不會讓烏克蘭輸掉的訊號。"
+      ],
+      "researchLensZh": "這篇文章聚焦「制裁法案設計」是否把戰略訊息送進正確工具。文中把關稅條款視為會因總統裁量而提高不確定性與貿易衝突風險的來源，並對照提出更具體的防禦供給與國會的長期政治訊號作為嚇阻手段。",
+      "keywordsZh": [
+        "林賽·葛雷厄姆制裁俄羅斯與伊朗法",
+        "普丁",
+        "關稅裁量權",
+        "烏克蘭防空（愛國者）",
+        "全球貿易體系"
+      ]
     },
     {
       "id": "2847a8c6-376a-4bae-a30c-5124660c8497",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Leaders",
+      "categoryZh": "國際與政策",
       "titleEn": "China has wrested control of oil markets from OPEC",
       "rubricEn": "When market power comes from buying power, oil importers can do better",
       "publishedEn": "Aug 13th 2026",
@@ -102,46 +171,88 @@
     },
     {
       "id": "43c03ffb-0a83-4820-bafb-946f6287a407",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Leaders",
+      "categoryZh": "國際與政策",
       "titleEn": "In praise of designer-ish babies",
       "rubricEn": "Couples should be allowed to select embryos on the basis of both disease resistance and IQ",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/leaders/2026/08/13/in-praise-of-designer-ish-babies",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "矽谷的新創公司正把胚胎篩選推向更細的基因評估：在透過體外受精（IVF）挑選胚胎時，提供乳癌、糖尿病等疾病風險的基因檢測，甚至給出IQ、身高，或眼睛與髮色等分數。評論者一方面擔心技術仍不成熟，或把這用在倫理上；另一方面也有人質疑就算可行也不應使用。作者認為全面禁止或大幅限縮會錯失重點，較可行的做法是要求廠商清楚揭露限制與風險，並接受獨立審查。",
+      "keyPointsZh": [
+        "作者指出，反對意見多半針對年輕技術被推到特定容易受影響的族群，但隨IVF成本下降與市場競爭，提供胚胎篩選的情況可能擴大。",
+        "文中強調多基因（polygenic）預測仍有不確定性：相對風險的下降在比例上可能看起來很大，但在罕見疾病的絕對風險上未必同樣顯著；而且為某些性狀做選擇，可能同時提高其他不利風險。",
+        "作者主張若要提供多基因計分，應以資訊揭露與第三方審查取代禁令；並提到2019年研究指出，從10個胚胎中選擇，可能讓身高增加1到6公分、IQ約提升1到7分（使用的是接近十年前的技術）。"
+      ],
+      "researchLensZh": "本文以「胚胎篩選是否該被禁止」作為檢查問題，聚焦多基因風險分數的可用性與解讀限制（如資料庫代表性、相對與絕對風險差異），並在倫理爭點上主張以透明度與獨立審查作為治理工具，而非直接限縮。",
+      "keywordsZh": [
+        "IVF",
+        "胚胎篩選",
+        "多基因風險評分（polygenic scoring）",
+        "資訊揭露",
+        "獨立審查"
+      ]
     },
     {
       "id": "324ed1e6-10f3-4d54-a683-367b7c7ea1b4",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Letters",
+      "categoryZh": "觀點與文化",
       "titleEn": "Does air-conditioning contribute to urban heat?",
       "rubricEn": "Also this week hospital malpractice, red-light therapy, the night-time economy, Andy Burnham’s taste in music, burgers",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/letters/2026/08/13/does-air-conditioning-contribute-to-urban-heat",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "《Letters》本週回應多個專題。針對加強冷氣的主張，有來信指出在巴黎熱浪期間於空調仍不足的情境下運作，會讓環境城市溫度升高20C；並主張用屋頂與道路等表面反射與整合策略取代，例示亞特蘭大要求新舊屋頂更高反射度，可冷卻1.3C、電費省下3.10億美元。醫療通報方面，有信認為2014年「誠實義務」後通報中受害程度的分類可能改變而非作法改善，需把學習與執法分開。另有信談PBM在美國已超過2,300個照護據點、夜間經濟不應只靠增加酒類執照。",
+      "keyPointsZh": [
+        "冷氣被指是都市熱的重要來源；來信引述巴黎熱浪期間的數據（環境溫度+20C），並用表面反射策略回應。",
+        "醫療事件通報的因果邏輯：2014年的「duty of candour」可能促使人改變「傷害分類」，不是改變實際作法；主張學習要與追責制度分離。",
+        "PBM在臨床已快速擴散：美國PBM相關處置已在2,300多處照護據點進行；夜間經濟則被批評不宜只靠放寬酒類執照。"
+      ],
+      "researchLensZh": "讀信把多個政策議題拉回可檢驗的連結：例如都市熱如何因冷氣運作而升溫、通報制度如何影響行為與分類、以及PBM從臨床擴散後仍需回到標準化處方與參數。閱讀時可逐段核對文中引用的數據與期間。",
+      "keywordsZh": [
+        "urban heat（都市熱）",
+        "air-conditioning（冷氣）",
+        "reflective roofs（反射屋頂）",
+        "duty of candour（誠實義務）",
+        "photobiomodulation（PBM）"
+      ]
     },
     {
       "id": "b42e02e4-7d55-4c9b-a507-a05594be96aa",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "By Invitation",
+      "categoryZh": "觀點與文化",
       "titleEn": "The case for overhauling American science",
       "rubricEn": "The focus should be on harnessing AI and out-competing China, writes Michael Kratsios, the White House science chief",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/by-invitation/2026/08/13/the-case-for-overhauling-american-science",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "白宮科技政策主任Michael Kratsios主張，美國沿用自1945年的科研治理模式已跟不上產業投入、中國競爭與AI發展。生醫研究預算增加後，重大突破速度仍放慢，研究人員又把近半時間花在文書作業；企業每年自籌約374億美元投入基礎研究，已超過政府提供給大學的金額。Kratsios建議把補助改成短期探索與長期支持的投資組合，搭配獎金競賽、預先承諾市場、顛覆性提案審查及NSF X-Labs，並擴大青年研究者可攜式獎助與元科學評估，讓科研體系適應AI時代。",
+      "keyPointsZh": [
+        "美國政府支持基礎研究的核心理由仍成立，但二戰後形成的線性模式已不符現況：企業研究人力與資金的重要性大幅提高。",
+        "過去20年，私人資金投入基礎研究的占比增為五倍；企業每年自籌約374億美元，2024年諾貝爾化學獎成果也主要來自產業資源。",
+        "改革方案包括彈性補助年期、獎金競賽與市場承諾、新型研究機構、青年研究者獨立支持，以及在資助機構內設置元科學單位。"
+      ],
+      "researchLensZh": "這是白宮科技官員的政策主張。可檢查私人基礎研究投入、突破產出與行政負擔的衡量方式，並比較投資組合式資助、X-Labs及AI協調機制能否改善現行審查與資源配置。",
+      "keywordsZh": [
+        "美國科研政策",
+        "國家科學基金會",
+        "AI科研",
+        "基礎研究資助",
+        "NSF X-Labs"
+      ]
     },
     {
       "id": "fa22bb2f-6f11-4f4b-a17f-dd8b309b5240",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "By Invitation",
+      "categoryZh": "觀點與文化",
       "titleEn": "The yuan is more than a symptom of global imbalances",
       "rubricEn": "Treating it as a mere by-product of deeper distortions lets China off too easily, argue Anantha Nageswaran and P.S. Srinivas",
       "publishedEn": "Aug 13th 2026",
@@ -164,59 +275,114 @@
     },
     {
       "id": "2528c253-6bbd-4517-9cb8-cc6741d1b77d",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Briefing",
+      "categoryZh": "國際與政策",
       "titleEn": "Under the Taliban, Afghanistan is, for once, peaceful",
       "rubricEn": "Also very hungry, poor and repressed",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/briefing/2026/08/13/under-the-taliban-afghanistan-is-for-once-peaceful",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "塔利班2021年重掌阿富汗後，暴力事件明顯減少，政府也靠提高關稅與壓低貪腐，把稅收等收入增至約40億美元，較2020年高近六成。但外援從2020年約40億美元降至2025年的12億美元，政府又把一半收入用於安全，醫療與社福資金因而不足。人均GDP按購買力平價計算僅約2,300美元，乾旱、失業與約600萬人被迫返國加重民生壓力。最高領袖阿洪扎達持續集中權力，禁止12歲以上女孩接受中學教育，也限制女性就醫與從醫，使短期治安改善伴隨更深的貧窮、壓迫與人才外流。",
+      "keyPointsZh": [
+        "2025年恐攻造成的平民死亡少於100人，跨城移動與農產品運輸較安全；塔利班也壓制伊斯蘭國呼羅珊省分支，但與巴基斯坦的邊境衝突仍推高糧價。",
+        "政府每年收入約40億美元，較2020年增加近六成；同期人道與發展援助降至2025年的12億美元，且政府將一半收入投入安全部門。",
+        "禁止女孩接受中學教育及限制女性醫療訓練，已削弱女性照護；難民國際調查顯示，赫拉特2026年上半年孕產婦死亡率是前一年同期五倍。"
+      ],
+      "researchLensZh": "可檢查治安改善能否轉化為投資與就業，以及外援縮減、安全支出、女性教育禁令和醫療人力流失如何共同影響財政與長期成長；也要區分塔利班宣稱的行政效率與其高壓統治成本。",
+      "keywordsZh": [
+        "阿富汗",
+        "塔利班",
+        "外援縮減",
+        "女性教育禁令",
+        "安全支出"
+      ]
     },
     {
       "id": "fb7c688e-4c88-48c9-b18d-67517cd6c547",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Asia",
+      "categoryZh": "區域政情",
       "titleEn": "Should every Indian follow the same rules?",
       "rubricEn": "The ruling party’s apparently liberal argument for making everyone marry, divorce and inherit like Hindus",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/asia/2026/08/12/should-every-indian-follow-the-same-rules",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章追蹤印度多個邦推動「統一民法典」（UCC）的進展。以烏塔拉坎德為例，2025年1月起穆斯林在部分家事習俗上被限制，讓社群人士在宗教信仰與依法行事之間感到兩難。文章認為，UCC被包裝為普世與女性權益，但實際做法更像是把印度教既有規則套用到宗教少數；例如部分條文要求同居型關係限期向州登記，並可能讓反對機制把親密關係推到公眾視線。",
+      "keyPointsZh": [
+        "UCC旨在以單一規則取代宗教分別的個人法，涵蓋婚姻、離婚、繼承與領養；文中提到今年以來已有阿薩姆、古吉拉特與中央邦通過「本質相同」的法案版本，尚未施行，另有五州規劃跟進。",
+        "批評焦點在「普世」敘事與實際內容的落差：文中舉烏塔拉坎德的條文為例，要求所有伴侶在30天內登記同居型關係，逾期可能遭刑責；州與黨方說這是為保護女性，但文章也指出，某些本就不便被打擾的關係可能因此更容易變得人人可介入。",
+        "文章並以女性權益作比較：文中認為UCC沒有直接採納印度不同傳統中對女性更有利的部分，反而「基本上複製」曾被視為印度教個人法的做法，並提到例如仍排除寡婦、妻子與母親取得祖產的問題，且部落社群也未被納入。"
+      ],
+      "researchLensZh": "可用「制度設計—政治推動—社會回應」來檢視：UCC如何在各州落地、哪些具體條文（如同居登記、反對與阻擋機制）改變既有家庭規範；再把政策推行放在BJP主導的地方政治與穆斯林人口比例脈絡下，看它是讓群體更接近，還是拉大差距。",
+      "keywordsZh": [
+        "印度統一民法典（UCC）",
+        "烏塔拉坎德 2025年1月穆斯林家事規範",
+        "同居關係登記與刑責",
+        "BJP主導的州立法",
+        "宗教少數與女性權益"
+      ]
     },
     {
       "id": "03fb0a9b-1901-4eaf-b1e9-658dc34016f8",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Asia",
+      "categoryZh": "區域政情",
       "titleEn": "Rohingya refugees from Myanmar are living in fear in Malaysia",
       "rubricEn": "Their welcome has worn thin",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/asia/2026/08/13/rohingya-refugees-from-myanmar-are-living-in-fear-in-malaysia",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "緬甸羅興亞難民在馬來西亞生活日益陷入恐懼。近五年抵達的社區組織者Nur Sadek表示，收到陌生人以暴力威脅的訊息，還收過展示開槍畫面的影片。文中稱，聯合國在馬來西亞登記逾10萬名羅興亞，實際數字可能更高，但他們不能尋找正式工作、孩子也無法在馬來西亞學校就讀。文章指稱，近來社群媒體上的仇恨宣傳升溫，帶動部分非正式學校在6至7月被關閉、政府拒絕或扣留難民船隻，並在7月29日宣布計畫遣返部分約5,000人，恐讓風險再度提高。",
+      "keyPointsZh": [
+        "文中以Nur Sadek的遭遇為例，描述威脅訊息與影片如何加劇羅興亞難民的日常恐懼。",
+        "文章說明羅興亞在馬來西亞雖有登記人數（逾10萬，實際可能更多），但權利仍受限：不能正式就業，子女也不能入讀學校。",
+        "文中將網路仇恨宣傳連到現實影響：6至7月至少9所非正式學校被關閉、政府拒絕或扣留船隻，並宣布可能遣返部分約5,000人。"
+      ],
+      "researchLensZh": "回到原文可檢查：仇恨宣傳的具體貼文內容如何與現實處置（學校關閉、船隻被拒或扣留、遣返計畫）逐步銜接，以及其中的時間點與人數數據。",
+      "keywordsZh": [
+        "羅興亞難民",
+        "馬來西亞",
+        "社群媒體仇恨宣傳",
+        "非正式學校停辦",
+        "遣返"
+      ]
     },
     {
       "id": "69984ad3-2689-48e3-a142-a45ef45ae3f8",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Asia",
+      "categoryZh": "區域政情",
       "titleEn": "South-East Asia braces for more smoke from Indonesia",
       "rubricEn": "Has the region learned anything from past crises?",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/asia/2026/08/13/south-east-asia-braces-for-more-smoke-from-indonesia",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章稱印尼山火可能再把東南亞推向與2015年相近的嚴重霾害。資料顯示，婆羅洲島8月前12天偵測到的火點數已超過過去七年每年整月紀錄；煙霧已迫使印尼與馬來西亞調整作息，並讓新加坡啟動回應待命。作者並指出，厄爾尼諾往往帶來更乾燥條件，特別提高泥煤地起火與地下悶燒的機率；雖然區域已有衛星監測與ASEAN協調中心，但執行與資金仍受限，嚴重度仍高度取決印尼的防火作為。",
+      "keyPointsZh": [
+        "擔憂升溫主因是火勢加劇：婆羅洲島8月前12天偵測到的火點數已超過過去七年各年整月紀錄；煙霧也已促使學校停課、呼籲民眾留在室內，並讓新加坡回應人力待命。",
+        "2015年後果顯示風險不小：一項研究估計霾害造成印尼、馬來西亞與新加坡約10萬例過量死亡，且世界銀行評估印尼損失為161.1億美元、接近GDP的近2%。",
+        "作者認為今年走向仍取決於印尼：厄爾尼諾可能使區域更乾燥、提高起火與地下悶燒機率；區域已強化衛星監測與預警並推動協調中心，但ASEAN跨境協議的落地與資金仍主要仰賴各國、且規模偏小。"
+      ],
+      "researchLensZh": "用「風險放大」來看：先看天氣（厄爾尼諾帶來較乾燥）、再看燃燒條件（泥煤地更易燃、地下悶燒難撲），最後回到治理鏈：監測與預警是否足以支撐執行、以及資金與執法是否足夠。",
+      "keywordsZh": [
+        "東南亞霾害",
+        "印尼山火",
+        "厄爾尼諾",
+        "衛星監測與早期預警",
+        "ASEAN跨境協議"
+      ]
     },
     {
       "id": "e1ce2fca-b6b0-4d11-9536-6ac4a2baa74c",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Asia",
+      "categoryZh": "區域政情",
       "titleEn": "Japan's long-overdue revamp of its intelligence services",
       "rubricEn": "Growing threats from enemies and a less dependable America have driven the move",
       "publishedEn": "Aug 13th 2026",
@@ -239,33 +405,62 @@
     },
     {
       "id": "f433862f-d332-4275-a690-90f96b4e4e22",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Asia",
+      "categoryZh": "區域政情",
       "titleEn": "Why India triumphed at Venice and flopped in Osaka",
       "rubricEn": "The state is a poor representative of the country",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/asia/2026/08/09/why-india-triumphed-at-venice-and-flopped-in-osaka",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文中先回顧去年大阪世界博覽會的印度館：開幕超過兩週才啟用、現場混亂，展陳與宣傳被形容像古早旅遊廣告，還安排了納倫德拉・莫迪的「鼓舞人心」談話。相較之下，今年威尼斯雙年展印度館被稱為成功且更真實，由Amin Jaffer策展，讓五位藝術家以「家」為題，連結印度在城市更新中的快速變化。",
+      "keyPointsZh": [
+        "大阪印度館被指延後開幕（超過兩週）、執行混亂，展品像宣傳片，且政治式元素較多，包括莫迪的演講。",
+        "威尼斯印度館由Amin Jaffer策展，集結五位藝術家：Sumakshi Singh用纖細布料重建德里祖父母家、Asim Waqif以數百根巨型竹竿呈現「Chaal」。",
+        "文章把差異歸到治理方式：大阪偏上意下達、由私營廠商承接後又取消並由文化部自有藝術機構執行；威尼斯則是政府與兩大藝術機構合作，政府僅處理行政與物流，並要求多元聲音、其餘由策展方主導。"
+      ],
+      "researchLensZh": "可從文中兩個例子追問：同一個文化部、同一套政治架構下，究竟是誰負責、怎麼分工？回到原文可檢查大阪如何出現決策與執行斷裂（含取消與重做），以及威尼斯如何透過公私合作、政府較少介入與多元性要求，換來更一致且被認同的展出。",
+      "keywordsZh": [
+        "印度館",
+        "大阪世界博覽會",
+        "威尼斯雙年展",
+        "文化部治理",
+        "公私合作"
+      ]
     },
     {
       "id": "76a883f6-edec-4057-9b7a-89af5d24872b",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "China",
+      "categoryZh": "區域政情",
       "titleEn": "In China, treatment for mental-health problems is a luxury",
       "rubricEn": "The government wants to improve a patchy and uneven systyem",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/china/2026/08/13/in-china-treatment-for-mental-health-problems-is-a-luxury",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以中國心理健康照護為例，指出治療仍不普及且不均：截至2023年估計有1.91億例心理疾病，約相當於每七名中國人一人，但1990至2023年的估計雖上升，研究也提示數據與診斷可能使其低估。疫情後抑鬱與焦慮等求助增加，線上諮商與政府心理支援熱線使用量上升；然而精神科服務有限、線上治療產業規管不足、且費用與地方財政壓力仍限制可近性，因此現行治療多半仍是較有能力者的「奢侈」。",
+      "keyPointsZh": [
+        "Lancet研究估計2023年有191m心理疾病個案，約占人口1/7，較1990年高46%；但屬模型推估，受資料與診斷資訊有限影響，真實狀況可能更高。",
+        "疫情出現轉折：封控期間抑鬱與焦慮上升，求助與線上服務擴張；例如政府心理支持熱線2025年逾70萬通、今年上半年約90萬通。不過精神科服務仍有限、諮商產業缺乏有效規管。",
+        "政府規劃2030年前建全國心理支持與危機介入體系（含學校諮詢室、縣內醫院精神科服務與更多專業人力）；但資源、人力、可負擔性與社會接受度（含污名）仍是落差來源。"
+      ],
+      "researchLensZh": "可用「治療需求增加，但供給、監管與負擔跟不上」來檢查文中論述：一方面用191m個案與疫情後求助量說明壓力上升，另一方面對照服務有限、治療監管不一與費用、地方財政等制約，來理解為何可近性仍不均。",
+      "keywordsZh": [
+        "心理健康",
+        "精神疾病盛行率",
+        "線上諮商",
+        "污名",
+        "可近性與負擔"
+      ]
     },
     {
       "id": "55601663-524e-4840-9d84-efb77a63916d",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "China",
+      "categoryZh": "區域政情",
       "titleEn": "Zhu Rongji’s death is a reminder of how much has changed in China",
       "rubricEn": "A titan of pragmatic reform is gone, aged 97",
       "publishedEn": "Aug 13th 2026",
@@ -288,33 +483,62 @@
     },
     {
       "id": "68ceba54-403d-4692-8d47-2bca6a7aaa8e",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "China",
+      "categoryZh": "區域政情",
       "titleEn": "China’s officials are obsessed with safety theatre",
       "rubricEn": "The public likes all the controls—until they get in the way",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/china/2026/08/10/chinas-officials-are-obsessed-with-safety-theatre",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以濟南地鐵手扶梯的「禁止多項行為」標示，以及深圳在APEC前突然加強安檢為例，說明中國官員推行大量可見的安全措施。多數民眾起初接受，甚至覺得安心；但當排隊與檢查明顯增加，態度就會改變，且當局會在抱怨後調整流程。作者並指出，官員並非只因迷戀安全而為之，而是擔心「一票否決」式的升遷與問責，同時也要面對層層安全成本。",
+      "keyPointsZh": [
+        "濟南地鐵在手扶梯上列出14項禁止與7項指引，多數乘客幾乎不在意，安檢也像一般車站通關；作者用此呈現「安全表演」在日常情境較易被接受。",
+        "7月下旬深圳為APEC主辦而臨時收緊安檢，逐一仔細掃描、在超出允許範圍時沒收物品，排隊一度拉長到約半小時；隨後因抱怨快速簡化檢查並增設金屬探測。",
+        "作者認為張力不在安全與自由的抽象對立，而多在便利性；並指出官員需避免安全通用機制下的單次事故或安檢失靈，而安全措施層層疊加也提高成本。"
+      ],
+      "researchLensZh": "回到文中可檢查的機制：先核對深圳加強安檢後的做法（掃描方式、沒收標準、排隊時間）與其後調整；再追問官員為何必須把安全做得「看得見」，以「一票否決」的問責邏輯來理解政策動能。",
+      "keywordsZh": [
+        "安全劇場",
+        "濟南地鐵",
+        "深圳安檢",
+        "APEC",
+        "一票否決"
+      ]
     },
     {
       "id": "0c545ab3-72a6-4e4e-8929-c1f22566f7b2",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "For a different kind of Democratic insurgency, look to Iowa",
       "rubricEn": "Republican policies have left a red state reeling. Will voters spring for change?",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/13/for-a-different-kind-of-democratic-insurgency-look-to-iowa",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以愛荷華州為例，指出共和黨政策讓紅州出現不滿，並可能讓民主黨用「不同型態的反抗」回到政權。愛荷華長期由共和黨掌權、總統也由川普以13個百分點以上勝出，但該州仍有35%的註冊選民為獨立派，民調顯示他們可能向左移動。文中把經濟、移民、環境與教育等政策後果視為推力，並描述民主黨候選人強調務實、問責與反腐，而非正面硬碰。",
+      "keyPointsZh": [
+        "愛荷華州州、聯邦層級長期偏共和黨：2016年後共和黨主導州議會、2006年後未再有民主黨贏得州長；文中同時指出，獨立選民占註冊選民35%，且一份8月6日發布的民調顯示民主黨候選人領先。",
+        "文中將不滿歸因於多面向衝擊：提到去年大豆生產者的淨農場收入減半；並稱今年受伊朗戰爭推升的燃料與肥料價格將更糟，同時川普政府的移民強硬也限縮肉品加工業的勞力。",
+        "環境與教育政策也被列為反彈來源：文章提到最高法院6月同意Bayer相關立場，但愛荷華癌症發生率排名靠前、且得市已因硝酸鹽限制用水；教育券制度則在2022至2025年造成公校入學減少13,000人、約3%。"
+      ],
+      "researchLensZh": "本文把愛荷華的政治轉動放在「選民不滿如何累積」來理解：從獨立選民的民調走向、到農業收入、移民與用工、環境風險與公校入學下滑等具體後果，並觀察民主黨如何用務實與問責敘事承接挫折。",
+      "keywordsZh": [
+        "愛荷華州",
+        "民主黨反抗",
+        "獨立選民民調",
+        "共和黨政策不滿",
+        "教育券與公校入學"
+      ]
     },
     {
       "id": "710dde70-0d52-4ee0-b8a9-87c49566c831",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "Donald Trump is getting a new tariff weapon against Russia",
       "rubricEn": "But the president will have plenty of discretion over who gets hit",
       "publishedEn": "Aug 13th 2026",
@@ -337,371 +561,738 @@
     },
     {
       "id": "87a96e4d-5681-42ba-82de-90a6e4c84ab9",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "Donald Trump takes a fresh swipe at childhood vaccines",
       "rubricEn": "A new order only adds to confusion for parents",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/13/donald-trump-takes-a-fresh-swipe-at-childhood-vaccines",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "川普在8月10日發布行政命令，要求把麻疹、腮腺炎與德國麻疹（MMR）疫苗拆成三次，並建議在不同醫師門診完成；同時把兒童疫苗分成三類：涵蓋11種疾病與感染、但比過去少（18減至11）的普遍建議、高風險族群，以及需先與醫師討論後決定的項目。文中指出沒有證據支持疫苗會造成自閉症，也沒有證據顯示把接種拉開是有益的，反而會拉長兒童易感染的時間。文中估計該命令實際效果有限，因學校入學多由各州訂定要求，但家長猶疑增加：幼兒園學齡的麻疹疫苗涵蓋率由2019年的95.2%降到92.5%，而停麻疹傳播所需的社區免疫門檻約92%到94%。",
+      "keyPointsZh": [
+        "行政命令要求將MMR等疫苗拆分並分次於不同門診施打，並把兒童疫苗改為三類：普遍建議（涵蓋11種疾病與感染，較前次減少）、高風險族群、以及與醫師討論後再決定。",
+        "文中強調：沒有證據顯示疫苗致自閉症；也沒有證據支持分散接種有益，作者並指出這會延長兒童處於感染風險的窗口。",
+        "文中認為聯邦命令對實務影響可能有限，因各州多自行訂定入學接種規定；但文中仍指出麻疹疫苗涵蓋率下降（2019年95.2%到92.5%），且2026年麻疹病例已超過2025年。"
+      ],
+      "researchLensZh": "研究可從兩條線索檢視：一是聯邦層級行政命令在疫苗施打與決策上的傳導機制，特別是如何與各州的入學接種規範互動；二是把接種時間窗拉開是否會改變感染風險，並以麻疹涵蓋率（92.5%）與社區需達免疫門檻（約92%到94%）來核對文中風險推論。",
+      "keywordsZh": [
+        "兒童疫苗",
+        "MMR拆分接種",
+        "行政命令",
+        "麻疹涵蓋率",
+        "自閉症疑慮"
+      ]
     },
     {
       "id": "c9e6cbe6-e41b-4c55-a284-9abf402df7e7",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "Democratic moderates get a surprising reprieve in Wisconsin",
       "rubricEn": "The party has narrowly dodged a socialist insurgency in a crucial swing state",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/12/democratic-moderates-get-a-surprising-reprieve-in-wisconsin",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "在威斯康辛州民主黨州長初選中，原本領先的民主社會主義候選人Francesca Hong最後只以3,783票之差落敗，David Crowley完成逆轉。文中指出，主流溫和訴求與「可當選性」在搖擺州仍有影響；同時，Hong在爭議負面因素下仍幾乎勝出，反映民主黨聯盟內部仍存著不滿與緊繃情緒，且部分選民對左翼民粹更能接受。",
+      "keyPointsZh": [
+        "文中描寫選民投票前會評估候選人的「溫和」與「可當選性」，因此在最後階段，Crowley在民調一度落後後仍以3,783票擊敗Hong。",
+        "Hong被認為離政治主流太遠：包括曾主張取消感恩節、提到對快餐店「老白人」感到焦慮，並表示支持廢除警察；民主黨建制與部分左派人士未予背書。",
+        "文章並質疑民調高估了左翼候選人的優勢，原因可能與初選樣本較小、偏好較流動、且受訪者較容易偏向特定族群有關；Crowley雖反敗為勝，之後仍需面對共和黨Tom Tiffany。"
+      ],
+      "researchLensZh": "可用這場初選追問：在搖擺州，選民是否會把「可當選性」放在意識形態之上；同時檢視民調在初選因樣本與偏好流動而可能出現的高估誤差，以及最後階段的建制整合與媒體投放如何改變選情。",
+      "keywordsZh": [
+        "威斯康辛州",
+        "民主黨州長初選",
+        "David Crowley",
+        "Francesca Hong",
+        "民調誤差與可當選性"
+      ]
     },
     {
       "id": "85509b80-8504-493a-9e01-c21096f801fb",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "Donald Trump’s attack on mail-in voting looks doomed",
       "rubricEn": "A federal judge issues another blow to the president’s elections agenda",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/13/donald-trumps-attack-on-mail-in-voting-looks-doomed",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "2024年約三分之一美國人以郵寄投票，包括約四分之一的共和黨選民。9個月後，川普誓言「取消郵寄選票」，並錯誤地宣稱郵寄投票的疑似詐欺是他在2020年落敗的原因；他在國會與法院尋求再設限，迄今仍未成功。3月31日他下令要求USPS作為投票的「把關」機制，但8月11日麻州一名聯邦法官以全國效力暫停該令的主要條款，並指出行政部門無權規範選舉。",
+      "keyPointsZh": [
+        "8月11日麻州聯邦法官Indira Talwani以全國效力暫停川普3月31日行政命令的主要條款，稱其在中期選舉前不到3個月可能使選民感到困惑。",
+        "該行政令要透過DHS建立「州公民名單」、州端再提供符合名單的投票人名冊，並要求使用USPS設計的新信封與標記/條碼；但時程與各清單如何互動連選舉法專家也覺得不明。",
+        "法理上法院認為美國憲法將「國會選舉的時間、地點與方式」權交由州政府，行政部門無權調整；最高法院仍在審理政府7月27日的撤回請求，但就算改判後續裁定仍可能阻礙落地。"
+      ],
+      "researchLensZh": "本文用法律與程序視角檢查川普郵寄投票政策的可執行性：從USPS與清單機制的實作細節、時程設計，到州對選舉規則的憲法授權，以及最高法院在選舉截止前可能無法即時定案的影響。",
+      "keywordsZh": [
+        "郵寄投票",
+        "USPS",
+        "行政命令",
+        "聯邦法院裁定",
+        "州對選舉的權限"
+      ]
     },
     {
       "id": "e6b1e358-c428-4d43-b035-26c3c7fd0637",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "Florida was a swing state. Now it’s MAGA-land",
       "rubricEn": "Its next governor will have to focus more on costs than culture",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/10/florida-was-a-swing-state-now-its-maga-land",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "佛州曾是美國搖擺州，但在羅恩・德桑提斯主政、加上川普的政治影響後，逐步變成共和黨權力堡壘，整體更顯「MAGA-land」。文中提到，德桑提斯在疫情期間宣告佛州「保持開放」，兩年內帶來接近100萬的淨移入（約1,500人/天），但2021年7到11月那波疫情下，每人死亡率是全國平均的三倍以上。他也透過一系列立法與司法改組鞏固一黨格局。下任州長若由拜倫・唐納斯贏得11月大選，文章認為其重點恐將從「文化」轉向「成本」，因自2020年起房價與保險費分別上漲50%與75%，而所得增幅為30%。",
+      "keyPointsZh": [
+        "文章稱，佛州從搖擺州轉向共和黨主導，部分與川普的帶入與資源配置有關，也與德桑提斯把州內政治形象「MAGA化」相互呼應。",
+        "文中描述德桑提斯任內的變化：2021年疫情期間宣布佛州對外保持開放、推動大量淨移入，但死亡率在2021年7至11月較全國高出逾三倍；同時透過政策攻勢與司法改組強化一黨執政。",
+        "下一任州長將面對可負擔性壓力：自2020年起房價與保險費分別上漲50%與75%，所得只增30%，人口成長也出現明顯降速；文章引用唐納斯把「affordability」列為首要。"
+      ],
+      "researchLensZh": "文章把佛州的轉向放在「選舉結構＋政策後果」一起看：一方面，德桑提斯透過立法、司法與否決等手段鞏固共和黨優勢；另一方面，州內民生成本上升（房價、保險）與人口成長放緩，可能成為未來施政的約束條件。",
+      "keywordsZh": [
+        "Florida",
+        "Ron DeSantis",
+        "Donald Trump/MAGA-land",
+        "Byron Donalds",
+        "affordability/housing insurance"
+      ]
     },
     {
       "id": "e21976f9-7a55-4099-a91f-7817a2e15d50",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "United States",
+      "categoryZh": "區域政情",
       "titleEn": "What Britain can teach Democrats about the ultra-Left",
       "rubricEn": "How to stop extremists from making a party unelectable",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/united-states/2026/08/13/what-britain-can-teach-democrats-about-the-ultra-left",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以尼爾·金諾克（Neil Kinnock）在1980年代清理英國工黨內的極左勢力為例，指出民主黨也正面臨類似的入黨滲透與初選提名爭奪。作者認為，像DSA這樣的少數高度組織化團體可在初選中贏得提名、放大存在感，進而讓主流選民覺得該黨難以執政。文中並比較英國與美國情境差異，認為主流黨必須持續向選民說明其理想並非妄想，否則英國的教訓可能對美國形成「長期不受阻的川普式」風險。",
+      "keyPointsZh": [
+        "文中把1980年代英國工黨的「entryism」與美國民主黨內DSA的作法對照：兩者都依靠少數組織化力量，在更大的政黨體系內競逐派系與提名機會。",
+        "作者描寫Militant以簡化口號對外，卻被認為另有祕密且更激進的主張，並舉出金諾克主張其對中位選民脫節；其在利物浦的結果也被拿來作為警訊。",
+        "作者指出金諾克的做法（公開譴責、在黨內程序上推動開除）不易直接複製到民主黨，因其黨內結構較不集中、且領導者難以阻止他人參與初選；但主張民主黨仍需持續說服選民其理想並非瘋狂。"
+      ],
+      "researchLensZh": "研究焦點放在政黨如何面對「少數團體滲透」與「初選提名競逐」所帶來的選民可接受性問題。文中用金諾克處理Militant的過程，整理出訊息透明度、黨內程序與選民觀感之間的關聯，並延伸到民主黨初選結構對激進勢力的限制。",
+      "keywordsZh": [
+        "民主黨",
+        "DSA",
+        "金諾克",
+        "Militant",
+        "entryism"
+      ]
     },
     {
       "id": "3f1980df-13ba-41a1-be44-909154799d2f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The Americas",
+      "categoryZh": "區域政情",
       "titleEn": "Inside Venezuela’s high-stakes political negotiations",
       "rubricEn": "Maria Corina Machado’s absence does not mean they will fail",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-americas/2026/08/13/inside-venezuelas-high-stakes-political-negotiations",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "委內瑞拉在8月6日啟動政治談判，議程涵蓋地震災民救助、民主制度強化，以及政治權利與保障。第一輪於8月12日結束並發布聯合聲明，同意推進司法改革流程，包括最高法院新任命機制，並討論動用遭凍結於英國的黃金儲備協助災民。美國深度介入，馬爾科·魯比奧具關鍵影響；但由於領導反對派的瑪麗亞·科里納·馬查多未參與，談判的合法性與「輸家保障」的可信度面臨更大考驗，而未來是否出現實質讓步仍取決於美方意圖。",
+      "keyPointsZh": [
+        "談判由反對派Dinorah Figuera領軍與政府方Jorge Rodríguez領軍。雙方進行6天後於8月12日達成首份共識：推動司法改革流程，並訂出最高法院法官的新任命機制，同時也同意合作處理遭英國凍結的黃金儲備。",
+        "官方議程分三部分：協助地震受害者、強化民主、以及政治權利與保障；其中強化民主主要涉及選舉委員會與最高法院相關改革，並預期圍繞委員與法官席位安排以及政治權利恢復展開激烈談判。",
+        "文中指出，馬查多缺席不必然代表談判會失敗：美國已與Figuera合作並在馬德里等地先行磨合，且擁有對制裁與資源動用的影響力；但若缺少她的在場支持，改革與讓步的壓力可能不足，而「輸家保障」能否可信也更需看政府是否相信她會遵守承諾。"
+      ],
+      "researchLensZh": "可檢查兩條線：一是美國如何透過人選安排、會談支援與對制裁/資源的批准權，影響談判能否推進司法與選舉相關改革；二是馬查多不在場如何削弱談判合法性與「失去政權者的保障」的可操作性，進而影響政府是否做出實質讓步。",
+      "keywordsZh": [
+        "委內瑞拉政治談判",
+        "馬爾科·魯比奧",
+        "馬查多缺席",
+        "司法改革",
+        "選舉委員會改革"
+      ]
     },
     {
       "id": "318bf30f-7ae3-4580-860b-2db58bbf6c7f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The Americas",
+      "categoryZh": "區域政情",
       "titleEn": "Donald Trump’s bullying of Canada is endless",
       "rubricEn": "Canadians are starting to turn against Mark Carney’s pragmatic response",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-americas/2026/08/09/donald-trumps-bullying-of-canada-is-endless",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "蓋迪豪國際橋長2.5公里，加拿大先出資64億加元，但川普長期威脅延後開通，直到美方拿到通行費分成才在7月下旬恢復通車。隨後他宣布對自加拿大進口多項商品加徵50%關稅；若8月19日按預期生效，加拿大將成為1930年《斯莫特-霍利關稅法》第338條下首個受罰國，因該條款無需國會核准。文中也提到，加拿大先後讓步後，仍面臨民眾對談判信心下滑與對關稅的反感。",
+      "keyPointsZh": [
+        "加拿大2012年起就承擔整座長2.5公里的蓋迪豪橋成本，並同意在成本回收前把通行費全數給美方；直到美方拿到通行費分成，交通才在7月下旬開始流動。",
+        "若新關稅如期8月19日生效，加拿大將依1930年《斯莫特-霍利關稅法》第338條成為首個適用對象；文中指出這項關稅安排無需國會同意，且新措施還涵蓋USMCA內的商品。",
+        "文中引用民調：加拿大民眾對卡尼能替自己爭取到好交易的信心，4到7月下滑8個百分點；雖仍有近三分之二希望加國以關稅反制，但也有人認為反打同樣會重擊加拿大。"
+      ],
+      "researchLensZh": "可回到兩個檢查點：一是第338條在制度上如何讓美方在程序上取得更大彈性；二是加國即使已先調整數位服務稅與部分報復關稅，仍未換來降溫，反制又可能增加對國內產業的成本。",
+      "keywordsZh": [
+        "蓋迪豪國際橋",
+        "50%關稅",
+        "Smoot-Hawley第338條",
+        "USMCA",
+        "卡尼（Mark Carney）"
+      ]
     },
     {
       "id": "1d5ef05d-7d07-4825-a5ed-35252e2c44cb",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The Americas",
+      "categoryZh": "區域政情",
       "titleEn": "Brazil is at last managing to build its own warships",
       "rubricEn": "That is sensible in a newly volatile hemisphere",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-americas/2026/08/13/brazil-is-at-last-managing-to-build-its-own-warships",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "巴西在軍艦自製上出現轉折式進展：4艘護衛艦Tamandaré由巴西全程建造，4艘第二批也已先行同意。艦上可偵測潛艦並發射飛彈與魚雷，另設直升機起降台以在不依賴昂貴驅逐艦的情況下擴大巡邏範圍。文中也把這項作為更長期的防務現代化安排，而非只針對近期對美緊張的即時回應。",
+      "keyPointsZh": [
+        "Tamandaré級護衛艦由巴西在地建造：4艘已於4月服役，並有第二批4艘的建造案先行獲得同意。",
+        "TKMS與Embraer合作、在聖卡塔琳娜州Itajaí製造，設計重點放在帶動國內供應鏈與培育在地技能型勞動力。",
+        "巴西軍費占GDP為1.1%，近一年武裝部隊支出達240億美元、較2024年增13%；文中引述智庫說法，這套擴軍與原本的計畫時程（2017年、2013年備忘錄）一致。"
+      ],
+      "researchLensZh": "閱讀時可追問：Tamandaré的建造是否真的改變過往「流產多、成果難留」的紀錄；以及巴西把軍費從1.1%往上提高的同時，能否承接已啟動的護衛艦、核能潛艦與戰機等長周期專案。",
+      "keywordsZh": [
+        "Tamandaré護衛艦",
+        "巴西國防採購在地化",
+        "TKMS與Embraer合作",
+        "反潛能力",
+        "軍費占GDP 1.1%"
+      ]
     },
     {
       "id": "9e1cf3bc-0d49-4088-9c65-59f1b3e1d396",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "The Americas",
+      "categoryZh": "區域政情",
       "titleEn": "A big earthquake reveals two very different Colombias",
       "rubricEn": "The new president, Abelardo de la Espriella, took office three days before it struck",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/the-americas/2026/08/12/a-big-earthquake-reveals-two-very-different-colombias",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "哥倫比亞8月10日發生規模7.4強震，震央附近的西部州巧科（Chocó）重創，至少265人死亡。新總統阿貝拉多・德拉艾斯皮里埃亞（Abelardo de la Espriella）在震災前三天上任、中央反應較快，但巧科仍反映資源匱乏：醫院僅能提供基本手術、救援在11日就開始，卻在地震後72小時黃金救援期結束後仍有人被救出但也有死亡，同時不少家庭仍無水無電、等不到進一步詢問與協助。",
+      "keyPointsZh": [
+        "強震震源約在地殼深處、破壞力因而較被低估，但巧科因貧困脆弱而仍重傷；救援3日內開始，卻趕上72小時窗口過後的落差。",
+        "中央層級反應較快：新總統已在震災前3天宣誓，並派內閣、宣布受害者將獲臨時住房協助；然而巧科多數家庭仍抱怨無水無電、等待官方回應。",
+        "救災與復原還受制於治理能力與資訊：災害管理單位資金短缺且曾被貪腐侵蝕，新的政府也因交接過程缺乏合作、較依賴地方政府。"
+      ],
+      "researchLensZh": "讀原文可用一條線索檢查因果：中央回應速度（總統3天前上任、派內閣、宣布協助）能否抵消地區差異（醫療與基礎設施不足、72小時窗口過後救援不易），以及新政府在災害資訊與能力上的缺口，如何讓偏遠的巧科落後於較富裕的瓦耶德爾考卡（Valle del Cauca）。",
+      "keywordsZh": [
+        "哥倫比亞",
+        "7.4強震",
+        "巧科州（Chocó）",
+        "瓦耶德爾考卡（Valle del Cauca）",
+        "Abelardo de la Espriella"
+      ]
     },
     {
       "id": "bafceb33-2759-4568-9c37-208c8c608bef",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Middle East & Africa",
+      "categoryZh": "區域政情",
       "titleEn": "Mogadishu no longer deserves its deadly reputation",
       "rubricEn": "Why security in the Somali capital is improving",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/middle-east-and-africa/2026/08/13/mogadishu-no-longer-deserves-its-deadly-reputation",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "索馬利亞首都摩加迪休近年治安改善。根據ACLED資料，與青年黨（al-Shabab）相關、在城內的攻擊數量，已從2022年第三季的144起降至今年第二季5起；文中指稱，2026年相關死亡人數有望回到該組織自2000年代中期出現以來的最低水準。安全變好也帶來夜間外出與消費活動回升、機場周邊更密集、並有新開發案。惟穩定仍受不確定因素牽動，包括延宕選舉引發的衝突、總統與地方勢力的對峙升高，以及美國宣布不再支持UNSOS等後勤/維和支援可能縮減。",
+      "keyPointsZh": [
+        "與青年黨相關的摩加迪休城內攻擊明顯降溫：2022年第三季144起，至今年第二季僅5起；文中估計2026年相關死亡數將是2000年代中期以來最低。",
+        "治安改善的效果在日常可見：居民不再如過去般避開夜晚，夜間咖啡廳增多、機場周邊更密集，新建如Dahab Tower等也預計在今年開放。",
+        "原因與風險同時存在：政府稱用監視器、警用電子資料庫（iPad辨識檢查點車輛）及便衣情報等手段「關上門」，土耳其亦提供軍事與訓練等支持；但選舉延宕、地方資源投入政治內鬥，以及UN後勤UNSOS可能在2027前面臨結束，讓「新常態」不保。"
+      ],
+      "researchLensZh": "文中以摩加迪休的攻擊下降為切入點，追問首都安全何以改善、以及改善是否可能持續。可檢查的方向包括：政府在城內治安上的具體作法如何影響青年黨活動；外部力量（特別是土耳其與美國空襲）對首都外圍的影響程度；以及選舉、地方衝突與UN後勤支援（UNSOS）變化，是否會在短期內改變風險水準。",
+      "keywordsZh": [
+        "摩加迪休",
+        "青年黨 al-Shabab",
+        "ACLED",
+        "哈桑·謝赫·穆罕默德",
+        "UNSOS 與維和後勤"
+      ]
     },
     {
       "id": "3f431c5f-d717-4a4b-9c5e-1aab57856cbb",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Middle East & Africa",
+      "categoryZh": "區域政情",
       "titleEn": "Zambia’s election is a test of metal",
       "rubricEn": "High copper prices are a boon. But voters want to feel it",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/middle-east-and-africa/2026/08/12/zambias-election-is-a-test-of-metal",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "贊比亞銅帶地區正因創高銅價而重啟採礦，但這份利多未必讓街坊安心。8月13日投票時，選民把生活成本放在心上：通膨回落、kwacha走強雖讓壓力降溫，仍有人抱怨不知道錢流到哪裡。現任Hakainde Hichilema（UPND）預料可贏得第二任（結果預計8月17日），其改革包含重整無法償還的債務、削減補貼、提高準備金，並減輕銅業稅負；但產量目標3百萬噸/年要到2031年，去年產出約89萬噸，離承諾仍有落差。文中也提到，政治審查與網路言論風險讓部分人擔心制度仍像前政權時期，而下一任需回答貧窮與供電風險、以及如何把銅價紅利帶出礦區。",
+      "keyPointsZh": [
+        "銅價上行帶動銅帶復工與政府改革：現任政府重整無法償還債務、削減補貼、提高準備金、減輕銅業稅負；但成長未如承諾、且有人質疑金流與分配透明度。",
+        "選舉焦點仍是物價壓力與政治互動：8月13日投票、結果預計8月17日；通膨下行與kwacha走強未必消弭不滿，主要挑戰者Brian Mundubile強打失望青年，競選期間也出現支持者阻撓。",
+        "銅業之外的難題更考驗下一任：產量目標3百萬噸/年（2031）可能落空（去年約89萬噸），民主與制度面臨疑慮（含網路犯罪法下的逮捕擔憂），另有El Niño帶來乾旱、2024年曾讓水力發電供電時數大幅受限的風險。"
+      ],
+      "researchLensZh": "以8月13日選舉為切點，檢視外部銅價走高與政府經濟調整，為何仍難立即轉化為民眾的生活改善；同時追問政治競逐、制度運作與能源脆弱性，如何影響選民對「銅價紅利留在國內」的信心。",
+      "keywordsZh": [
+        "贊比亞",
+        "選舉（8月13日/8月17日）",
+        "銅價與銅帶省",
+        "kwacha與通膨",
+        "El Niño/供電風險"
+      ]
     },
     {
       "id": "9a23abe7-37a2-44ab-ad5f-ccb3ef5ce416",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Middle East & Africa",
+      "categoryZh": "區域政情",
       "titleEn": "War in the Gulf has weakened two of America’s Arab allies",
       "rubricEn": "Egypt promised to fight and Jordan promised to stay neutral. Neither delivered",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/middle-east-and-africa/2026/08/10/war-in-the-gulf-has-weakened-two-of-americas-arab-allies",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "約旦國王曾表示本國不會成為區域衝突的戰場，但如今約旦位於美國與伊朗之間的區域衝突中心；埃及則「一點就到位」的安全承諾，卻在對伊朗戰事中提供的除了言語不多。原文把差距歸因於：約旦在承受打擊與國內不滿之間、難以配合撤出美軍；埃及在經濟相對穩定的同時，斡旋與軍事存在感被外國與海灣夥伴稀釋，仍遭到以無法以戰略行動換取安全保障的情況。",
+      "keyPointsZh": [
+        "約旦未如承諾置身事外：由於境內美軍部署於穆瓦法克·薩爾蒂等空軍基地，伊朗把約旦視為目標；國內則出現要求撤軍的公開信，但約旦難以拒絕。",
+        "約旦能源與旅遊成本上升：戰事導致航班取消與旅遊受挫；以色列在開戰時一度停止供氣，使約旦改用柴油、重油與現貨LNG，雖然4月恢復出口，IMF仍預期能源進口帳單比2025年高36%。",
+        "埃及看似較能撐住，但影響力變小：原文稱今年預期成長4.6%，IMF已解鎖1.8bn美元分期；旅遊與外匯來源仍有支撐，但在對伊朗戰事中被巴基斯坦、土耳其與海灣國家稀釋，且埃及仍未避免遭到以無關聯外溢性攻擊的例子。"
+      ],
+      "researchLensZh": "本文以約旦與埃及為例，對照兩國先前在安全承諾上的表態，追問為何在美國與伊朗的衝突中出現落差；重點放在美援與軍事部署的約束、國內政治壓力，以及能源與外匯指標如何把風險放大。",
+      "keywordsZh": [
+        "Jordan",
+        "Egypt",
+        "Iran",
+        "US foreign aid",
+        "energy imports"
+      ]
     },
     {
       "id": "afd54652-5298-48b3-bf78-9673f73bbe82",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Middle East & Africa",
+      "categoryZh": "區域政情",
       "titleEn": "What to make of a new Saudi-led defence pact",
       "rubricEn": "Turkish arms producers may be the first beneficiaries",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/middle-east-and-africa/2026/08/13/what-to-make-of-a-new-saudi-led-defence-pact",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "土耳其、巴基斯坦與沙烏地阿拉伯在8月7日簽署由沙國主導的防務協議，並表示條款含有類似北約第5條的相互防衛安排。文中認為，這份協議一方面被用來作為對以色列在加薩、黎巴嫩、敘利亞與伊朗等地軍事行動的「對重」，另一方面也回應伊朗透過霍爾木茲海峽航運施壓的風險與美國安全承諾可信度。作者同時指出，三方真正彼此出兵的可能性不高，短期更偏向安全與防務合作平台，且土耳其軍工被視為首批受惠者。",
+      "keyPointsZh": [
+        "協議宣稱以「類似北約第5條」為精神：對三國任何一國的武裝攻擊都視為對所有成員的攻擊，但文中評估真正互相介入的機率偏低。",
+        "文章把目標放在兩個方向：對以色列在多地的軍事行動與區域主導野心的回應，以及對伊朗破壞地區安全、含透過霍爾木茲海峽干擾航運的威懾訊號；伊朗則稱不必擔心。",
+        "潛在受益者主要是土耳其軍工，因其無人機與防空等領域具能力且需資金；沙國資金與採購需求，結合土耳其防務產業與巴基斯坦的軍工基底，被視為能加速合作。"
+      ],
+      "researchLensZh": "可用「安全承諾如何被設計成政治威懾」來讀：文中一面強調相互防衛條款與集體嚇阻的訊號效果，另一面又拿出三方互相出兵的限制，說明為何短期更像合作平台；最後再看軍工資金與採購需求如何把政治安排落到產業層面。",
+      "keywordsZh": [
+        "沙烏地主導防務協議",
+        "北約第5條相互防衛",
+        "霍爾木茲海峽與伊朗威脅",
+        "對以色列影響的對重",
+        "土耳其軍工與資金採購需求"
+      ]
     },
     {
       "id": "b577c981-926c-4469-ba23-2c000162920c",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Middle East & Africa",
+      "categoryZh": "區域政情",
       "titleEn": "The Muslim Brotherhood is more divided and weaker than ever",
       "rubricEn": "But it is far from finished in the Middle East",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/middle-east-and-africa/2026/08/11/the-muslim-brotherhood-is-more-divided-and-weaker-than-ever",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "突尼西亞莫爾那古亞監獄內的酷熱，今年逼得恩納赫達（Ennahda）創辦人、85歲的拉希德·加努努奇在7月17日昏厥失去意識，故事也被比作2012年當選埃及總統、2019年死於獄中的穆罕默德·穆爾西。作者用他們的命運，說明穆斯林兄弟會在中東多地影響力下滑：多名領導被監禁或流亡，加上美國在11月要求將其各章程列為恐怖組織、並在5月將其與蓋達與伊斯蘭國並列，讓組織承受更大打擊。儘管出現2021年後分裂成兩派、難以同聲，作者也指出其社會福利與「尊嚴」論述仍會讓部分人繼續選擇加入。",
+      "keyPointsZh": [
+        "作者將近年的壓力具體化：美國在11月要求把兄弟會各分支列為恐怖組織；1月13日把埃及與約旦分支列為「全球恐怖組織」（並與哈瑪斯的援助連結）；5月又在新的反恐戰略下，把兄弟會列入與蓋達與伊斯蘭國相同的現代聖戰來源類別。",
+        "內部分裂被描寫為關鍵變化：自2021年起，流亡倫敦的伊卜拉欣·穆尼爾解散在土耳其的組織架構、但其被指遭撤換；兩派各自有領導、協商機構（Shura）與網站，彼此都稱自己才是真正代表，且在土耳其資產、投資公司與現金控制等上難以整合。",
+        "在埃及、突尼西亞、加沙與敘利亞，作者認為外部打擊仍未抹去吸引力：如埃及的穆罕默德·巴迪仍在獄中、兩國現任領導多次以逮捕方式壓制兄弟會，而加沙境內哈瑪斯的權力被削弱；但作者仍提到經濟困境與「屈辱」敘事，讓支持者的理由依舊存在。"
+      ],
+      "researchLensZh": "讀原文時可用三個問題檢查：第一，美國的列名與各國禁令如何在時間點上加碼（11月、1月13日、5月等）；第二，2021年後兩派在治理與資源控制上的衝突，是否讓組織難以動員；第三，作者說「加入理由」是否主要來自經濟與尊嚴敘事，而不僅是政治領導被壓制。",
+      "keywordsZh": [
+        "穆斯林兄弟會",
+        "美國恐怖組織列名與制裁",
+        "2021年後兩大派系分裂",
+        "埃及與突尼西亞的監禁與壓制",
+        "哈瑪斯與加沙戰事"
+      ]
     },
     {
       "id": "26fde958-1e84-41fa-929e-af93412ec6a8",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "Sexually transmitted infections are surging in Europe",
       "rubricEn": "To restrain them, countries must increase testing and reduce stigma",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/09/sexually-transmitted-infections-are-surging-in-europe",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "歐洲性病（STIs）近十年病例大幅上升，疫情期間一度因監測較不勤與性行為較不頻繁而下滑，2021年後再度上衝。ECDC在2024年（最新可得資料）估計淋病約10萬例、較2015年逾3倍；梅毒病例超過4.6萬例、逾倍增；披衣菌在2022年達峰後回落至2015年水準。文中稱，疫情後仍持續上升不只是測試恢復，更可能反映真正的傳播增加，並主張要提高檢測量、降低污名才能壓制。",
+      "keyPointsZh": [
+        "ECDC資料顯示：2024年淋病約10萬例（為2015年的逾3倍）、梅毒約4.6萬例以上（逾倍增）；披衣菌則在2022年後回落至2015年水準。",
+        "追問原因時，文中提到疫情後仍持續的上升可能代表真正傳播增加；至於約會軟體帶來的「多伴侶」或避孕套使用下降，相關證據都被描述為有限或只具提示性。",
+        "控制方向上，文章強調強化監測與目標性檢測，特別是孕期母嬰梅毒；同時處理污名造成不敢就醫的問題。匈牙利則呈現：通報上升（含因測更多而被看見）後，篩檢變得更嚴格。"
+      ],
+      "researchLensZh": "閱讀重點可放在：哪些數字被用來界定「上升幅度」與時間點（2015、2021、2024），以及文中如何在「監測回復」與「真正傳播增加」之間做因果判斷；再核對提到的干預抓手（檢測覆蓋、孕期與高風險族群篩檢、污名）。",
+      "keywordsZh": [
+        "歐洲",
+        "性病（STIs）",
+        "淋病（gonorrhoea）",
+        "梅毒（syphilis）",
+        "避孕套使用/PrEP/污名"
+      ]
     },
     {
       "id": "ae826e79-cad4-4c0e-9348-451be8d6b54b",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "A liberal party is barred in Russia for implicitly opposing the war",
       "rubricEn": "Russia’s authorities are increasingly fearful of the slightest sign of dissent",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/13/a-liberal-party-is-barred-in-russia-for-implicitly-opposing-the-war",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "俄羅斯8月10日，數百名多為年輕人聚集在最高法院外，聽手機直播法院審理，討論自由派政黨雅布洛科能否參與9月20日的杜馬選舉。法院以「極端主義」等理由取消其資格。雅布洛科在7月29日完成登記後，稱自己是「和平黨」並支持停火協議、外交與談判；民調顯示其支持率由約3%快速升到被取消前的9.3%，社群以吃蘋果等貼文擴散。文中指出，當局擔憂其可能在「公開且合法」層面談和平，因此透過司法裁決切割，並在裁決後出現徵兵威脅的警告。",
+      "keyPointsZh": [
+        "最高法院裁決取消雅布洛科參加9月20日杜馬選舉資格，外界關注其反戰立場。當局的訴訟理由包含「極端主義」等指控。",
+        "文中提到雅布洛科原被視為較安全的選項，7月29日可完成登記；但其在7月27日宣布以和平為主軸後，民調支持率由約3%上升至9.3%，社群貼文也快速擴散。",
+        "作者主張當局擔心的是其能在法律框架內公開談論和平；裁決宣布後，法院外出現「羞恥」口號，警方也以徵兵招募威脅要求民眾散去。"
+      ],
+      "researchLensZh": "本文把焦點放在戰爭情境下的政治治理：先允許雅布洛科登記並參與競選，再以司法程序撤除資格，限制其可見度。文中同時連結支持率上升與社群動員，指出當局可能因此認定壓力、審查與鎮壓不足，並用徵兵威嚇回應。",
+      "keywordsZh": [
+        "俄羅斯",
+        "雅布洛科",
+        "反戰",
+        "和平談判",
+        "取消參選資格/極端主義"
+      ]
     },
     {
       "id": "688e246f-26b4-4964-ac88-48c31038b233",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "Europe must do more to guard its airports from Russian drones",
       "rubricEn": "The Leipzig attack shows the danger of Russian-style hybrid warfare",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/13/europe-must-do-more-to-guard-its-airports-from-russian-drones",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "德國萊比錫—哈雷機場8月4日晚間險些出事：一架搭載800公克塑膠炸藥的FPV四軸無人機，飛入停放且已加滿油的烏克蘭安托諾夫An-124機翼，卻因炸彈未引爆而脫落；若成功，旁邊另一架An-124也可能同樣遭殃。直到隔天清晨才被巴士司機發現並壓住警報，凸顯歐洲機場在偵測與處置俄方風格無人機攻擊上的缺口。",
+      "keyPointsZh": [
+        "文中稱，這起企圖比去年針對歐洲的偵察與干擾型無人機更進一步；因它直接把武裝無人機對準萊比錫作為北約與烏克蘭物流樞紐的關鍵運輸。",
+        "調查與資料顯示該無人機屬軍事等級，來源推估為國家相關行動者；其通聯設計使用SIM卡與5G天線而非電台式遙控。德國未正式歸因俄方，但文中提到外部來源認為很快會有指認。",
+        "文中主張德國應在主要機場於8月底前部署多層偵測：結合雷達、可在行動網路偵測異常的軟體、攝影機與熱／聲學感測。另需清楚反無人機作業規範，因干擾可能影響商用飛機通訊、攔截可能造成碎片風險，而缺乏流程會讓隊伍偏向保守。"
+      ],
+      "researchLensZh": "本文以萊比錫—哈雷攻擊未遂作為警訊，檢視「如何更早發現」與「發現後怎麼做」兩段鏈條。文中把焦點放在偵測難題（天氣、鳥類活動、背景噪音與密集基礎設施）以及處置的不確定性（干擾、攔截碎片與SOP不足）上。",
+      "keywordsZh": [
+        "萊比錫—哈雷機場",
+        "8月4日FPV無人機",
+        "800公克塑膠炸藥",
+        "An-124",
+        "反無人機偵測與處置SOP"
+      ]
     },
     {
       "id": "a6addc32-4263-421e-a385-48efc674a456",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "Might Moldova merge with Romania?",
       "rubricEn": "Its leaders are starting to mention an alternative route to joining the EU",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/13/might-moldova-merge-with-romania",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "摩爾多瓦原本目標是2030年前加入歐盟，但文中指出，若歐盟阻止，部分領導人正提到「Plan B」：與已是會員國的羅馬尼亞統一。報導回顧1918年摩爾多瓦曾表決加入羅馬尼亞，並引述總統Maia Sandu表示公投將投「yes」。不過，法國擴大相關的憲法程序、民意差距，以及對德涅斯特河沿岸（Transnistria）與加告茲（Gagauz）等安排，讓統一路徑不容易成形。",
+      "keyPointsZh": [
+        "文中提到，Maia Sandu稱若就與羅馬尼亞統一舉行公投會投「yes」，副總理Eugen Osmochescu稱之為「Plan B」，多名羅馬尼亞政客也支持；統一在民意上約在羅馬尼亞70%、摩爾多瓦40%。",
+        "入歐時間與外部阻力是關鍵不確定性：文中評估摩爾多瓦有機會在2029年前完成入歐要求，但法國可能以擴大反對立場卡關；法國憲法要求同意新成員須經公投或兩院三分之五通過。",
+        "統一也涉及財政與治理難題：文中指出羅馬尼亞不足以像西德那樣補貼，摩爾多瓦對Transnistria等地控制有限；另因1994年與Gagauz的協議，未來若摩爾多瓦加入羅馬尼亞，Gagauz可選擇獨立。"
+      ],
+      "researchLensZh": "閱讀時可把「Plan B」當作入歐談判的替代路徑來檢查：先看摩爾多瓦是否能在2029年後續通過歐盟要求，再對照法國憲法門檻與可能的政治人選，最後評估Transnistria、Gagauz等安排是否會讓統一失去可行性。",
+      "keywordsZh": [
+        "摩爾多瓦",
+        "羅馬尼亞統一",
+        "歐盟擴大",
+        "Plan B",
+        "法國憲法公投或國會三分之五同意"
+      ]
     },
     {
       "id": "992a5494-cd77-40de-867e-79c234a01ae5",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "Europe’s dry rivers are exposing mammoths and Nazi warships",
       "rubricEn": "Record heat and drought are crippling",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/13/europes-dry-rivers-are-exposing-mammoths-and-nazi-warships",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "西歐本年度出現第5波熱浪，萊茵河與多瑙河水位降到1880年官方記錄開始以來的最低。萊茵河在德國卡奧布的量測深度8月12日僅12公分，德國內河航運協會估計未來幾天可能降到個位數，恐讓可航段被切成兩段。多瑙河在布達佩斯水位26公分，低於2018年的紀錄低點33公分，並衝擊發電用水：布達佩斯附近帕克斯核電廠提供匈牙利電力的30%，以及羅馬尼亞的切爾納沃達核電廠部分或全部停機，同時兩國政府要求企業與民眾節電。",
+      "keyPointsZh": [
+        "萊茵河水位在卡奧布僅12公分；若降到個位數，協會估計可航萊茵河段將被切成兩段。",
+        "多瑙河供冷卻用水不足使帕克斯核電廠與切爾納沃達核電廠部分或全部停機，兩國政府並請求企業與家庭盡量削減用電，汽車業如匈牙利Audi與羅馬尼亞Dacia也縮產。",
+        "低水位外露「飢餓石」、二戰遺跡與猛獁象等現象；在經濟面，內河貨運需降載以避免擱淺，2018年乾旱曾讓德國GDP下滑約0.4%，今年若持續到10月，iNG估計可能再少0.5%。"
+      ],
+      "researchLensZh": "摘要把焦點放在同一個共同條件—熱浪與乾旱造成的低水位—如何同時改變內河航運載重、核電廠冷卻用水與能源需求，並用2018與今年的水位/停機狀況與GDP估算，呈現衝擊幅度的不確定性。",
+      "keywordsZh": [
+        "西歐乾旱與熱浪",
+        "萊茵河水位（卡奧布12公分）",
+        "多瑙河水位（布達佩斯26公分）",
+        "內河航運降載（避免擱淺）",
+        "核電廠冷卻用水不足（帕克斯、切爾納沃達）"
+      ]
     },
     {
       "id": "d429b7eb-cc63-47be-9434-1d1893c1a207",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Europe",
+      "categoryZh": "區域政情",
       "titleEn": "Europe’s true architects of integration",
       "rubricEn": "The nominees for the Charlemagne column prize are…",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/europe/2026/08/13/europes-true-architects-of-integration",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "歐洲整合常被歸功於布魯塞爾的高峰會與法規協調，但真正讓歐洲在日常變得更像一體的人，卻較少被看見。文中以「查理」專欄獎提名人為例：從1994年起掌舵Ryanair、讓低成本跨境移動變得很便宜，到1969年提出Erasmus的學者、以及在歐洲跨境流通的二手平台Vinted（2008年成立）等。最後作者也提到，反對者奈傑爾·法拉吉可能因英國脫歐成為歐洲的警示而成為首屆得主。",
+      "keyPointsZh": [
+        "文中先承認EU確實透過協調法規推動「更緊密聯盟」，但指出只談會議與指令，會忽略把歐洲變成日常單一大陸的人。",
+        "提名涵蓋多面向：低成本移動（Ryanair自1994年以來）、Erasmus（1969年構想、EU運作）、二手市場Vinted（2008年在維爾紐斯共同創辦）等。",
+        "作者在末段拋出反諷：若要談「留下歐盟」的價值並把英國脫歐寫成警示，可能由反歐盟的奈傑爾·法拉吉拿下首屆查理獎。"
+      ],
+      "researchLensZh": "回到原文可檢查：作者如何用提名名單串起制度外的跨境日常連結（如交通、教育、平台與語言），以及何以在結尾把「反對者」與「留在歐盟的警示」連在一起，是否有對應的例子或因果暗示。",
+      "keywordsZh": [
+        "Europe’s true architects of integration",
+        "Charlemagne column prize",
+        "Erasmus",
+        "Ryanair低成本移動",
+        "Vinted二手市場"
+      ]
     },
     {
       "id": "ada61263-6810-4267-824e-9a69521fcd8d",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "Andy Burnham’s chance to reset Labour’s relations with business",
       "rubricEn": "Mark his actions more than his words",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/13/andy-burnhams-chance-to-reset-labours-relations-with-business",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章回顧，2024年大選前工黨曾以與企業長談來換取信心，宣稱放棄「社會主義」、並把經濟成長列為「第一要務」。文中說，這套做法在選前奏效，但到工黨在7月交班時，多數企業領袖對政府失去耐心：企業互動被外包給公務體系，並面臨較高稅負、部分承諾的促成長改革也未落實。文末認為，Andy Burnham出任首相提供重啟合作的機會，但他的說法與做法之間仍可能落差。",
+      "keyPointsZh": [
+        "文章指出，工黨選前就各產業進行冗長談話，並以放棄社會主義、強調經濟成長來安撫企業；但選後政府停止更積極傾聽企業，承諾改革未能兌現。",
+        "文中認為失溝通不只源於執政者：工黨內來自商業或金融背景的國會議員占比僅6%（保守黨為31%），而工會背景與其他政治經驗者占比較高；企業與政治彼此都常誤解對方運作。",
+        "Burnham被視為可望翻盤的選項：他過去在大曼徹斯特的經驗顯示願意和私部門合作；但文章同時提到他過去的言論偏向反新自由主義與反私有化，且對成長與貿易政策的論述仍不足。"
+      ],
+      "researchLensZh": "摘要用「工黨與企業關係如何從承諾走向落差」來整理：先對照選前溝通與選後政策（稅負、改革落空、會談形式外包），再補上黨內背景結構與雙向誤解，最後評估Burnham能否在言行之間建立更一致的成長與投資取向。",
+      "keywordsZh": [
+        "英國工黨",
+        "Andy Burnham",
+        "企業信心",
+        "稅負與改革落空",
+        "投資與貿易政策"
+      ]
     },
     {
       "id": "a804a76e-8a86-469d-922f-2ef50f007da1",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "British business has failed to make its voice heard",
       "rubricEn": "It needs to do better with Andy Burnham",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/13/british-business-has-failed-to-make-its-voice-heard",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章認為，英國企業在最近大選前就替工黨搖旗吶喊，卻沒把政策落地後的影響想清楚；以《就業權利法》為例，雇主似乎期待其會被大幅稀釋，但在政府與工會談新法細節時，政府方和工會卻對企業團體的談判能力感到震驚。文中並指出，企業高層往往只在政府新聞稿留下中性引述，擔心談不好會難堪、也怕被同業反感；因此企業需要更早和新團隊合作，並把政策帶來的物價與成長影響講清楚。",
+      "keyPointsZh": [
+        "文章回頭說明，企業在大選前對工黨政策過於樂觀，尤其對《就業權利法》可能被稀釋的想像，結果在新法細節談判中，政府與工會對商界代表的協商表現感到吃驚。",
+        "文中描述企業高層多不願投入政治對話，公開談政策的人少，部分原因是怕拿不到想要的結果就顯得尷尬，且可能遭同業不滿。",
+        "作者主張企業應更早與安迪．伯恩漢的新團隊合作，爭取政府從一開始就與商界討論；同時企業也想避免10月預算中的再度稅務衝擊，因為國防支出上升的資金來源並不明朗。"
+      ],
+      "researchLensZh": "本文把焦點放在「企業為何難以被政策制定者聽見」：先指出大選前的判斷偏誤，再談企業高層迴避政治的心理與社會成本，最後落到與政府溝通的時機與談判能力，並連結到10月預算前的財政不確定。",
+      "keywordsZh": [
+        "英國商界與政治對話",
+        "《就業權利法》",
+        "企業協商能力",
+        "安迪．伯恩漢新團隊",
+        "10月預算與稅負不確定"
+      ]
     },
     {
       "id": "5a42f0a7-289d-41eb-982f-7bef674e1488",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "Andy Burnham and the politics of accents",
       "rubricEn": "His way of speaking marks him out in a long line of posh-sounding PMs",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/13/andy-burnham-and-the-politics-of-accents",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "安迪・伯恩漢（Andy Burnham）在英國首相上任後的發言逐字稿顯示，他把“Buckingham”說成逐字稿可讀的“Bookingham”，還用把“class”押成與“gas”相同韻的方式；倫敦大學學院（UCL）的 Geoff Lindsey 因而認為他的口音更像北方人。文中回顧過去首相口音的變化：中期以來的 RP 長期主導，但在 1960 年代後地方與工人階級口音在文化中更受歡迎，政治圈卻開放較慢，仍較少出現特定地區口音的首相。",
+      "keyPointsZh": [
+        "UCL 的 Geoff Lindsey 指出，伯恩漢的逐字稿會把“Buckingham”誤讀成“Bookingham”，且他也把“class”與“gas”押韻，聽感更接近北方。",
+        "文中提到伯恩漢曾被指在利物浦時強調 Scouse 聲音、在曼徹斯特時調整 Manc 元音，並稱自己的口音為“generic northern”；英國早期亦提到皮爾（Lancashire）與格萊斯頓（北西部）等例子。",
+        "劍橋的 Amanda Cole 以實驗量化口音評價：使用自己聲音的研究發現，受試者對有艾塞克斯口音的說話者，給分比 RP 說話者低 11%；她也表示目前仍難以在英國出現艾塞克斯口音的首相。"
+      ],
+      "researchLensZh": "摘要把焦點放在「首相講話的口音」如何在政治舞台上被辨識與被評價。文中一方面用逐字稿與押韻做具體例子，另一方面用研究結果（艾塞克斯口音相對 RP 低 11%）來檢查口音偏見是否仍影響首相形象與可被想像的政治人選。",
+      "keywordsZh": [
+        "Andy Burnham",
+        "accent（口音）",
+        "Received Pronunciation（RP）",
+        "London Westminster",
+        "social class and region accents"
+      ]
     },
     {
       "id": "d19a7011-0ad4-4d37-99ec-db26c0a8f21b",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "The parlous state of Britain’s prisons is Burnham’s first test",
       "rubricEn": "The tricky politics of releasing prisoners early",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/13/the-parlous-state-of-britains-prisons-is-burnhams-first-test",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "英國監獄狀況不佳成為工黨首相安迪．伯納姆上任後的首個考驗。政府推出提前出獄方案以避免監獄「崩潰」，先前也在請願壓力下改口，稱可能讓特定重罪犯留在監內。最新方案自10月1日起，服刑較輕罪名者須服滿33%而非40%至50%，較重罪名（含過失殺人）則可在服滿50%而非66%後取得假釋資格；但文中指出，自2010年起，多數犯罪的即時監禁比例與平均刑期都上升。監獄容量未擴張到2012年以外，英國司法部估計人口將從目前的85,600人（約等同97%容量）升至2032年的96,000人。",
+      "keyPointsZh": [
+        "2024年政府為防監獄接近滿載推出急迫提前出獄安排，並在輿論反彈後於8月11日表示對「惡名昭彰」殺人犯仍可維持監禁的信心。",
+        "新方案更具爭議：10月1日起較輕罪名者提前後仍服滿33%而非40%至50%；較重罪名者（含過失殺人）可在服滿50%而非66%後申請假釋。",
+        "文中強調看似較寬的提前出獄，實際上正與司法實務的趨勢背道：自2010年起，多數犯罪的即時監禁比例與平均刑期上升；同時監獄容量與2012年相近、且2032年預估將逼近97%容量。"
+      ],
+      "researchLensZh": "摘要聚焦提前出獄政策如何被監獄容量約束所推動：一方面為避免溢出而調整服刑比例與釋放規則，另一方面又與自2010年以來監禁更重、更久的司法趨勢並存；同時檢視伯納姆在公共壓力與執行限制下的可行選項。",
+      "keywordsZh": [
+        "英國監獄",
+        "提前出獄",
+        "監獄容量與溢出風險",
+        "假釋與服刑比例",
+        "刑事司法更嚴趨勢"
+      ]
     },
     {
       "id": "70d22337-1f2d-42eb-aad6-25b7869bec0e",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "How to fix Scotland’s drugs disaster",
       "rubricEn": "Efforts to get Scots off drugs need to be stepped up",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/13/how-to-fix-scotlands-drugs-disaster",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "蘇格蘭投入額外2.5億英鎊後，仍連續第七年被視為歐洲毒品死亡的重災區。2024年藥物濫用相關死亡降至2017年以來最低、為1,017人，但去年又上升約8%。文中認為「減害」固然重要，因警方攜帶納洛酮、格拉斯哥也啟用英國首個藥物消費室試辦三年，估計可避免約200起過量死亡；但若要讓人真正離開成癮，仍需把戒癮服務與長期照護加強。",
+      "keyPointsZh": [
+        "減害被視為必要：警方備有納洛酮以降低街頭過量風險；格拉斯哥開設藥物消費室（DCR）三年試辦，提供醫療監督、血液檢測、淋浴與轉介，文中估計已預防約200起過量死亡。",
+        "批評指出減害可能偏向「讓人活在成癮中」；蘇格蘭約有4.4萬名對鴉片類藥物有依賴，且在死亡率最高的格拉斯哥，公部門資助的戒癮床位僅23床，復發也被描寫為常見問題。",
+        "文中把風險連到更廣的取得與脆弱性：貧窮使物質濫用更易導致死亡、毒品更易取得；並提到含硝他嗪（nitazenes）等新威脅已出現，且合成阿片的效力被指可比芬太尼高達500倍。提出擴充康復咖啡廳與長期照護基礎設施。"
+      ],
+      "researchLensZh": "摘要以蘇格蘭的毒品危機為主軸，整理文中對政策的分工：一端是減害（DCR、納洛酮、監督與轉介），另一端是戒癮到離開成癮所需的長期照護。再把個案困境、貧窮與新型毒品風險納入，作為需要「加速投入」的依據。",
+      "keywordsZh": [
+        "蘇格蘭",
+        "毒品死亡",
+        "減害（harm reduction）",
+        "藥物消費室DCR",
+        "戒癮長期照護"
+      ]
     },
     {
       "id": "50b355e4-7592-4620-b190-12fe6730da4f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "A ban on an ancient hunt exposes a divide in Scottish nationalism",
       "rubricEn": "The controversy over the Hebridean tradition of killing gannet chicks",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/12/a-ban-on-an-ancient-hunt-exposes-a-divide-in-scottish-nationalism",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "赫布里底群島中，劃誓爾島（Isle of Lewis）每年夏天自1549年以來，男子會出海到北大西洋的無人小島捕殺鵝鯗幼雛（guga），並以棍棒打死後去內臟、鹽漬保存供一年四季食用。但今年這場獵捕不會照常進行：蘇格蘭民族黨（SNP）旗下的自然保育機構NatureScot以研究指出該行動可能劇烈傷害小島的鵝鯗族群而拒絕核准；當地工黨籍國會議員等反對者則說決策是為了安撫動保人士而被「反向設計」。",
+      "keyPointsZh": [
+        "NatureScot以研究為據，拒絕今年獵殺鵝鯗幼雛的申請，理由是可能大幅傷害小島鵝鯗族群。",
+        "爭議被用來說明蘇格蘭民族主義內部分歧：一邊重視文化傳承，另一邊也試圖用更「進步」的價值重新看待傳統實踐。",
+        "文中把這種張力追溯到先前政策作法：2025年1月教育考試機構將Robert Burns從單獨作者名錄移除，並提到後續立法可能促使歷史性蘇格蘭家族拆分大型莊園以稀釋集中土地持有。"
+      ],
+      "researchLensZh": "可用「民族認同如何落到具體政策」來讀：當文化傳統涉及對幼鳥的殺害時，保護文化與採取動保導向的政策，如何在同一個民族主義陣營內形成拉扯。文中也把蘇格蘭民族運動的左翼取向與其對文化象徵的取捨連在一起。",
+      "keywordsZh": [
+        "蘇格蘭民族主義",
+        "SNP",
+        "NatureScot",
+        "鵝鯗（gannet）幼雛",
+        "guga傳統獵殺"
+      ]
     },
     {
       "id": "21ded1aa-bd2e-4ccf-9b23-9154d7dac2ff",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Britain",
+      "categoryZh": "區域政情",
       "titleEn": "Britain has more cheeses than France. The whey ahead may be harder",
       "rubricEn": "Greater freedom to innovate has helped bring about an artisan revival",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/britain/2026/08/10/britain-has-more-cheeses-than-france-the-whey-ahead-may-be-harder",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "2019年聖誕前夕，Nettlebed Creamery爆發「藍霉（blue-mould）危機」：Highmoor起司外皮出現Penicillium commune，雖然可食用但失去販售資格，最後送往食物銀行。文中把這樣的試誤視為英國手作起司復興的代價；也指出英國不像法國有起司專門機構，因而常得自己摸索。1994年取消牛奶行銷管制後，牧場有動機把牛奶做成更高價值產品，加上英國PDO約束較少與消費者偏好產地、工藝故事，讓英國起司品項與出口都擴大；但原料與能源成本上升、病原體出現也讓生乳起司製作者更不安。",
+      "keyPointsZh": [
+        "2019年前後的藍霉問題顯示試作風險：Nettlebed Creamery的Highmoor起司外皮被Penicillium commune染灰，雖可食用但因外觀不符而無法銷售，轉交食物銀行。",
+        "英國制度與偏好提供創新空間：1994年取消牛奶行銷管制後，牧場不再有保證價格；同時因PDO法規較少、法國對特定地區品項的壓力較大，業者更能嘗試新配方與技法。",
+        "擴張不等於沒有壓力：文中提到下一章可能更難，原因包含原料與能源成本上升、病原體出現引發對生乳起司的擔憂；出口雖由2023年的£818m升至2025年的£971m（實質+12%），但運輸條件對較新鮮起司不利。"
+      ],
+      "researchLensZh": "以「制度鬆綁＋消費偏好」如何推動起司多樣化為主線，回到文中具體數據與法規差異（PDO、法國與英國做法），並檢視原料/能源成本與生乳病原風險，來評估英國起司產業後續擴張的限制。",
+      "keywordsZh": [
+        "英國起司",
+        "藍霉危機（blue-mould）",
+        "1994年取消牛奶行銷管制",
+        "PDO法規差異（英國vs法國）",
+        "生乳起司病原風險"
+      ]
     },
     {
       "id": "6e1831a9-96cf-4bb1-a0e1-ad946baabd12",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "International",
+      "categoryZh": "國際與政策",
       "titleEn": "Silicon Valley’s AI boom is remaking American charity",
       "rubricEn": "AI founders pledge to give away hundreds of billions of dollars. How will they be spent?",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/international/2026/08/13/silicon-valleys-ai-boom-is-remaking-american-charity",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "矽谷AI財富激增，可能讓美國出現前所未見的大規模慈善捐款潮。文中以「邊際救命成本可能從約5,000美元提高到15,000美元以上」為例，指出若先把錢投入成本較低、可擴張的介入（例如先買瘧疾蚊帳再談疫苗），後續才流向更昂貴的作法，整體反而可能救更多人。估計Anthropic與OpenAI若上市，兩者合計可能釋出約4,300億美元；但成效取決於安全研究能否被驗證、以及捐款可能透過DAF先取得稅賦優惠再延後使用等不確定因素。",
+      "keyPointsZh": [
+        "文中主張捐款可用「先便宜、後昂貴」來提高救命效率：若募款先支付低成本、可規模化的介入，之後才進入更花錢的行動，「邊際救命成本上升」未必意味整體變差。",
+        "AI創富者的捐款承諾規模遠超過過往：Anthropic與OpenAI相關的估計合計約4,300億美元；許多捐款受Effective Altruism影響，可能投向公共衛生、動物福利，以及AI安全與「存在性風險」研究等。",
+        "落地仍有幾個疑慮：AI對齊與安全研究難以找到可檢驗的反事實；捐款也可能被用於資助難以與「救人」直接對應的計畫；此外DAF等機制與IPO估值波動，可能讓資金短期內難以快速投入。"
+      ],
+      "researchLensZh": "摘要以兩條線索評估這波AI慈善潮：一是文中談到的「捐款如何配置，先低成本介入再推更昂貴作法」；二是強調衡量與資金流動的限制，特別是安全研究可證明性、以及DAF先鎖住資金與實際支出速度之間的落差。",
+      "keywordsZh": [
+        "矽谷AI慈善",
+        "有效利他主義（EA）",
+        "捐贈者建議基金（DAF）",
+        "AI安全與對齊（alignment）",
+        "存在性風險（existential risks）"
+      ]
     },
     {
       "id": "5be97fa7-0646-4274-904c-9a7d00eeb92c",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "International",
+      "categoryZh": "國際與政策",
       "titleEn": "Taking Taiwan’s democracy hostage",
       "rubricEn": "Self-interested Taiwanese politicians are making the country increasingly ungovernable. China is the only winner",
       "publishedEn": "Aug 13th 2026",
@@ -724,72 +1315,140 @@
     },
     {
       "id": "15023702-38f4-4da8-a1e2-6518c8e2a930",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "How much would you pay for a smarter baby?",
       "rubricEn": "Startups claim they can screen embryos for everything from genetic diseases to IQ. Not everyone is convinced",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/business/2026/08/10/how-much-would-you-pay-for-a-smarter-baby",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "紐約地鐵出現以「最佳寶寶」為訴求的胚胎篩檢廣告，並宣稱可用多基因風險分數評估智商、身高與疾病風險，引發爭議。文中指出，在英國等地，性別或多基因特徵篩檢仍屬非法，且多數遺傳學家與醫療團體對技術是否有效、是否合倫理存疑。儘管如此，矽谷新創持續擴張與募資：2024年美國用IVF完成篩檢的新生兒僅占2.8%（約10萬人），但2019至2022年間生殖相關VC投資由2.54億美元增至4.96億美元；若IVF成本下降，胚胎篩檢的市場規模可能擴大。",
+      "keyPointsZh": [
+        "文中以Nucleus、Orchid、Herasight為例：Herasight提供疾病風險與身高、智力、壽命等估計，費用最高達5萬美元；Nucleus則把髮色與瞳色納入。",
+        "文章說明PGT-P依賴GWAS資料衍生的多基因風險分數，但學界質疑「對單一孩子」的精準度，且即使宣稱能在特定族群降低絕對風險，平均效益仍可能有限，並受可選胚胎數影響。",
+        "在需求面，文中提到美國約四成多IVF參與者表示若安全且免費會使用多基因篩檢；投資與募資則推動更廣的IVF可近性，但也帶來倫理與法規拉鋸，包括是否會走向更廣泛的優生式做法，甚至胚胎編輯的擔憂。"
+      ],
+      "researchLensZh": "摘要聚焦PGT-P如何從既有PGT-A/PGT-M延伸，以及其商業擴張所依靠的兩條線：一是IVF普及與成本下降、資金投入增加；二是技術有效性與精準度、族群資料不足與倫理/法規爭議。文中同時保留支持者與質疑者的不同論點。",
+      "keywordsZh": [
+        "胚胎篩檢",
+        "PGT-P",
+        "多基因風險分數",
+        "GWAS",
+        "IVF投資與成本"
+      ]
     },
     {
       "id": "1537c421-b40c-47fc-ac66-3ac478954040",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "The six stages of holiday-making",
       "rubricEn": "Two weeks off, but how many days of relaxation?",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/business/2026/08/13/the-six-stages-of-holiday-making",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以「度假製作」的心境轉變，描寫兩週假期前後要走過的六個階段：從出發前的收尾焦慮與控制衝動，到假期初期把休息當作工作搜尋行程；其後逐步放手、間歇處理訊息，最後雖短暫失真、試著回到更理性的節奏，卻在回辦公室後很快又被寒暄與無差別回信帶回原本循環。",
+      "keyPointsZh": [
+        "出發前兩三天先把最急任務收完並整理桌面，說信任團隊卻同時要求隨時聯絡；他原本不開自動外出回覆，仍覺得離開時自己像要感冒。",
+        "假期前幾天把休息做成工作流程：用 AI 找離開熱門景點的地方。某個早上開車兩小時去吃早飯，卻發現餐廳關門，還去看腌魚的古老工藝；午餐喝酒後睡著，仍擔心時間在流逝。",
+        "放手後他會用收件匣「分流」：把需要立刻處理與可以等的訊息分開，並切換開啟外出回覆。到最後階段才再看「重要」信件、重新設定優先順序，但回辦公室後同樣對話重複、桌面與行事曆也很快被填回去。"
+      ],
+      "researchLensZh": "可用文中的六階段作檢查框架：準備期的聯繫衝動、假期初期的過度投入、放手後對郵件/通訊的處理方式、短暫失真的想像，最後回到辦公室後舊習如何迅速重建節奏。",
+      "keywordsZh": [
+        "holiday-making",
+        "出發前準備",
+        "AI找行程",
+        "外出回覆",
+        "回辦公室回歸舊習"
+      ]
     },
     {
       "id": "ea913099-a70d-49ac-8f1c-ccb647fb3c2f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "Japan’s downbeat startups need a lift",
       "rubricEn": "Can past success ever be rekindled?",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/business/2026/08/13/japans-downbeat-startups-need-a-lift",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文中以索尼等日本企業的創業起家史作對照，指出近數十年日本培育具影響力新創的能力走弱。資料顯示，全球1,400家獨角獸中只有6家在日本誕生，且日本尚未出現「百億美元」級別的decacorn。作者認為，問題主要在風險資本不足、公司過早上市讓資源難以用在長期成長，以及社會對創業的風險厭惡等因素；儘管AI帶動新獨角獸、政府與交易所也開始調整，但仍需更多推進才能翻轉。",
+      "keyPointsZh": [
+        "全球1,400家獨角獸中，只有6家來自日本，且日本尚未誕生decacorn；作者以此鋪陳日本新創動能偏弱的背景。",
+        "第一個卡關是風險承擔資本不足：Pitchbook稱2015年全日本VC投資僅約10億美元、交易數不到500；即便2025年成長到約60億美元，仍比澳洲（人口約為日本一半、去年籌到50億美元）落差更大，且大量資金被投向海外。",
+        "第二與第三個因素是退出路徑偏IPO與創業文化偏保守：疫情後日本有57%的已退出新創採IPO，低於美國與英國的23%與13%，且社會對創業的期待度偏低。政策與交易所的緊縮與指引正在改善，但規則對摘牌的全面效果要到2030年才開始。"
+      ],
+      "researchLensZh": "可用「資金—退出—文化」三條線追問：日本是否在後期與大型投資上供給不足、為何併購退出較少導致IPO節奏偏快、以及風險污名如何影響創辦人與團隊選擇。再回看文中提到的AI新獨角獸、政府扶植與交易所摘牌規劃，觀察改善是否能轉化為更大規模的新創與更高品質的後續資本配置。",
+      "keywordsZh": [
+        "日本新創",
+        "獨角獸",
+        "decacorn",
+        "後期風險資本（late-stage VC）",
+        "IPO偏快/退出管道（M&A）/交易所摘牌規則"
+      ]
     },
     {
       "id": "1ab9b494-3ac5-4a67-9986-1a353ec96917",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "The world’s biggest fast-food chain is moving into pubs",
       "rubricEn": "Why China’s Mixue Bingcheng is serving up beer",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/business/2026/08/13/the-worlds-biggest-fast-food-chain-is-moving-into-pubs",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "Mixue旗下的福鹿（Fulujia）近年把小型啤酒吧開到中國各地。文中稱其自2021年以來已開出超過3,200家mini-pub，並主打價格：生啤一杯低至5.9元（約0.87美元），大城市與邊陲小鎮的定價相近。低價與快速展店，文章歸因於Mixue的特許加盟模式與供應鏈效率；加盟端除啟動費約6萬人民幣外，前三年免付權利金，且啤酒由河南配送到逾2,000公里外的加盟店，運費由體系吸收。",
+      "keyPointsZh": [
+        "文中稱Fulujia自2021年起已在全中國開出超過3,200家mini-pub，店內空間雖小但有約20種生啤與簡餐（如炸豬肉、毛豆）。",
+        "Mixue在2023年10月取得Fulujia控制性股權；兩者採近似特許加盟，加盟端需約6萬人民幣的前置成本（含啤酒泵與品牌裝飾等，未含房租與裝修），並在前三年免付權利金。",
+        "作者把Fulujia的成本壓低與供應鏈效率連在一起：啤酒從河南運到加盟店，加盟店不支付運輸成本；文章並指出Mixue以加盟模式推動其門市擴張，2025年約每日至少增加40家。"
+      ],
+      "researchLensZh": "讀回原文時可釐清兩條機制：一是特許加盟端的啟動費與「前三年免權利金」如何影響展店速度；二是供應鏈如何讓即使距離超過2,000公里的店也不收取運費。也可核對文章對Fulujia在Mixue持股後擴張幅度的敘述，以及其海外布局的範圍與時間點。",
+      "keywordsZh": [
+        "Mixue",
+        "Fulujia",
+        "mini-pub",
+        "特許加盟",
+        "供應鏈物流"
+      ]
     },
     {
       "id": "6db41285-76bb-426d-9c63-39b473d6b58e",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "Is the LA Lakers’ sale a sign of sports investment gone mad?",
       "rubricEn": "$12.5bn price tag is highest ever for an American sports team",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/business/2026/08/13/is-the-la-lakers-sale-a-sign-of-sports-investment-gone-mad",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "Joshua Kushner以125億美元買下洛杉磯湖人、成為控股股東，並由前迪士尼CEO Bob Iger擔任合作夥伴。文中指出，這筆價格是美國運動隊史上最高，反映機構投資人對運動特許資產的胃口；但也拿去年湖人成交價與凱爾特人交易作比較，質疑溢價是否過高。",
+      "keyPointsZh": [
+        "125億美元交易讓Kushner取得湖人控股權，Iger則以合作夥伴身分加入；文中稱此為美國運動隊史新高，並把它解讀為機構投資人對體育特許資產的「熱」。",
+        "文中用湖人的在地轉播收益、全球知名度與球迷規模來支撐投資邏輯；也提到NBA在2024年談妥為期11年的全美媒體權利案，提供未來轉播收入的確定性。",
+        "作者同時提出疑問：即便沒有出價競爭，Kushner對湖人的估值仍較去年同業交易高出不少；此外，賣方Mark Walter為何急於出售，文中僅提到可能涉及籌資壓力、聯邦調查與健康狀況等不確定因素。"
+      ],
+      "researchLensZh": "回到原文可檢查：交易金額（125億美元）與去年其他球隊的成交價比較；以及NBA媒體權利合約、湖人收入結構等敘事，如何被用來支撐「投資熱潮」的說法與對溢價的懷疑。",
+      "keywordsZh": [
+        "Los Angeles Lakers",
+        "Joshua Kushner",
+        "Bob Iger",
+        "sports team acquisition",
+        "12.5bn deal"
+      ]
     },
     {
       "id": "fe06f478-594e-446d-a98f-591cc80f0bac",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "Nvidia’s great silicon showdown",
       "rubricEn": "The chipmaker’s biggest customers want a piece of its business. It is fighting back with a $500bn deal",
       "publishedEn": "Aug 13th 2026",
@@ -812,7 +1471,10 @@
     },
     {
       "id": "f79742c0-df82-4590-b4be-db3417f33973",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Business",
+      "categoryZh": "產業與科技",
       "titleEn": "AI agents lie, cheat and steal. That is putting off users",
       "rubricEn": "It is time to impose law and order on the frontier",
       "publishedEn": "Aug 13th 2026",
@@ -835,7 +1497,10 @@
     },
     {
       "id": "460f267b-2d80-4d15-a493-d294f9b11170",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "China is now the world’s great oil power",
       "rubricEn": "Forget OPEC. The Chinese Communist Party calls the shots",
       "publishedEn": "Aug 13th 2026",
@@ -858,7 +1523,10 @@
     },
     {
       "id": "8fd2ee52-3e5e-471d-a95e-9e7f67bac150",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "Is China’s debt-bomb squad about to blow up?",
       "rubricEn": "Firms tasked with defusing credit crises are getting into trouble",
       "publishedEn": "Aug 13th 2026",
@@ -881,46 +1549,88 @@
     },
     {
       "id": "3f8c7670-293f-4046-ace2-32d4f7ecfec8",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "Can Singapore ever build a proper stock market?",
       "rubricEn": "The city-state wants to fill a hole in its financial portfolio",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/finance-and-economics/2026/08/13/can-singapore-ever-build-a-proper-stock-market",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "新加坡在外匯、實體商品與保險等領域資產規模夠大，但長期缺少「夠大的股市」。文中指出，近年在MAS的多項優惠與放寬下，SGX開始回暖：2024年起STI上漲約75%，去年IPO募資約20億美元，EQDP也自2025年起帶動STI日均成交量上升逾半。不過，大型掛牌仍出現落差，且部分公司仍偏好到紐約或香港上市，使新加坡能否建立完整股市仍需觀察。",
+      "keyPointsZh": [
+        "過去SGX因估值偏低、流動性較差，出現的退市數量多於新增上市；許多本地或區域成功案例也選擇紐約。到2024年後STI上漲約75%，而Hang Seng同期約50%，Next 50近一年漲幅也較佳。",
+        "MAS改用「較多獎勵、較少管束」：降低上市要求的嚴格度、減少對表現不佳公司的警示措施，並提供研究補助；另有與Nasdaq的共同上市「橋接」。",
+        "推動力集中在EQDP（2025起）：用S$65億匹配資金，至今已向9家投資公司發放S$40億，交易量與基金設立明顯增加；但今年也有大型REIT掛牌後股價低於發行價，顯示政策效益未必立刻轉化為上市後表現。"
+      ],
+      "researchLensZh": "可檢查的重點是：MAS的放寬上市要求與資金匹配（EQDP、研究補助、與Nasdaq橋接）是否真的提高「上市後表現」與投資人信心，而不只是短期推升STI與IPO募資；同時追問為何仍有企業偏向紐約或香港，拉大承諾與實績的差距。",
+      "keywordsZh": [
+        "新加坡交易所（SGX）",
+        "海峽時報指數（STI）",
+        "貨幣部MAS",
+        "股權市場發展計畫（EQDP）",
+        "中央公積金CPF"
+      ]
     },
     {
       "id": "2d0d12e1-ebe0-41ce-bac7-fdd150bbf9b1",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "Hooray for index funds—just don’t call them passive",
       "rubricEn": "Jack Bogle’s creation has transformed markets, and involves plenty of choices",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/finance-and-economics/2026/08/11/hooray-for-index-funds-just-dont-call-them-passive",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "Vanguard創辦人Jack Bogle在50年前推出第一檔以追蹤股價指數為主的基金，本想募到5,000萬至1.5億美元，最後只拿到略高於1,100萬美元，還被稱為「慘敗」；金融分析師期刊同年也預言這只是短暫的流行。但半世紀後，根據美國投資公司協會估算，超過50%由美國投資基金代管的淨資產在指數型基金（追蹤器）上；若聚焦國內股票，比例是64%。文中主張，指數基金之所以重要、也確實改善了投資，但把它叫做「被動」並不貼切，因為選擇追蹤哪個指數、配置比例，以及基金在抽樣、避稅交易、再平衡與借券上的做法，都牽涉明確決策。",
+      "keyPointsZh": [
+        "Bogle首檔指數基金原先募資目標介於5,000萬到1.5億美元，實際僅略高於1,100萬美元；儘管當時遭到質疑，半世紀後指數型基金仍成為美國投資基金的主流選項。",
+        "作者指出「被動」不精準：即使追蹤S&P 500以外，也得在不同指數間取捨（例如STOXX Europe 50的50檔 vs MSCI Europe的396檔），而追求真正「市場組合」也不實際；60/40股票與債券配置同樣是決策。",
+        "文中還說明指數基金並非零裁量：首檔基金因資金規模不足而僅抽樣買進約300檔S&P 500成分股，並可透過交易以降低稅負、因再平衡需求進行調整，甚至借出股票賺取費用；研究也曾提出資金流可能造成股價扭曲。"
+      ],
+      "researchLensZh": "回到原文時可檢查兩件事：一是「被動」的說法在哪些環節不符合現實（指數選擇、是否追蹤市場組合、60/40配置、抽樣與再平衡等）；二是文中提到的研究如何量化指數型基金的影響，例如以「inelastic markets hypothesis」估計每流入1美元可能推升市場價值3至8美元。",
+      "keywordsZh": [
+        "Vanguard First Index Investment Trust",
+        "指數型基金",
+        "inelastic markets hypothesis",
+        "抽樣與再平衡",
+        "資金流與股價影響"
+      ]
     },
     {
       "id": "16f6a683-9436-4d3f-ae40-5e72a5e3a26b",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "Kevin Warsh is struggling to escape his predecessor’s problems",
       "rubricEn": "High inflation, weak jobs numbers and presidential interference trouble the Federal Reserve",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/finance-and-economics/2026/08/12/kevin-warsh-is-struggling-to-escape-his-predecessors-problems",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "Kevin Warsh 於 5 月上任後多次強調「新章」，但他任內前幾個月更像是延續 Powell 時期的兩難：通膨仍未回到 2% 目標。7 月 CPI 年增 3.4%，扣除食物與能源的核心商品也上升；同時就業轉弱，7 月減少 23,000 個工作且先前增幅被大幅下修。政治干預的不確定性也持續：6 月最高法院阻止川普解僱聯準會理事 Lisa Cook，8 月 5 日白宮仍重申可能解僱並給出三週回應期。",
+      "keyPointsZh": [
+        "通膨回不去 2%：7 月 CPI 年增 3.4%；剔除食物與能源後的月度核心商品價格也上升，顯示關稅的影響仍在。",
+        "就業訊號偏弱：7 月全美少了 23,000 個工作，先前幾個月的增幅也被大幅下修，與需要下調利率的風險方向一致。",
+        "聯準會獨立性仍受牽動：6 月最高法院阻止川普解僱 Lisa Cook；8 月 5 日白宮再度致函表示考慮解僱，並給她三週回應。"
+      ],
+      "researchLensZh": "可回到原文核對：在通膨未達目標、就業數據走弱之際，利率路徑如何在「上修與降息需求」間拉扯；同時，最高法院裁定與白宮後續動作，如何影響聯準會面對政治要求時的可行性。",
+      "keywordsZh": [
+        "Kevin Warsh",
+        "聯準會",
+        "通膨仍高於目標（7 月 CPI 年增 3.4%）",
+        "就業轉弱（7 月 -23,000）",
+        "Lisa Cook 與聯準會獨立性"
+      ]
     },
     {
       "id": "ced5b9df-36de-4fea-a5da-e72a6d02f800",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Finance & economics",
+      "categoryZh": "金融與經濟",
       "titleEn": "When Japan buys yen, it unwinds a dangerous trade",
       "rubricEn": "The world’s biggest carry trader begins to exit its position",
       "publishedEn": "Aug 13th 2026",
@@ -943,20 +1653,36 @@
     },
     {
       "id": "17f8318f-10ce-4251-baed-b0d8b437315d",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Science & technology",
+      "categoryZh": "產業與科技",
       "titleEn": "The brain may be about to have its Ozempic moment",
       "rubricEn": "Pharma’s newest obsession involves mimicking the system that keeps people awake",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/science-and-technology/2026/08/11/the-brain-may-be-about-to-have-its-ozempic-moment",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "一種新療法正在被推進：美國在8月5日核准武田的oveporexton，作為首個用於發作性睡病的食慾素（orexin）致效劑。文章指出，食慾素負責調控清醒；oveporexton以OX2R為目標，讓參與者在維持清醒測試中可多清醒12.5到25分鐘，且猝倒發作頻率約較安慰劑少三分之一。藥廠也把這類藥物視為後續拓展到其他睡眠障礙，並測試與憂鬱、ADHD與成癮相關的可能性。",
+      "keyPointsZh": [
+        "文章說明食慾素是調控清醒的神經傳遞物質，藥物目標是模仿其作用以刺激同一類受體；OX2R被用來維持清醒，OX1R則較牽涉獎賞與動機。",
+        "美國8月5日核准oveporexton（Takeda）用於發作性睡病；文中引用8週、90人試驗，在維持清醒測試中，效果依劑量延長約12.5到25分鐘；猝倒發作約較安慰劑少三分之一，常見副作用包含失眠，約三分之一患者出現不適的頻尿。",
+        "產業不只押注發作性睡病：文章提到Lilly以最多7.8bn美元交易收購Centessa、Morgan Stanley估計相關藥物到2035年可能每年帶來16bn美元；但作者也提醒，目前多是提示與早期資料，仍需更有力的測試才可能上市。"
+      ],
+      "researchLensZh": "摘要聚焦「食慾素致效劑是否成為下一波藥物平台」：從機轉對準OX2R／OX1R、與既有刺激或抑制清醒訊號的差異，再到oveporexton在小規模試驗中的效益與副作用訊號，並檢查其對其他睡眠疾病及精神/成癮領域的延伸是否仍屬於早期研發。",
+      "keywordsZh": [
+        "GLP-1",
+        "食慾素（Orexin）致效劑",
+        "OX2R",
+        "發作性睡病（Narcolepsy）",
+        "維持清醒測試（Maintenance of Wakefulness test）"
+      ]
     },
     {
       "id": "2540876c-4828-4186-9ce7-aa3eacc70f38",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Science & technology",
+      "categoryZh": "產業與科技",
       "titleEn": "Maybe scientific progress isn’t slowing, after all",
       "rubricEn": "A new paper takes aim at the claim that science has become less disruptive",
       "publishedEn": "Aug 13th 2026",
@@ -979,120 +1705,237 @@
     },
     {
       "id": "601ccd6f-251b-4dbe-8953-c70255110631",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Science & technology",
+      "categoryZh": "產業與科技",
       "titleEn": "NASA takes aim at fire storms",
       "rubricEn": "These products of wildfires worsen their creators",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/science-and-technology/2026/08/09/nasa-takes-aim-at-fire-storms",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "7月29日，一架Gulfstream在美國科羅拉多州登陸後，首飛INSPYRE任務，原定直接進入目的地是俄勒岡的火災超積雨雲（pyroCb），此類罕見風暴是在野火上方生成，並可能把災害放大。計畫由NASA與美國海軍研究實驗室合作，透過採樣與追蹤風暴演變，蒐集前所未有的資料；研究團隊希望釐清pyroCb對地球升溫氣候可能扮演的角色，並協助消防在野火規模與強度上升時更好因應。",
+      "keyPointsZh": [
+        "INSPYRE結合地面與空中量測：在地面用lidar、雷達與氣球探測風暴下方；空中則由Gulfstream進入pyroCb雲內採樣，另有NASA的ER-2在約10公里、進入平流層處監測煙霧羽流。",
+        "文中說明pyroCb在野火高溫驅動下，促使氣流強烈上升並攜帶燃燒釋放的水氣與煙霧：煙霧阻塞雲層形成，可能限制降雨、提高閃電機率，同時因地表到達的水分更少而利於火勢蔓延。",
+        "作者主張這類風暴會讓野火更難控制，也可能因閃電與夾帶炭屑的湍亂風造成新火；而風暴高度與上升流使煙可被帶入平流層，文中並提到2019年澳洲東南部四天野火期間，約1百萬噸煙霧被注入低平流層。"
+      ],
+      "researchLensZh": "摘要可用三個可核對問題回讀：pyroCb的形成與觸發來源是哪類野火、它是否以及注入平流層的量為何、以及煙霧如何改變平流層組成與輻射收支；同時留意文中強調「仍知之甚少」與現有觀測的時程設計。",
+      "keywordsZh": [
+        "NASA",
+        "INSPYRE",
+        "pyroCb（火災超積雨雲）",
+        "平流層煙霧",
+        "消防與野火"
+      ]
     },
     {
       "id": "29be86ab-208c-4c6e-b07b-adaf2a476429",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Science & technology",
+      "categoryZh": "產業與科技",
       "titleEn": "Can you hack your gut microbiome?",
       "rubricEn": "Yes. But perhaps best not to overthink it",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/science-and-technology/2026/08/07/can-you-hack-your-gut-microbiome",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "人類腸道微生物能分解複雜碳水、合成維生素（如K與B群）、調節免疫並抑制病原，還會影響與腸腦訊息傳遞相關的分子（如血清素）。因此，維持多樣化飲食、尤其部分發酵食物，被認為有助提升多樣性；2018年的公民科學與史丹佛在2021年的研究都指向這點。但部分D2C業者會分析糞便DNA/RNA、提供客製化飲食與補充，想補齊檢測到的「缺口」。文中指出，因為沒有一個可作參照的「正確」微生物組合，且發布的科學依據偏少，此外還有重現性疑慮：美國NIST用21份均質化糞便寄給7家D2C，回來的結果不只不同業者間差異明顯，甚至在同一家也出現不同。",
+      "keyPointsZh": [
+        "腸道微生物把複雜碳水消化成脂肪酸，供給約10%熱量；並合成維生素（尤其K與B群）、調節免疫、抑制病原，還影響與腸腦通訊相關的訊號分子（如血清素）。",
+        "提升腸道菌叢多樣性被視為較可行的方向：2018年研究顯示每週吃30種植物的人，多樣性顯著高於少於10種者；2021年史丹佛資料也指出發酵食品（如kimchi與酸菜）能使微生物多樣化。",
+        "D2C透過糞便DNA/RNA列出菌種、並提供客製飲食、活菌劑與補充品以回補「缺口」，但文中認為缺乏可讓人相信的科學基礎，且NIST的測試顯示不同業者、甚至同一家公司之間結果可能出現明顯差異，因此個人化微生物醫療仍難預期會立刻到來。"
+      ],
+      "researchLensZh": "摘要把焦點放在「要不要把腸道微生物當成可精準干預的目標」：一邊引用飲食多樣化與發酵食品的關聯研究，另一邊用D2C缺乏標準參照與糞便檢測重現性測試的差異，質疑把檢測結果直接落地成個人化療法是否為時過早。",
+      "keywordsZh": [
+        "腸道微生物組合",
+        "腸道多樣性",
+        "發酵食品",
+        "D2C糞便檢測",
+        "個人化微生物醫療"
+      ]
     },
     {
       "id": "36e41a34-9cd8-47d7-8c54-ead3f4a77e1e",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "Can AI save tourists from the TikTok herd?",
       "rubricEn": "Some fear that chatbots will lead everyone to the same places. In fact, they may do the opposite",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/13/can-ai-save-tourists-from-the-tiktok-herd",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文章以羅馬找披薩為例，回顧旅遊靈感如何從旅行社與指南書，轉向評論平台與社群演算法，現在又出現用聊天機器人規劃行程的趨勢。雖然有人擔心大型語言模型會把人導向同一批熱門景點、造成過度擁擠，但文中也指出：不同模型之間、同一模型面對不同提問會出現差異，且若能依個人偏好與過往互動做個人化，可能把旅客導向更分散的地點。",
+      "keyPointsZh": [
+        "旅遊建議的入口依序變化：旅行社與指南書，之後到Tripadvisor等評論平台，以及社群演算法帶來的爆紅效應；近期則轉向聊天機器人。",
+        "文中同時呈現兩種風險：研究顯示ChatGPT偏好知名觀光樞紐；另一項分析中，ChatGPT向巴塞隆納共給出10,000個推薦地點，卻只落在215個地方，且另有38個疑似虛構景點的建議。",
+        "也有分散論點：不同模型的建議可能不同，例如在披薩問題上ChatGPT與Google AI Mode的推薦不同；且同一模型的機率回覆也會變動，Evertune發現Gemini前幾名披薩出現在91%回答中，並呈現多達24個「長尾」地點。"
+      ],
+      "researchLensZh": "重點不在「AI會不會統一指引」，而是用文中數據檢查：評論平台與社群演算法是否造成集中、ChatGPT是否偏向熱門樞紐；同時再比對模型之間差異、同一模型在相同任務下的回覆變動，以及個人化可能帶來的路線分散。",
+      "keywordsZh": [
+        "旅遊建議",
+        "Tripadvisor",
+        "聊天機器人",
+        "大型語言模型",
+        "個人化推薦"
+      ]
     },
     {
       "id": "47f8d25e-d03e-42d2-8d78-03751505e23d",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "Travel agents are in demand—especially for luxury trips",
       "rubricEn": "AI can try, but humans still have the edge when it comes to booking holidays",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/13/travel-agents-are-in-demand-especially-for-luxury-trips",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "加拿大旅行「解決者」Olivia Ferney 服務的高端客戶，每人每年在旅遊上至少花費100萬美元，還額外繳納向 Top Tier Travel 的10萬美元訂閱費。英國 ABTA估計，去年約三分之一旅客透過人類專家代訂假期；美國方面，American Society of Travel Advisers 會員人數從2024年的19萬增至逾31萬。文中認為，AI能協助規劃與分擔行政，但在房間出錯、錯過接駁等突發狀況，以及客製品味、在地知識與人脈支持上，人類顧問仍具優勢。",
+      "keyPointsZh": [
+        "文中以高端客製需求開場：Ferney 的客戶年旅遊支出至少100萬美元，並付10萬美元訂閱費，要求可到「取巴黎可頌」或請人處理天氣。",
+        "資料顯示人類顧問仍有市場：ABTA估計英國去年約三分之一旅客找人類專家代訂；美國旅行顧問協會會員從2024年19萬成長到逾31萬。",
+        "文中指出AI可被納入工作流程、加速行政，甚至被當作「團隊成員」；但當出現房間問題或漏接駁等突發時，仍需人類顧問提供處理與即時協助。"
+      ],
+      "researchLensZh": "可用「高端服務為核心」來檢視：當AI提升行程與行政效率後，需求是否會下滑；而在地知識、人脈、客製品味與突發支援這些難以完全商品化的環節，可能支撐頂級服務續存。",
+      "keywordsZh": [
+        "旅行顧問",
+        "奢華旅遊",
+        "ABTA",
+        "AI行程規劃",
+        "突發支援"
+      ]
     },
     {
       "id": "8f3f8d11-582f-48f7-b446-26cb7a088e11",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "A prizewinning novel explores the legacy of the Rwandan genocide",
       "rubricEn": "Gaël Faye’s “Jacaranda” looks at the limits of reconciliation",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/13/a-prizewinning-novel-explores-the-legacy-of-the-rwandan-genocide",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "Gaël Faye 在 2016 年以《Petit Pays》（2016）獲得廣泛好評；他在 2024 年推出新作《Jacaranda》，首月在法國售出近 10 萬冊並贏得 Prix Renaudot。小說以一名在凡爾賽長大的法盧混血男孩 Milan 為視角，回看 1994 年盧安達大屠殺後的餘波；當年或有約 50 萬人、以圖西族為多數，死於約三個月內。從 tv 得知消息、到多年後赴盧安達與同伴重逢並旁觀 gacaca 社區法庭，作者呈現審判帶來部分正義，但難以讓創傷真正止息，且在 kwibuka 追思中延燒到下一代。",
+      "keyPointsZh": [
+        "Milan 先透過電視得知 1994 年盧安達大屠殺，後來幾年才有機會回到盧安達，與 Claude 重逢並遇見母親舊友 Eusébie。",
+        "盧安達政府要求公民遵循和解政策；倖存者與屠殺家人朋友的人被迫同住，Milan 也觀察 2002–2012 年間 gacaca 法庭審理的逾 100 萬起與大屠殺相關指控。",
+        "小說在 kwibuka 期間描寫 Eusébie 的證詞觸發群眾崩潰、尖叫或向看不見的殺手求饒；文中指出許多受困者因當時年紀太小而未必親身經歷殺戮，創傷仍跨世代回響。"
+      ],
+      "researchLensZh": "文章用小說敘事追問「和解」的界線：從媒體傳來的消息，到家庭中被攻擊後送醫的親族，接著是社區法庭與追思儀式，去看正義與收束能走到哪裡。",
+      "keywordsZh": [
+        "Jacaranda",
+        "Gaël Faye",
+        "盧安達大屠殺",
+        "和解政策",
+        "gacaca 法庭"
+      ]
     },
     {
       "id": "ab952a26-fd4e-4ab5-b62b-007ebe99469f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "How the world was wired",
       "rubricEn": "The transatlantic telegraph cable helped usher in the information age, a new book shows",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/12/how-the-world-was-wired",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "1866年第一條可運作的跨大西洋海底電報電纜完成，顯示全球通訊網路確實可行，也被視為現代資訊時代的開端。作者以Cyrus Field推動的工程為主線，從原先規劃先在卡博特海峽到紐芬蘭、再加碼提出「直接鋪到整個大西洋」的想法，描述其取得海洋學與電報先驅的背書，以及英美政府與英國海軍資源的支持；同時，作品提醒這類看不見的海底資料管線依然脆弱，並指出「連結能帶來和平」的期待多次落空。",
+      "keyPointsZh": [
+        "文中把1866年跨大西洋電報電纜視為全球通訊網路可行的證明，並標誌現代資訊時代的起點。",
+        "Cyrus Field原本想先把卡博特海峽至紐芬蘭的訊息傳遞提速，後轉向直接鋪設跨大西洋電纜；他獲得Matthew Maury與Samuel Morse等背書，並在大量遊說後取得美英政府官方支持與英國海軍船隻。",
+        "敘事強調人事與意外帶來的勝敗：電纜敷設船遇到風暴、專案內部出現能力不足的問題；並以「連結促和平」的主張作對照，指出這種希望並未如預期實現。"
+      ],
+      "researchLensZh": "回到原文可檢查：從分段電報構想到直接跨大西洋的轉折如何被寫成因果鏈；英美政府與英國海軍資源如何具體支撐計畫；以及作者如何用「連結促和平」的多次落空，來說明通訊並非衝突的主要原因。",
+      "keywordsZh": [
+        "跨大西洋電報電纜",
+        "Cyrus Field",
+        "海底資料管線",
+        "維多利亞工程",
+        "資訊時代"
+      ]
     },
     {
       "id": "9761eda4-fef5-49e7-b7b7-da3e392d4110",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "Gen Z has rediscovered the joy of going to the movies",
       "rubricEn": "The hottest new hangout is old-school",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/11/gen-z-has-rediscovered-the-joy-of-going-to-the-movies",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "今年院線端動能明顯回來：全球已有5部電影在票房超過10億美元，另有3部超過5億美元；分析師預估2026年全球票房將達350億美元、較2025年成長7%，但仍未回到疫情前水準。文中把關鍵轉折歸因於年輕觀眾回流，尤其美國2025年近90%的Gen Z去看電影、平均7次，並透過社群媒體話題與FOMO，讓觀影更像與朋友共享的「事件」，進而拉高加購與場館收入。",
+      "keyPointsZh": [
+        "文中說明整體仍低於疫情前，但全球票房預估將達350億美元、年增7%；5部影片已破10億美元、另有3部破5億美元。",
+        "在美國，Fandango調查顯示2025年近90%的Gen Z進戲院、平均7次；首週表現也顯示年齡偏向，且18至34歲約占《蜘蛛人：新紀元》首週觀眾近兩/三。",
+        "文中將熱度部分歸功社群媒體與FOMO；並強調把戲院行程當成活動，推升加購（如造型爆米花桶、躺椅等）與營運收入，例如AMC在2026年第二季每名觀眾收入較2019年同期高44%。"
+      ],
+      "researchLensZh": "回到原文可檢查：世代回流是否只是「愛出門」，以及社群媒體、FOMO與把看電影活動化，如何在不同市場（美國、印度、沙烏地阿拉伯、越南、日本）對票房與觀眾年齡結構產生影響。",
+      "keywordsZh": [
+        "Gen Z回流戲院",
+        "全球票房預估350億美元",
+        "社群媒體與FOMO",
+        "群聚觀影與加購消費",
+        "世代差異（18至34歲）"
+      ]
     },
     {
       "id": "75ac8946-adf8-4226-b845-6811861fe2a4",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Culture",
+      "categoryZh": "觀點與文化",
       "titleEn": "The dark underbelly of “Paw Patrol”",
       "rubricEn": "Why a debate over a hit cartoon is more than culture-war madness",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/culture/2026/08/07/the-dark-underbelly-of-paw-patrol",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "《汪汪隊立大功》以一群可愛的幼犬救援英雄為主角，卻被批評帶有政治與權力暗示：有人說它是「威權型新自由主義宣傳」，也有人喊出「Defund the Paw Patrol!」，並指其親警察、資源來自商品化，像是在替私有化服務背書。作者反駁若只把爭論當文化戰，可能忽略其之所以風靡的心理背景：孩子渴望修復大人的焦慮，於是透過故事替成人解決問題而感到被理解。",
+      "keyPointsZh": [
+        "文章先交代作品基底與規模：自2013年首播後跨過十多季，也延伸玩具帝國與三部院線電影，外界常以其公式化口號、洗腦旋律與價值訊息為題做拆解。",
+        "政治解讀是爭點之一：批評者將反派Humdinger描寫成具有威權色彩，並指出核心6隻幼犬中只有1隻是女孩；也有人認為Chase是警察幼犬，整體呈現親警察的「copaganda」，甚至因資金與商品化來源而指向私有化服務。",
+        "作者主張別只靠意識形態互罵：他用精神分析解釋，許多孩子可能急著「治癒父母」，因此在卡通裡扮演能看見與處理成人困擾的小救援者，並與4歲左右的觀眾產生共鳴。"
+      ],
+      "researchLensZh": "回到文章脈絡可用兩條線檢視：一是成人如何用意識形態（如威權、新自由主義、親警察或私有化）去讀內容；二是用精神分析理解孩子對「治癒大人焦慮」的需求，並觀察這種投射如何讓節目在學齡前獲得回響。",
+      "keywordsZh": [
+        "Paw Patrol",
+        "文化戰",
+        "威權/新自由主義宣傳",
+        "copaganda（親警察敘事）",
+        "精神分析與兒童心理投射"
+      ]
     },
     {
       "id": "075e5842-8270-4526-8e6c-472da84fdf0f",
+      "issueKey": "2026.08.15",
+      "issueDate": "August 15th 2026",
       "section": "Obituary",
+      "categoryZh": "觀點與文化",
       "titleEn": "Nirmal Purja performed momentous feats in the Death Zone",
       "rubricEn": "The Gurkha mountaineer and Netflix star died in an avalanche on July 30th, aged 43",
       "publishedEn": "Aug 13th 2026",
       "sourceUrl": "https://www.economist.com/obituary/2026/08/13/nirmal-purja-performed-momentous-feats-in-the-death-zone",
-      "featured": false,
-      "summaryZh": null,
-      "keyPointsZh": [],
-      "researchLensZh": null,
-      "keywordsZh": []
+      "featured": true,
+      "summaryZh": "文中悼述尼爾馬爾·普爾賈（Nirmal Purja）如何從幼年就在道拉吉里（Dhaulagiri）腳下看見喜馬拉雅山景，走到30歲時能在「死亡地帶」完成攀登任務。他在2019年離開英國軍隊後，花6個月又6天完成14座8,000公尺以上高峰；原先的Project Possible後來由Netflix接手，並拍成紀錄片、出成書，使他名聲擴散到曼哈頓與各地機場。他也曾受批評使用瓶裝氧氣、固定繩與直升機轉移，但他主張這有助於救援。7月30日，另一場雪崩仍帶走他與同行隊伍，終年43歲。",
+      "keyPointsZh": [
+        "作者從普爾賈在道拉吉里腳下成長、家人5歲後遷到尼泊爾低地的背景寫起，並描述他30歲時已能在岩石與積雪的高牆上開路，30度身體狀態與速度帶來「死亡地帶」的突破。",
+        "2019年離開英軍（身分含廓爾喀與特種部隊）後，他在6個月又6天完成14座8,000公尺以上高峰；Project Possible後被Netflix採用，改編成紀錄片、並由他撰寫成書，進一步提升其全球能見度。",
+        "文中同時呈現外界對他攀登方式的爭議：使用瓶裝氧氣、固定繩與直升機移動遭到純粹派批評，但他回應稱若不帶氧氣就無法救回氧氣耗盡的登山者；最後在7月30日，雪崩再次將他與隊伍帶走。"
+      ],
+      "researchLensZh": "以訃聞方式回顧他的登山生涯：文中把「任務型攀登」的時間表、媒體轉化（Netflix與出版）以及技術爭議（瓶裝氧氣與後援能力）並列，並用7月30日的雪崩作為整體敘事的終點。",
+      "keywordsZh": [
+        "Nirmal Purja",
+        "死亡地帶",
+        "8,000公尺以上高峰",
+        "Netflix紀錄片",
+        "7月30日雪崩"
+      ]
     }
   ]
 }
