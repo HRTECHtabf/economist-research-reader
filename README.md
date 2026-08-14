@@ -2,6 +2,8 @@
 
 以《經濟學人》英文文章索引與繁體中文 AI 導讀，協助研究員快速判斷值得深入閱讀的內容。
 
+網站：<https://hrtechtabf.github.io/economist-research-reader/>
+
 ## 目前版本
 
 - 資料來源每週一期，來源庫標示每週五晚更新。
