@@ -1,0 +1,13 @@
+# 私密金鑰與本機設定
+.env
+.env.*
+!.env.example
+
+# 常見的網站產出與本機檔案
+node_modules/
+.next/
+dist/
+.DS_Store
+*.log
+.cache/
+site/

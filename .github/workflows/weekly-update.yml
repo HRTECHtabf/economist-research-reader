@@ -1,0 +1,50 @@
+name: Weekly Economist update
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Asia/Taipei 週五 13:00–週六 01:00，每兩小時檢查一次。
+    - cron: "0 5-17/2 * * 5"
+    # 週六 11:00 再做一次補查，因應來源延遲。
+    - cron: "0 3 * * 6"
+
+concurrency:
+  group: weekly-economist-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_PATH: /openai/v1/
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Detect and process a new issue
+        run: node scripts/update-latest.mjs
+
+      - name: Publish updated site data
+        run: |
+          if git diff --quiet -- docs/data/articles.json; then
+            echo "No new issue to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/articles.json
+          git commit -m "Update Economist issue"
+          git push

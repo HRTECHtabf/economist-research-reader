@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="為研究工作整理的《經濟學人》英文文章索引與繁體中文 AI 導讀。"
+    />
+    <title>全球經濟研究閱讀室</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#articles">跳至文章列表</a>
+
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="#top" aria-label="回到頁首">
+          <span class="brand-mark">ER</span>
+          <span>
+            <strong>全球經濟研究閱讀室</strong>
+            <small>Economist Research Reader</small>
+          </span>
+        </a>
+        <nav aria-label="主要導覽">
+          <a href="#highlights">本期精選</a>
+          <a href="#articles">文章索引</a>
+          <a href="#about">關於本站</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="shell hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">RESEARCH READING DESK · 研究導讀</p>
+            <h1>先掌握脈絡，<br />再深入英文原文。</h1>
+            <p class="hero-lead">
+              集中整理最新一期《經濟學人》文章，以繁體中文導讀協助研究員快速辨識論點、數據與研究價值。
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#highlights">閱讀本期精選</a>
+              <a class="button secondary" id="issue-source-link" href="#" target="_blank" rel="noreferrer">查看資料來源 ↗</a>
+            </div>
+          </div>
+
+          <aside class="issue-panel" aria-label="最新一期資訊">
+            <div class="issue-kicker">LATEST ISSUE</div>
+            <div class="issue-date" id="issue-date">載入中…</div>
+            <dl class="issue-stats">
+              <div><dt>文章</dt><dd id="article-count">—</dd></div>
+              <div><dt>欄目</dt><dd id="section-count">—</dd></div>
+              <div><dt>中文導讀</dt><dd id="featured-count">—</dd></div>
+            </dl>
+            <p id="update-cadence">每週更新</p>
+            <p class="source-time">來源更新：<time id="source-updated">—</time></p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="briefing-strip" aria-label="使用說明">
+        <div class="shell briefing-grid">
+          <div><span>01</span><strong>快速篩選</strong><p>依研究主題與原刊欄目縮小閱讀範圍。</p></div>
+          <div><span>02</span><strong>中文導讀</strong><p>摘要核心論證，而不是逐句翻譯。</p></div>
+          <div><span>03</span><strong>回到原文</strong><p>保留英文標題與合法來源連結供核對。</p></div>
+        </div>
+      </section>
+
+      <section class="content-section" id="highlights">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow red">LATEST BRIEFINGS</p>
+              <h2>本期研究精選</h2>
+            </div>
+            <p>優先挑選總體經濟、金融市場、科技產業與國際政治等研究相關議題。</p>
+          </div>
+
+          <div class="toolbar" id="articles">
+            <label class="search-box">
+              <span class="sr-only">搜尋文章</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
+              <input id="search-input" type="search" placeholder="搜尋英文標題、中文摘要或關鍵字…" />
+            </label>
+            <div class="view-switch" role="group" aria-label="顯示範圍">
+              <button class="active" id="featured-view" type="button">精選導讀</button>
+              <button id="all-view" type="button">全部文章</button>
+            </div>
+          </div>
+
+          <div class="filter-row" id="section-filters" aria-label="欄目篩選"></div>
+          <p class="result-count" id="result-count" aria-live="polite"></p>
+          <div class="article-grid" id="article-grid"></div>
+          <div class="empty-state" id="empty-state" hidden>
+            <strong>沒有符合條件的文章</strong>
+            <p>試著清除搜尋文字或切換其他欄目。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section" id="about">
+        <div class="shell about-grid">
+          <div>
+            <p class="eyebrow red">ABOUT THIS PROJECT</p>
+            <h2>為研究判讀而設計，<br />不是另一個翻譯站。</h2>
+          </div>
+          <div class="about-copy">
+            <p>
+              本站保留英文原題與原文入口，中文內容則濃縮文章的主要判斷、證據與值得追蹤的研究角度。AI 導讀可能有誤，重要資訊仍應回到英文原文核對。
+            </p>
+            <p>
+              現階段為第一版展示：收錄本期完整文章索引，並先替研究相關度較高的文章製作中文導讀。後續將持續補上自動更新、分類校正與人工複核流程。
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell footer-inner">
+        <p>研究閱讀輔助專案 · 非《經濟學人》官方產品</p>
+        <p>AI 摘要僅供導讀，請以英文原文為準。</p>
+      </div>
+    </footer>
+
+    <template id="article-template">
+      <article class="article-card">
+        <div class="card-meta"><span class="section-label"></span><time></time></div>
+        <h3 class="article-title"></h3>
+        <p class="rubric"></p>
+        <div class="summary-block">
+          <p class="summary"></p>
+          <details>
+            <summary>展開重點與研究角度</summary>
+            <div class="details-inner">
+              <h4>核心重點</h4>
+              <ul class="key-points"></ul>
+              <h4>研究閱讀角度</h4>
+              <p class="research-lens"></p>
+            </div>
+          </details>
+        </div>
+        <div class="pending-block"><span>中文導讀待補</span><p>目前先提供英文標題與原文入口。</p></div>
+        <div class="tags"></div>
+        <a class="source-link" target="_blank" rel="noreferrer">開啟英文原文 <span>↗</span></a>
+      </article>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
