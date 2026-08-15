@@ -6,6 +6,7 @@ import { basename, resolve } from "node:path";
 const projectRoot = resolve(import.meta.dirname, "..");
 const envPath = resolve(projectRoot, ".env.local");
 const siteDataPath = resolve(projectRoot, "docs/data/articles.json");
+const rawArticlesPath = resolve(projectRoot, ".cache/articles.raw.json");
 const force = process.argv.includes("--force");
 
 function readEnv(path) {
@@ -19,6 +20,41 @@ function readEnv(path) {
     values[line.slice(0, equalsAt).trim()] = line.slice(equalsAt + 1).trim();
   }
   return values;
+}
+
+function validateSiteData(data, expectedFolder, expectedSourceSha) {
+  const failures = [];
+  const keys = new Set();
+  const currentIssueArticles = (data.articles || []).filter(
+    (article) => article.issueKey === data.issueKey,
+  );
+
+  if (data.issueFolder !== expectedFolder) failures.push("期數資料不符");
+  if (data.sourceFolderSha !== expectedSourceSha) failures.push("來源版本不符");
+  if (currentIssueArticles.length !== data.articleCount) failures.push("本期文章數不符");
+  if (currentIssueArticles.filter((article) => article.summaryZh).length !== data.summaryCount) {
+    failures.push("本期摘要數不符");
+  }
+
+  for (const article of data.articles || []) {
+    const key = `${article.issueKey}:${article.id}`;
+    if (keys.has(key)) failures.push(`${article.titleEn}：文章鍵重複`);
+    keys.add(key);
+    if (!/^[a-f0-9]{64}$/.test(article.sourceHash || "")) {
+      failures.push(`${article.titleEn}：缺少原文內容指紋`);
+    }
+    if ("textEn" in article) failures.push(`${article.titleEn}：公開資料不應包含英文全文`);
+    const terms = article.highlightTermsZh;
+    if (!Array.isArray(terms) || terms.length > 3) {
+      failures.push(`${article.titleEn}：摘要標示數量不正確`);
+    } else if (terms.some((term) => !article.summaryZh?.includes(term))) {
+      failures.push(`${article.titleEn}：摘要標示不在摘要內`);
+    }
+  }
+
+  if (failures.length) {
+    throw new Error(`網站資料驗證失敗：\n${failures.join("\n")}`);
+  }
 }
 
 const env = {
@@ -45,20 +81,31 @@ const listingResponse = await fetch(apiUrl, { headers });
 if (!listingResponse.ok) throw new Error(`無法取得來源目錄（HTTP ${listingResponse.status}）`);
 
 const listing = await listingResponse.json();
-const latestFolder = listing
+const latestEntry = listing
   .filter((entry) => entry.type === "dir" && /^te_\d{4}\.\d{2}\.\d{2}$/.test(entry.name))
-  .map((entry) => entry.name)
-  .sort()
+  .sort((a, b) => a.name.localeCompare(b.name))
   .at(-1);
 
-if (!latestFolder) throw new Error("來源庫中找不到期數資料夾");
+if (!latestEntry) throw new Error("來源庫中找不到期數資料夾");
+const latestFolder = latestEntry.name;
 
 const currentData = existsSync(siteDataPath)
   ? JSON.parse(readFileSync(siteDataPath, "utf8"))
   : null;
 
-if (!force && currentData?.issueFolder === latestFolder) {
+if (
+  !force &&
+  currentData?.issueFolder === latestFolder &&
+  currentData?.sourceFolderSha === latestEntry.sha
+) {
   console.log(`目前已是最新一期：${latestFolder}`);
+  process.exit(0);
+}
+
+if (!force && currentData?.issueFolder === latestFolder && !currentData?.sourceFolderSha) {
+  currentData.sourceFolderSha = latestEntry.sha;
+  writeFileSync(siteDataPath, `${JSON.stringify(currentData, null, 2)}\n`, "utf8");
+  console.log(`已記錄目前期數的來源版本：${latestFolder}`);
   process.exit(0);
 }
 
@@ -75,7 +122,8 @@ const rawUrl = [
 ].join("/");
 const temporaryEpub = resolve(tmpdir(), `${Date.now()}-${basename(epubName)}`);
 
-console.log(`偵測到新一期 ${latestFolder}，開始下載與處理。`);
+const changeLabel = currentData?.issueFolder === latestFolder ? "同一期有新增或異動" : "偵測到新一期";
+console.log(`${changeLabel} ${latestFolder}，開始下載與處理。`);
 const epubResponse = await fetch(rawUrl);
 if (!epubResponse.ok) throw new Error(`EPUB 尚未可用（HTTP ${epubResponse.status}）`);
 writeFileSync(temporaryEpub, Buffer.from(await epubResponse.arrayBuffer()));
@@ -85,16 +133,15 @@ execFileSync(process.execPath, [
   temporaryEpub,
 ], { cwd: projectRoot, stdio: "inherit" });
 
+const rawArticles = JSON.parse(readFileSync(rawArticlesPath, "utf8"));
+rawArticles.sourceFolderSha = latestEntry.sha;
+writeFileSync(rawArticlesPath, `${JSON.stringify(rawArticles, null, 2)}\n`, "utf8");
+
 execFileSync(process.execPath, [
   resolve(projectRoot, "scripts/generate-site-data.mjs"),
 ], { cwd: projectRoot, stdio: "inherit", env });
 
 const updatedData = JSON.parse(readFileSync(siteDataPath, "utf8"));
-if (
-  updatedData.issueFolder !== latestFolder ||
-  updatedData.summaryCount !== updatedData.articleCount
-) {
-  throw new Error("新一期資料未完整產生，保留既有發布版本");
-}
+validateSiteData(updatedData, latestFolder, latestEntry.sha);
 
 console.log(`網站資料已更新至 ${latestFolder}。`);

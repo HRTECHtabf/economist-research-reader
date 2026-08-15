@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -84,16 +85,66 @@ const sectionCategories = {
   Obituary: "觀點與文化",
 };
 
-const endpoint = env.AZURE_OPENAI_ENDPOINT.replace(/\/+$/, "");
-const apiPath = (env.AZURE_OPENAI_API_PATH || "/openai/v1/")
-  .replace(/^\/*/, "/")
-  .replace(/\/*$/, "/");
-const responseUrl = `${endpoint}${apiPath}responses`;
+function publishedDateFromUrl(sourceUrl, fallback = "") {
+  const match = sourceUrl?.match(/\/(\d{4})\/(\d{2})\/(\d{2})(?:\/|$)/);
+  if (!match) return fallback;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return fallback;
+
+  const monthName = new Intl.DateTimeFormat("en", {
+    month: "short",
+    timeZone: "UTC",
+  }).format(date);
+  const remainder = day % 100;
+  const suffix = remainder >= 11 && remainder <= 13
+    ? "th"
+    : ({ 1: "st", 2: "nd", 3: "rd" }[day % 10] || "th");
+  return `${monthName} ${day}${suffix} ${year}`;
+}
+
+function articleSourceHash(article) {
+  return createHash("sha256")
+    .update([
+      article.section,
+      article.titleEn,
+      article.rubricEn,
+      article.sourceUrl,
+      article.textEn,
+    ].join("\n"))
+    .digest("hex");
+}
+
+function buildResponsesUrl(endpointValue, apiPathValue) {
+  const endpoint = endpointValue.replace(/\/+$/, "");
+
+  if (/\/openai\/v1\/responses$/i.test(endpoint)) return endpoint;
+  if (/\/openai\/v1$/i.test(endpoint)) return `${endpoint}/responses`;
+
+  const apiPath = (apiPathValue || "/openai/v1/")
+    .replace(/^\/*/, "/")
+    .replace(/\/*$/, "/");
+
+  return `${endpoint}${apiPath}responses`;
+}
+
+const responseUrl = buildResponsesUrl(
+  env.AZURE_OPENAI_ENDPOINT,
+  env.AZURE_OPENAI_API_PATH,
+);
 
 const schema = {
   type: "object",
   additionalProperties: false,
-  required: ["summaryZh", "keyPointsZh", "researchLensZh", "keywordsZh"],
+  required: ["summaryZh", "keyPointsZh", "researchLensZh", "keywordsZh", "highlightTermsZh"],
   properties: {
     // The requested length is shorter; these larger schema ceilings prevent the
     // model from satisfying JSON Schema by cutting a sentence mid-thought.
@@ -111,6 +162,12 @@ const schema = {
       maxItems: 5,
       items: { type: "string" },
     },
+    highlightTermsZh: {
+      type: "array",
+      minItems: 0,
+      maxItems: 3,
+      items: { type: "string", maxLength: 30 },
+    },
   },
 };
 
@@ -119,6 +176,13 @@ function endsAsCompleteSentence(value) {
 }
 
 function isCompleteBrief(value) {
+  const highlightTermsAreValid =
+    value?.highlightTermsZh === undefined ||
+    (Array.isArray(value.highlightTermsZh) &&
+      value.highlightTermsZh.length <= 3 &&
+      value.highlightTermsZh.every(
+        (term) => typeof term === "string" && value.summaryZh.includes(term),
+      ));
   return (
     value &&
     endsAsCompleteSentence(value.summaryZh) &&
@@ -133,7 +197,8 @@ function isCompleteBrief(value) {
       (point) => endsAsCompleteSentence(point) && point.length >= 20 && point.length <= 120,
     ) &&
     Array.isArray(value.keywordsZh) &&
-    value.keywordsZh.length >= 3
+    value.keywordsZh.length >= 3 &&
+    highlightTermsAreValid
   );
 }
 
@@ -155,6 +220,7 @@ function normalizeTaiwanUsage(brief) {
     keyPointsZh: brief.keyPointsZh.map(normalize),
     researchLensZh: normalize(brief.researchLensZh),
     keywordsZh: brief.keywordsZh.map(normalize),
+    highlightTermsZh: (brief.highlightTermsZh || []).map(normalize),
   };
 }
 
@@ -238,6 +304,7 @@ function summarize(article) {
       "根據英文文章，以繁體中文（台灣用語）製作第一版研究導讀。",
       "不得補造原文沒有的事實、數字、來源或因果關係。",
       "summaryZh 限 180–240 個中文字；keyPointsZh 剛好三點，每點 45–90 個中文字；researchLensZh 限 60–120 個中文字。",
+      "highlightTermsZh 通常選 1–3 個在 summaryZh 中逐字出現的短語，只能選關鍵結論、因果機制或重要證據；不要只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。",
       naturalStyleRules,
       "輸出 JSON，不要使用 Markdown。",
     ].join("\n"),
@@ -259,7 +326,7 @@ function humanize(article, draft) {
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
       "必須鎖定英文原文的事實、數字、因果關係與不確定程度，不得新增內容。",
       naturalStyleRules,
-      "保留 JSON 欄位與陣列數量。輸出 JSON，不要使用 Markdown。",
+      "保留 JSON 欄位與陣列數量。highlightTermsZh 必須重新檢查，只保留 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；不得只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。輸出 JSON，不要使用 Markdown。",
       humanizerGuide,
     ].join("\n\n"),
     input: [
@@ -276,8 +343,17 @@ function humanize(article, draft) {
 
 async function processWithWorkers({ items, values, label, processItem, checkpointPath }) {
   const failures = [];
+  const itemIds = new Set(items.map((article) => article.id));
+  for (const id of Object.keys(values)) {
+    if (!itemIds.has(id)) delete values[id];
+  }
   for (const article of items) {
-    if (values[article.id] && !isCompleteBrief(values[article.id])) {
+    const storedHash = values[article.id]?.sourceHash;
+    if (
+      values[article.id] &&
+      (!isCompleteBrief(values[article.id]) ||
+        (storedHash && storedHash !== articleSourceHash(article)))
+    ) {
       console.log(`[檢查] 移除不完整暫存：${article.titleEn}`);
       delete values[article.id];
     }
@@ -299,7 +375,10 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
         try {
           const result = await processItem(article);
           if (isCompleteBrief(result)) {
-            values[article.id] = result;
+            values[article.id] = {
+              ...result,
+              sourceHash: articleSourceHash(article),
+            };
             break;
           }
           if (attempt === 3) {
@@ -324,11 +403,52 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
   }
 }
 
+const previousOutput = existsSync(outputPath)
+  ? JSON.parse(readFileSync(outputPath, "utf8"))
+  : null;
+const previousCurrentArticles = new Map(
+  (previousOutput?.articles || [])
+    .filter((article) => (article.issueKey || previousOutput.issueKey) === source.issueKey)
+    .map((article) => [article.id, article]),
+);
+const reusableBriefs = Object.fromEntries(source.articles.flatMap((article) => {
+  const previous = previousCurrentArticles.get(article.id);
+  if (
+    !previous?.summaryZh ||
+    !previous.sourceHash ||
+    previous.sourceHash !== articleSourceHash(article)
+  ) return [];
+  return [[article.id, {
+    summaryZh: previous.summaryZh,
+    keyPointsZh: previous.keyPointsZh,
+    researchLensZh: previous.researchLensZh,
+    keywordsZh: previous.keywordsZh,
+    highlightTermsZh: previous.highlightTermsZh || [],
+    sourceHash: previous.sourceHash,
+  }]];
+}));
+const changedArticleIds = new Set(source.articles.flatMap((article) => {
+  const previous = previousCurrentArticles.get(article.id);
+  if (
+    previous?.sourceHash &&
+    previous.sourceHash !== articleSourceHash(article)
+  ) return [article.id];
+  return [];
+}));
+
 const articlesToProcess = source.articles;
 const manualSummaries = readCheckpoint(manualSummariesPath);
+const summaryCheckpoint = readCheckpoint(summaryCheckpointPath);
+const humanizedCheckpoint = readCheckpoint(humanizedCheckpointPath);
+for (const id of changedArticleIds) {
+  delete summaryCheckpoint[id];
+  delete humanizedCheckpoint[id];
+  delete manualSummaries[id];
+}
 
 const summaries = {
-  ...readCheckpoint(summaryCheckpointPath),
+  ...summaryCheckpoint,
+  ...reusableBriefs,
   ...manualSummaries,
 };
 await processWithWorkers({
@@ -340,7 +460,8 @@ await processWithWorkers({
 });
 
 const humanizedSummaries = {
-  ...readCheckpoint(humanizedCheckpointPath),
+  ...humanizedCheckpoint,
+  ...reusableBriefs,
   ...manualSummaries,
 };
 await processWithWorkers({
@@ -362,19 +483,19 @@ const currentIssueArticles = source.articles.map((article) => {
     categoryZh: sectionCategories[article.section] || "其他",
     titleEn: article.titleEn,
     rubricEn: article.rubricEn,
-    publishedEn: article.publishedEn,
+    publishedEn: publishedDateFromUrl(article.sourceUrl, article.publishedEn),
     sourceUrl: article.sourceUrl,
+    sourceHash: articleSourceHash(article),
     featured: Boolean(summary),
     summaryZh: summary?.summaryZh || null,
     keyPointsZh: summary?.keyPointsZh || [],
     researchLensZh: summary?.researchLensZh || null,
     keywordsZh: summary?.keywordsZh || [],
+    highlightTermsZh: summary?.highlightTermsZh || [],
+    highlightTermsVersion: "important-content-v1",
   };
 });
 
-const previousOutput = existsSync(outputPath)
-  ? JSON.parse(readFileSync(outputPath, "utf8"))
-  : null;
 const previousArticles = (previousOutput?.articles || [])
   .filter((article) => (article.issueKey || previousOutput.issueKey) !== source.issueKey)
   .map((article) => ({
@@ -382,6 +503,7 @@ const previousArticles = (previousOutput?.articles || [])
     issueKey: article.issueKey || previousOutput.issueKey,
     issueDate: article.issueDate || previousOutput.issueDate,
     categoryZh: article.categoryZh || sectionCategories[article.section] || "其他",
+    publishedEn: publishedDateFromUrl(article.sourceUrl, article.publishedEn),
   }));
 const articles = [...currentIssueArticles, ...previousArticles];
 
@@ -390,6 +512,7 @@ const output = {
   issueKey: source.issueKey,
   issueFolder: source.issueFolder,
   issueDate: source.issueDate,
+  sourceFolderSha: source.sourceFolderSha || previousOutput?.sourceFolderSha || null,
   sourceUpdatedAt: source.sourceModifiedAt || source.parsedAt,
   generatedAt: new Date().toISOString(),
   updateCadenceZh: "每週一期；本站於週五下午至深夜偵測新一期",
@@ -399,6 +522,7 @@ const output = {
   featuredCount: currentIssueArticles.filter((article) => article.summaryZh).length,
   totalArticleCount: articles.length,
   issueCount: new Set(articles.map((article) => article.issueKey)).size,
+  highlightPolicyVersion: "important-content-v1",
   articles,
 };
 

@@ -2,11 +2,18 @@ name: Weekly Economist update
 
 on:
   workflow_dispatch:
+    inputs:
+      test_azure:
+        description: "只測試 Azure OpenAI 連線，不重跑既有摘要"
+        required: false
+        type: boolean
+        default: false
   schedule:
-    # Asia/Taipei 週五 13:00–週六 01:00，每兩小時檢查一次。
-    - cron: "0 5-17/2 * * 5"
-    # 週六 11:00 再做一次補查，因應來源延遲。
-    - cron: "0 3 * * 6"
+    # Asia/Taipei 週五 13:17–週六 01:17，每兩小時檢查一次。
+    # 避開整點可降低 GitHub Actions 尖峰排隊與延遲機率。
+    - cron: "17 5-17/2 * * 5"
+    # 週六 11:17 再做一次補查，因應來源延遲。
+    - cron: "17 3 * * 6"
 
 concurrency:
   group: weekly-economist-update
@@ -18,7 +25,8 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 一期約 70–80 篇，包含摘要初稿與自然化兩輪；保留足夠處理時間。
+    timeout-minutes: 120
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
@@ -34,10 +42,42 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Test Azure OpenAI connection
+        if: ${{ inputs.test_azure == true }}
+        run: node scripts/test-azure-openai.mjs
+
+      - name: Restore partial summary checkpoints
+        if: ${{ !inputs.test_azure }}
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .cache/summaries.checkpoint.json
+            .cache/humanized-summaries.checkpoint.json
+          key: economist-checkpoints-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            economist-checkpoints-${{ runner.os }}-
+
       - name: Detect and process a new issue
+        if: ${{ !inputs.test_azure }}
+        id: process
+        continue-on-error: true
         run: node scripts/update-latest.mjs
 
+      - name: Save partial summary checkpoints
+        if: ${{ !inputs.test_azure && always() && hashFiles('.cache/*.checkpoint.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/summaries.checkpoint.json
+            .cache/humanized-summaries.checkpoint.json
+          key: economist-checkpoints-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Stop when issue processing failed
+        if: ${{ !inputs.test_azure && steps.process.outcome == 'failure' }}
+        run: exit 1
+
       - name: Publish updated site data
+        if: ${{ !inputs.test_azure }}
         run: |
           if git diff --quiet -- docs/data/articles.json; then
             echo "No new issue to publish."

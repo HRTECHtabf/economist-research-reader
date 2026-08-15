@@ -64,8 +64,35 @@ function extractOriginUrl(html) {
   return decodeHtml(links.at(-1)?.[1] || "");
 }
 
+function publishedDateFromUrl(sourceUrl) {
+  const match = sourceUrl.match(/\/(\d{4})\/(\d{2})\/(\d{2})(?:\/|$)/);
+  if (!match) return "";
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return "";
+
+  const monthName = new Intl.DateTimeFormat("en", {
+    month: "short",
+    timeZone: "UTC",
+  }).format(date);
+  const remainder = day % 100;
+  const suffix = remainder >= 11 && remainder <= 13
+    ? "th"
+    : ({ 1: "st", 2: "nd", 3: "rd" }[day % 10] || "th");
+  return `${monthName} ${day}${suffix} ${year}`;
+}
+
 function extractArticle(path, section, tocTitle) {
   const html = readFromEpub(path);
+  const sourceUrl = extractOriginUrl(html);
   const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || html;
   const contentOnly = body
     .replace(/<p[^>]*class=["'][^"']*link_navbar[^"']*["'][^>]*>[\s\S]*?<\/p>/gi, "")
@@ -81,8 +108,10 @@ function extractArticle(path, section, tocTitle) {
     section,
     titleEn: extractClass(html, "h1", "te_article_title") || cleanText(tocTitle),
     rubricEn: extractClass(html, "h3", "te_article_rubric"),
-    publishedEn: extractClass(html, "h3", "te_article_datePublished"),
-    sourceUrl: extractOriginUrl(html),
+    // EPUB 內的日期欄位可能把整期文章都標成同一天；官方文章網址的
+    // /YYYY/MM/DD/ 才是逐篇發布日期，因此優先採用網址日期。
+    publishedEn: publishedDateFromUrl(sourceUrl) || extractClass(html, "h3", "te_article_datePublished"),
+    sourceUrl,
     sourceFile: path,
     textEn: cleanText(contentOnly),
   };
