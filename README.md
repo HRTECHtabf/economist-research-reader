@@ -15,3 +15,29 @@
 - 公開網站不包含 Azure OpenAI 金鑰，也不重新發布英文全文。
 
 網站檔案位於 `docs/`，可直接由 GitHub Pages 發布。
+
+## 每週更新由誰執行
+
+不需要另外架設常駐 Agent 或讓個人電腦一直開著。GitHub Actions 會在 GitHub 的主機上，依 `.github/workflows/weekly-update.yml` 自動觸發：
+
+- 台北時間週五 13:17、15:17、17:17、19:17、21:17、23:17，以及週六 01:17 檢查新一期。
+- 台北時間週六 11:17 再補查一次。
+- 每次先比較來源庫最新的 `te_YYYY.MM.DD` 與網站目前期數；相同就安全結束，不呼叫 Azure OpenAI。
+- 每篇文章會保存原文內容指紋。只有新文章或原文內容真的改變時才呼叫 Azure OpenAI；未變動文章直接沿用已保存摘要。
+- 新一期出現時，只處理該期新文章一次，不會重跑歷史期數。同一期若後來只新增或修改少數文章，也只處理那些文章。
+- 完成結果保存到 `docs/data/articles.json`；這個版本控制的 JSON 是目前網站的持久資料庫，瀏覽器不會即時呼叫模型。
+- 摘要初稿與自然化結果會在處理途中逐篇建立檢查點，並由 GitHub Actions cache 保存；若某次執行中途失敗，下次會從未完成的文章接續，而不是整期重跑。
+- 全期處理完成且資料檢查通過後才提交網站更新；中途失敗時既有公開網站不變。
+- 也可在 GitHub 的 Actions 頁面手動執行 `Weekly Economist update`，作為排程延遲時的備援。
+- 更新 Azure Secrets 後，可手動執行工作流程並勾選 `test_azure`；它只測試連線，不會重跑既有摘要。
+- `AZURE_OPENAI_ENDPOINT` 同時接受資源根網址與 Foundry 完整的 `/openai/v1/responses` 網址。
+
+公開儲存庫若連續 60 天沒有任何活動，GitHub 可能自動停用排程；屆時到 Actions 頁面重新啟用即可。
+
+## 文章日期來源
+
+EPUB 的日期欄位可能把同一期文章全部標成同一天。網站改以每篇 Economist 原文網址中的 `/YYYY/MM/DD/` 作為文章發布日期，EPUB 日期只在網址沒有日期時備援使用。
+
+## 英文全文內部預覽
+
+公開 GitHub Pages 僅提供文章資訊、中文摘要與原文連結，不重新散布英文全文。需要在授權範圍內核對英文內容時，可在本機執行 `node scripts/serve-internal-preview.mjs`，再開啟 `http://127.0.0.1:4173/`；英文全文只由本機 `.cache/articles.raw.json` 提供，不會寫入 `docs/` 或上傳至公開網站。

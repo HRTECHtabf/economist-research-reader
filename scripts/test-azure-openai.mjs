@@ -44,11 +44,23 @@ if (missing.length) {
   process.exit(1);
 }
 
-const endpoint = env.AZURE_OPENAI_ENDPOINT.replace(/\/+$/, "");
-const apiPath = (env.AZURE_OPENAI_API_PATH || "/openai/v1/")
-  .replace(/^\/*/, "/")
-  .replace(/\/*$/, "/");
-const url = `${endpoint}${apiPath}responses`;
+function buildResponsesUrl(endpointValue, apiPathValue) {
+  const endpoint = endpointValue.replace(/\/+$/, "");
+
+  if (/\/openai\/v1\/responses$/i.test(endpoint)) return endpoint;
+  if (/\/openai\/v1$/i.test(endpoint)) return `${endpoint}/responses`;
+
+  const apiPath = (apiPathValue || "/openai/v1/")
+    .replace(/^\/*/, "/")
+    .replace(/\/*$/, "/");
+
+  return `${endpoint}${apiPath}responses`;
+}
+
+const url = buildResponsesUrl(
+  env.AZURE_OPENAI_ENDPOINT,
+  env.AZURE_OPENAI_API_PATH,
+);
 
 try {
   const response = await fetch(url, {

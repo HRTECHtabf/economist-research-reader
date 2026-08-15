@@ -78,14 +78,21 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
               <input id="search-input" type="search" placeholder="搜尋英文標題、中文摘要或關鍵字…" />
             </label>
-            <label class="sort-control">
-              <span>排序</span>
-              <select id="sort-select" aria-label="文章排序方式">
-                <option value="newest">日期：新到舊</option>
-                <option value="oldest">日期：舊到新</option>
-                <option value="category">依主題分類</option>
-              </select>
-            </label>
+            <div class="toolbar-actions">
+              <button class="favorites-filter" id="favorites-filter" type="button" aria-pressed="false">
+                <span class="favorite-symbol" aria-hidden="true">☆</span>
+                我的收藏
+                <small id="favorites-count">0</small>
+              </button>
+              <label class="sort-control">
+                <span>排序</span>
+                <select id="sort-select" aria-label="文章排序方式">
+                  <option value="newest">日期：新到舊</option>
+                  <option value="oldest">日期：舊到新</option>
+                  <option value="category">依主題分類</option>
+                </select>
+              </label>
+            </div>
           </div>
 
           <div class="filter-row" id="category-filters" aria-label="主題分類篩選"></div>
@@ -129,6 +136,10 @@
     <template id="article-template">
       <article class="article-card">
         <div class="card-intro">
+          <button class="favorite-button" type="button" aria-pressed="false" title="加入收藏">
+            <span aria-hidden="true">☆</span>
+            <span class="sr-only">加入收藏</span>
+          </button>
           <div class="card-meta">
             <span class="category-label"></span>
             <span class="section-label"></span>
@@ -152,6 +163,10 @@
             <details>
               <summary>研究閱讀角度</summary>
               <p class="research-lens"></p>
+            </details>
+            <details class="internal-english-block" hidden>
+              <summary>內部核對：英文全文</summary>
+              <div class="english-full-text"></div>
             </details>
           </div>
           <div class="pending-block">
