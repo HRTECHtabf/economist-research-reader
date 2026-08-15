@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -31,7 +31,10 @@ function readEnv(path) {
   return values;
 }
 
-const env = readEnv(envPath);
+const env = {
+  ...(existsSync(envPath) ? readEnv(envPath) : {}),
+  ...process.env,
+};
 const required = [
   "AZURE_OPENAI_API_KEY",
   "AZURE_OPENAI_ENDPOINT",
