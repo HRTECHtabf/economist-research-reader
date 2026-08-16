@@ -56,5 +56,5 @@ const server = createServer((request, response) => {
 
 server.listen(port, "127.0.0.1", () => {
   console.log(`內部預覽已啟動：http://127.0.0.1:${port}`);
-  console.log("此服務只綁定本機，英文全文不會進入 docs/ 或公開網站。");
+  console.log("此服務只綁定本機；頁面內容與公開網站資料格式相同。");
 });

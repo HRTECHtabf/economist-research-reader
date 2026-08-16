@@ -202,6 +202,64 @@ function isCompleteBrief(value) {
   );
 }
 
+function briefValidationFailures(value) {
+  const failures = [];
+  if (!value || typeof value !== "object") return ["不是物件"];
+  if (!endsAsCompleteSentence(value.summaryZh)) failures.push("摘要句尾不完整");
+  if (typeof value.summaryZh !== "string" || value.summaryZh.length < 120 || value.summaryZh.length > 280) {
+    failures.push(`摘要長度 ${value.summaryZh?.length ?? 0}`);
+  }
+  if (!endsAsCompleteSentence(value.researchLensZh)) failures.push("研究角度句尾不完整");
+  if (
+    typeof value.researchLensZh !== "string" ||
+    value.researchLensZh.length < 40 ||
+    value.researchLensZh.length > 160
+  ) failures.push(`研究角度長度 ${value.researchLensZh?.length ?? 0}`);
+  if (!Array.isArray(value.keyPointsZh) || value.keyPointsZh.length !== 3) {
+    failures.push(`重點數量 ${value.keyPointsZh?.length ?? 0}`);
+  } else {
+    value.keyPointsZh.forEach((point, index) => {
+      if (!endsAsCompleteSentence(point)) failures.push(`重點 ${index + 1} 句尾不完整`);
+      if (typeof point !== "string" || point.length < 20 || point.length > 120) {
+        failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
+      }
+    });
+  }
+  if (!Array.isArray(value.keywordsZh) || value.keywordsZh.length < 3 || value.keywordsZh.length > 5) {
+    failures.push(`關鍵字數量 ${value.keywordsZh?.length ?? 0}`);
+  }
+  if (!Array.isArray(value.highlightTermsZh) || value.highlightTermsZh.length > 3) {
+    failures.push(`標示數量 ${value.highlightTermsZh?.length ?? 0}`);
+  } else if (value.highlightTermsZh.some((term) => !value.summaryZh?.includes(term))) {
+    failures.push("摘要中找不到標示短語");
+  }
+  return failures;
+}
+
+function normalizeGeneratedBrief(value) {
+  if (!value || typeof value !== "object") return value;
+  const summaryZh = typeof value.summaryZh === "string" ? value.summaryZh.trim() : value.summaryZh;
+  const highlightTermsZh = Array.isArray(value.highlightTermsZh)
+    ? [...new Set(value.highlightTermsZh)]
+      .filter((term) => typeof term === "string" && summaryZh?.includes(term))
+      .slice(0, 3)
+    : value.highlightTermsZh;
+  return {
+    ...value,
+    summaryZh,
+    keyPointsZh: Array.isArray(value.keyPointsZh)
+      ? value.keyPointsZh.map((point) => typeof point === "string" ? point.trim() : point)
+      : value.keyPointsZh,
+    researchLensZh: typeof value.researchLensZh === "string"
+      ? value.researchLensZh.trim()
+      : value.researchLensZh,
+    keywordsZh: Array.isArray(value.keywordsZh)
+      ? value.keywordsZh.map((keyword) => typeof keyword === "string" ? keyword.trim() : keyword)
+      : value.keywordsZh,
+    highlightTermsZh,
+  };
+}
+
 function normalizeTaiwanUsage(brief) {
   const replacements = [
     [/特朗普/g, "川普"],
@@ -250,7 +308,7 @@ async function callAzureJson({ instructions, input, schemaName }, structured = t
   const body = {
     model: env.AZURE_OPENAI_DEPLOYMENT,
     store: false,
-    max_output_tokens: 1400,
+    max_output_tokens: 2600,
     instructions,
     input,
   };
@@ -282,7 +340,12 @@ async function callAzureJson({ instructions, input, schemaName }, structured = t
     throw error;
   }
 
-  return parseJsonText(extractOutputText(payload));
+  const outputText = extractOutputText(payload);
+  if (!outputText) {
+    const reason = payload?.incomplete_details?.reason || payload?.status || "沒有文字輸出";
+    throw new Error(`Azure 回應沒有完整文字（${reason}）`);
+  }
+  return parseJsonText(outputText);
 }
 
 async function callWithFallback(request) {
@@ -373,7 +436,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
       console.log(`[${label} ${index + 1}/${items.length}] 正在處理：${article.titleEn}`);
       for (let attempt = 1; attempt <= 3; attempt += 1) {
         try {
-          const result = await processItem(article);
+          const result = normalizeGeneratedBrief(await processItem(article));
           if (isCompleteBrief(result)) {
             values[article.id] = {
               ...result,
@@ -384,7 +447,9 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
           if (attempt === 3) {
             failures.push(`${article.titleEn}：輸出未通過完整性與長度檢查`);
           } else {
-            console.log(`[${label}] 輸出不完整或超長，第 ${attempt + 1} 次嘗試。`);
+            console.log(
+              `[${label}] ${briefValidationFailures(result).join("、")}，第 ${attempt + 1} 次嘗試。`,
+            );
           }
         } catch (error) {
           if (attempt === 3) {
@@ -485,6 +550,7 @@ const currentIssueArticles = source.articles.map((article) => {
     rubricEn: article.rubricEn,
     publishedEn: publishedDateFromUrl(article.sourceUrl, article.publishedEn),
     sourceUrl: article.sourceUrl,
+    textEn: article.textEn,
     sourceHash: articleSourceHash(article),
     featured: Boolean(summary),
     summaryZh: summary?.summaryZh || null,

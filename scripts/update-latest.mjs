@@ -43,7 +43,9 @@ function validateSiteData(data, expectedFolder, expectedSourceSha) {
     if (!/^[a-f0-9]{64}$/.test(article.sourceHash || "")) {
       failures.push(`${article.titleEn}：缺少原文內容指紋`);
     }
-    if ("textEn" in article) failures.push(`${article.titleEn}：公開資料不應包含英文全文`);
+    if (typeof article.textEn !== "string" || article.textEn.length <= 200) {
+      failures.push(`${article.titleEn}：缺少英文全文`);
+    }
     const terms = article.highlightTermsZh;
     if (!Array.isArray(terms) || terms.length > 3) {
       failures.push(`${article.titleEn}：摘要標示數量不正確`);

@@ -210,6 +210,7 @@ function termMatchesText(text, term) {
 function searchableFields(article) {
   return [
     { label: "英文標題／副標", text: [article.titleEn, article.rubricEn].filter(Boolean).join(" ") },
+    { label: "英文全文", text: article.textEn || "" },
     { label: "欄目／分類", text: [article.section, categoryFor(article)].filter(Boolean).join(" ") },
     { label: "中文摘要", text: article.summaryZh || "" },
     { label: "論述重點", text: (article.keyPointsZh || []).join(" ") },
@@ -383,7 +384,7 @@ function renderCard(article) {
   link.href = article.sourceUrl;
   link.hidden = !article.sourceUrl;
 
-  const internalEnglish = state.internalTextById.get(article.id);
+  const internalEnglish = article.textEn || state.internalTextById.get(article.id);
   const internalBlock = fragment.querySelector(".internal-english-block");
   if (internalEnglish) {
     const textContainer = fragment.querySelector(".english-full-text");
@@ -536,11 +537,11 @@ async function loadInternalEnglishText() {
       (data.articles || []).map((article) => [article.id, article.textEn]),
     );
   } catch {
-    // 公開網站與一般靜態預覽不提供內部英文內容。
+    // 舊版本機資料沒有 textEn 時，英文內容維持隱藏，不中斷頁面。
   }
 }
 
-fetch("./data/articles.json")
+fetch("./data/articles.json", { cache: "no-store" })
   .then((response) => {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();

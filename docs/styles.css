@@ -102,7 +102,7 @@ details { margin-top: 20px; border-top: 1px solid var(--line); }
 details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-size: 13px; font-weight: 750; }
 .research-lens { margin: 0; padding-left: 14px; border-left: 2px solid var(--red); color: #4b4844; font-size: 14px; }
 .internal-english-block { margin-top: 18px; border-top-style: dashed; }
-.internal-english-block summary { color: #5a5752; }
+.internal-english-block summary { color: var(--red); }
 .english-full-text { max-height: 440px; margin-top: 12px; padding: 16px 18px; overflow-y: auto; border: 1px solid var(--line); background: #f5f2ec; color: #3f3c38; font-size: 14px; line-height: 1.72; }
 .english-full-text p { margin: 0 0 1em; }
 .pending-block { padding: 16px; border-left: 3px solid #bbb5ac; background: #f2efe9; }
