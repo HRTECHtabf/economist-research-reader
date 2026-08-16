@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260816-2" />
+    <link rel="stylesheet" href="./styles.css?v=20260816-3" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -64,12 +64,16 @@
                 我的收藏
                 <small id="favorites-count">0</small>
               </button>
-              <label class="issue-control">
-                <span>期數</span>
+              <label class="select-control issue-control">
+                <span class="control-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M7 2v3m10-3v3M3.5 9h17M5.5 4.5h13a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2Z" /></svg>
+                </span>
                 <select id="issue-select" aria-label="文章期數"></select>
               </label>
-              <label class="sort-control">
-                <span>排序</span>
+              <label class="select-control sort-control">
+                <span class="control-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M8 6h11M8 12h8M8 18h5M4 4v16m0 0-2.5-2.5M4 20l2.5-2.5" /></svg>
+                </span>
                 <select id="sort-select" aria-label="文章排序方式">
                   <option value="newest">日期：新到舊</option>
                   <option value="oldest">日期：舊到新</option>
@@ -152,6 +156,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260816-3" defer></script>
+    <script src="./app.js?v=20260816-4" defer></script>
   </body>
 </html>

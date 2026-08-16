@@ -3,7 +3,6 @@ const CATEGORY_ORDER = [
   "金融與經濟",
   "產業與科技",
   "區域政情",
-  "評論與書信",
   "文化與人物",
   "其他",
 ];
@@ -23,8 +22,8 @@ const SECTION_CATEGORIES = {
   "Middle East & Africa": "區域政情",
   Europe: "區域政情",
   Britain: "區域政情",
-  "By Invitation": "評論與書信",
-  Letters: "評論與書信",
+  "By Invitation": "其他",
+  Letters: "其他",
   Culture: "文化與人物",
   Obituary: "文化與人物",
 };
