@@ -12,6 +12,8 @@ const humanizerGuidePath = resolve(
   projectRoot,
   ".agents/skills/economist-humanizer-zh-tw/references/economist-research-summary.md",
 );
+const SUMMARY_VERSION = "research-brief-v3";
+const HUMANIZER_VERSION = "economist-humanizer-v3";
 
 function readEnv(path) {
   const values = {};
@@ -55,10 +57,23 @@ const naturalStyleRules = [
   "直接從具體事件、主張或數據開場，不要固定以『本文指出』『文章聚焦』『作者認為』起句。",
   "採台灣研究員寫給同事的專業語氣；能用短句與動詞說清楚，就不要堆抽象名詞或轉折詞。",
   "避免宣傳式形容、職場黑話、否定對仗、三段排比、戲劇化金句與『總之』『未來可期』等昇華式結尾。",
-  "三個重點必須各自提供不同且可核對的資訊，不要把同一結論換句話說三次。",
+  "論述重點依內容使用三至五點，每點只寫一個可核對的主張或事件，嚴格控制在 35–65 個中文字並以完整標點收尾。每點必須能獨立閱讀，開頭直接交代主詞、事件或判斷；不要用短標題加冒號，也不要用分號把不同事件塞在一起。",
+  "中文摘要、論述重點與研究角度都要自然化；避免『文章同時指出』『原因與風險』『其他變化』等依賴前文的起句。",
   "研究角度要指出可檢查的假設、資料、傳導機制或政策取捨，不要寫『值得深入閱讀』『可供參考』。",
-  "使用台灣常用譯名與用語，例如川普、輝達、日圓、資訊、軟體、線上。",
+  "使用台灣常用譯名、用語與數字寫法，例如川普、輝達、日圓、資訊、軟體、線上；把 1.5 million 寫成 150萬，不要寫成 1.5百萬。",
 ].join("\n");
+const aiStylePattern = /綜上所述|總體而言|一言以蔽之|未來可期|值得深入閱讀|可供參考|值得注意的是|由此可見|賦能|助力|底層邏輯|深遠影響|重要里程碑|不只是.{0,35}而是|不僅.{0,35}更/u;
+const contextlessPointOpening = /^(?:文章|本文|文中)(?:同時|另|也|還|進一步)|^(?:原因與風險|其他變化|也有|另一個|此外|另一方面|至於|這些|此舉|上述)/u;
+
+function isStandaloneKeyPoint(point) {
+  return (
+    typeof point === "string" &&
+    !contextlessPointOpening.test(point) &&
+    !/^[^，。！？；]{2,18}：/u.test(point) &&
+    (point.match(/；/g) || []).length <= 1 &&
+    !aiStylePattern.test(point)
+  );
+}
 
 for (const name of ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT"]) {
   if (!env[name]) throw new Error(`尚未填寫 ${name}`);
@@ -152,8 +167,8 @@ const schema = {
     keyPointsZh: {
       type: "array",
       minItems: 3,
-      maxItems: 3,
-      items: { type: "string", maxLength: 160 },
+      maxItems: 5,
+      items: { type: "string", maxLength: 85 },
     },
     researchLensZh: { type: "string", maxLength: 220 },
     keywordsZh: {
@@ -186,15 +201,19 @@ function isCompleteBrief(value) {
   return (
     value &&
     endsAsCompleteSentence(value.summaryZh) &&
-    value.summaryZh.length >= 120 &&
-    value.summaryZh.length <= 280 &&
+    value.summaryZh.length >= 130 &&
+    value.summaryZh.length <= 250 &&
+    !/^(?:本文指出|文章聚焦|作者認為)/u.test(value.summaryZh) &&
+    !aiStylePattern.test(value.summaryZh) &&
     endsAsCompleteSentence(value.researchLensZh) &&
-    value.researchLensZh.length >= 40 &&
-    value.researchLensZh.length <= 160 &&
+    value.researchLensZh.length >= 50 &&
+    value.researchLensZh.length <= 135 &&
+    !aiStylePattern.test(value.researchLensZh) &&
     Array.isArray(value.keyPointsZh) &&
-    value.keyPointsZh.length === 3 &&
+    value.keyPointsZh.length >= 3 &&
+    value.keyPointsZh.length <= 5 &&
     value.keyPointsZh.every(
-      (point) => endsAsCompleteSentence(point) && point.length >= 20 && point.length <= 120,
+      (point) => endsAsCompleteSentence(point) && point.length >= 25 && point.length <= 85 && isStandaloneKeyPoint(point),
     ) &&
     Array.isArray(value.keywordsZh) &&
     value.keywordsZh.length >= 3 &&
@@ -206,23 +225,27 @@ function briefValidationFailures(value) {
   const failures = [];
   if (!value || typeof value !== "object") return ["不是物件"];
   if (!endsAsCompleteSentence(value.summaryZh)) failures.push("摘要句尾不完整");
-  if (typeof value.summaryZh !== "string" || value.summaryZh.length < 120 || value.summaryZh.length > 280) {
+  if (typeof value.summaryZh !== "string" || value.summaryZh.length < 130 || value.summaryZh.length > 250) {
     failures.push(`摘要長度 ${value.summaryZh?.length ?? 0}`);
   }
+  if (/^(?:本文指出|文章聚焦|作者認為)/u.test(value.summaryZh || "")) failures.push("摘要以公式化來源提示開場");
+  if (aiStylePattern.test(value.summaryZh || "")) failures.push("摘要含公式化 AI 語句");
   if (!endsAsCompleteSentence(value.researchLensZh)) failures.push("研究角度句尾不完整");
   if (
     typeof value.researchLensZh !== "string" ||
-    value.researchLensZh.length < 40 ||
-    value.researchLensZh.length > 160
+    value.researchLensZh.length < 50 ||
+    value.researchLensZh.length > 135
   ) failures.push(`研究角度長度 ${value.researchLensZh?.length ?? 0}`);
-  if (!Array.isArray(value.keyPointsZh) || value.keyPointsZh.length !== 3) {
+  if (aiStylePattern.test(value.researchLensZh || "")) failures.push("研究角度含公式化 AI 語句");
+  if (!Array.isArray(value.keyPointsZh) || value.keyPointsZh.length < 3 || value.keyPointsZh.length > 5) {
     failures.push(`重點數量 ${value.keyPointsZh?.length ?? 0}`);
   } else {
     value.keyPointsZh.forEach((point, index) => {
       if (!endsAsCompleteSentence(point)) failures.push(`重點 ${index + 1} 句尾不完整`);
-      if (typeof point !== "string" || point.length < 20 || point.length > 120) {
+      if (typeof point !== "string" || point.length < 25 || point.length > 85) {
         failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
       }
+      if (!isStandaloneKeyPoint(point)) failures.push(`重點 ${index + 1} 無法獨立閱讀或含公式化句型`);
     });
   }
   if (!Array.isArray(value.keywordsZh) || value.keywordsZh.length < 3 || value.keywordsZh.length > 5) {
@@ -238,9 +261,14 @@ function briefValidationFailures(value) {
 
 function normalizeGeneratedBrief(value) {
   if (!value || typeof value !== "object") return value;
-  const summaryZh = typeof value.summaryZh === "string" ? value.summaryZh.trim() : value.summaryZh;
+  const normalizeText = (text) => typeof text === "string"
+    ? text.trim()
+      .replace(/(\d+(?:\.\d+)?)百萬/gu, (_, number) => `${Number(number) * 100}萬`)
+      .replace(/(\d+(?:\.\d+)?)十億/gu, (_, number) => `${Number(number) * 10}億`)
+    : text;
+  const summaryZh = normalizeText(value.summaryZh);
   const highlightTermsZh = Array.isArray(value.highlightTermsZh)
-    ? [...new Set(value.highlightTermsZh)]
+    ? [...new Set(value.highlightTermsZh.map(normalizeText))]
       .filter((term) => typeof term === "string" && summaryZh?.includes(term))
       .slice(0, 3)
     : value.highlightTermsZh;
@@ -248,13 +276,11 @@ function normalizeGeneratedBrief(value) {
     ...value,
     summaryZh,
     keyPointsZh: Array.isArray(value.keyPointsZh)
-      ? value.keyPointsZh.map((point) => typeof point === "string" ? point.trim() : point)
+      ? value.keyPointsZh.map(normalizeText)
       : value.keyPointsZh,
-    researchLensZh: typeof value.researchLensZh === "string"
-      ? value.researchLensZh.trim()
-      : value.researchLensZh,
+    researchLensZh: normalizeText(value.researchLensZh),
     keywordsZh: Array.isArray(value.keywordsZh)
-      ? value.keywordsZh.map((keyword) => typeof keyword === "string" ? keyword.trim() : keyword)
+      ? value.keywordsZh.map(normalizeText)
       : value.keywordsZh,
     highlightTermsZh,
   };
@@ -366,7 +392,7 @@ function summarize(article) {
       "你是台灣金融與經濟研究機構的資深研究助理。",
       "根據英文文章，以繁體中文（台灣用語）製作第一版研究導讀。",
       "不得補造原文沒有的事實、數字、來源或因果關係。",
-      "summaryZh 限 180–240 個中文字；keyPointsZh 剛好三點，每點 45–90 個中文字；researchLensZh 限 60–120 個中文字。",
+      "summaryZh 限 150–230 個中文字；keyPointsZh 依內容使用三至五點，每點嚴格控制在 35–65 個中文字並以完整標點收尾；researchLensZh 限 60–120 個中文字。",
       "highlightTermsZh 通常選 1–3 個在 summaryZh 中逐字出現的短語，只能選關鍵結論、因果機制或重要證據；不要只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。",
       naturalStyleRules,
       "輸出 JSON，不要使用 Markdown。",
@@ -375,7 +401,7 @@ function summarize(article) {
       `欄目：${article.section}`,
       `標題：${article.titleEn}`,
       article.rubricEn ? `副標：${article.rubricEn}` : "",
-      `文章內容：\n${article.textEn.slice(0, 12000)}`,
+      `文章內容：\n${article.textEn}`,
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -389,14 +415,14 @@ function humanize(article, draft) {
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
       "必須鎖定英文原文的事實、數字、因果關係與不確定程度，不得新增內容。",
       naturalStyleRules,
-      "保留 JSON 欄位與陣列數量。highlightTermsZh 必須重新檢查，只保留 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；不得只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。輸出 JSON，不要使用 Markdown。",
+      "保留 JSON 欄位；keyPointsZh 可依內容調整為三至五點。highlightTermsZh 必須重新檢查，只保留 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；不得只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。輸出 JSON，不要使用 Markdown。",
       humanizerGuide,
     ].join("\n\n"),
     input: [
       `欄目：${article.section}`,
       `英文標題：${article.titleEn}`,
       article.rubricEn ? `英文副標：${article.rubricEn}` : "",
-      `英文原文核對資料：\n${article.textEn.slice(0, 10000)}`,
+      `英文原文核對資料：\n${article.textEn}`,
       `第一版中文摘要：\n${JSON.stringify(draft)}`,
     ]
       .filter(Boolean)
@@ -404,7 +430,7 @@ function humanize(article, draft) {
   });
 }
 
-async function processWithWorkers({ items, values, label, processItem, checkpointPath }) {
+async function processWithWorkers({ items, values, label, processItem, checkpointPath, processingVersion }) {
   const failures = [];
   const itemIds = new Set(items.map((article) => article.id));
   for (const id of Object.keys(values)) {
@@ -415,7 +441,8 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
     if (
       values[article.id] &&
       (!isCompleteBrief(values[article.id]) ||
-        (storedHash && storedHash !== articleSourceHash(article)))
+        (storedHash && storedHash !== articleSourceHash(article)) ||
+        values[article.id]?.processingVersion !== processingVersion)
     ) {
       console.log(`[檢查] 移除不完整暫存：${article.titleEn}`);
       delete values[article.id];
@@ -441,6 +468,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
             values[article.id] = {
               ...result,
               sourceHash: articleSourceHash(article),
+              processingVersion,
             };
             break;
           }
@@ -476,22 +504,6 @@ const previousCurrentArticles = new Map(
     .filter((article) => (article.issueKey || previousOutput.issueKey) === source.issueKey)
     .map((article) => [article.id, article]),
 );
-const reusableBriefs = Object.fromEntries(source.articles.flatMap((article) => {
-  const previous = previousCurrentArticles.get(article.id);
-  if (
-    !previous?.summaryZh ||
-    !previous.sourceHash ||
-    previous.sourceHash !== articleSourceHash(article)
-  ) return [];
-  return [[article.id, {
-    summaryZh: previous.summaryZh,
-    keyPointsZh: previous.keyPointsZh,
-    researchLensZh: previous.researchLensZh,
-    keywordsZh: previous.keywordsZh,
-    highlightTermsZh: previous.highlightTermsZh || [],
-    sourceHash: previous.sourceHash,
-  }]];
-}));
 const changedArticleIds = new Set(source.articles.flatMap((article) => {
   const previous = previousCurrentArticles.get(article.id);
   if (
@@ -513,7 +525,6 @@ for (const id of changedArticleIds) {
 
 const summaries = {
   ...summaryCheckpoint,
-  ...reusableBriefs,
   ...manualSummaries,
 };
 await processWithWorkers({
@@ -522,12 +533,11 @@ await processWithWorkers({
   label: "初稿",
   processItem: summarize,
   checkpointPath: summaryCheckpointPath,
+  processingVersion: SUMMARY_VERSION,
 });
 
 const humanizedSummaries = {
   ...humanizedCheckpoint,
-  ...reusableBriefs,
-  ...manualSummaries,
 };
 await processWithWorkers({
   items: articlesToProcess,
@@ -535,6 +545,7 @@ await processWithWorkers({
   label: "自然化",
   processItem: (article) => humanize(article, summaries[article.id]),
   checkpointPath: humanizedCheckpointPath,
+  processingVersion: HUMANIZER_VERSION,
 });
 
 const currentIssueArticles = source.articles.map((article) => {
@@ -559,6 +570,7 @@ const currentIssueArticles = source.articles.map((article) => {
     keywordsZh: summary?.keywordsZh || [],
     highlightTermsZh: summary?.highlightTermsZh || [],
     highlightTermsVersion: "important-content-v1",
+    humanizerVersion: HUMANIZER_VERSION,
   };
 });
 
