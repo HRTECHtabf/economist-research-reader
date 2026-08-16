@@ -3,7 +3,8 @@ const CATEGORY_ORDER = [
   "金融與經濟",
   "產業與科技",
   "區域政情",
-  "觀點與文化",
+  "評論與書信",
+  "文化與人物",
   "其他",
 ];
 
@@ -22,10 +23,10 @@ const SECTION_CATEGORIES = {
   "Middle East & Africa": "區域政情",
   Europe: "區域政情",
   Britain: "區域政情",
-  "By Invitation": "觀點與文化",
-  Letters: "觀點與文化",
-  Culture: "觀點與文化",
-  Obituary: "觀點與文化",
+  "By Invitation": "評論與書信",
+  Letters: "評論與書信",
+  Culture: "文化與人物",
+  Obituary: "文化與人物",
 };
 
 const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";

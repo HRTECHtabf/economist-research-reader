@@ -79,10 +79,10 @@ const sectionCategories = {
   "Middle East & Africa": "區域政情",
   Europe: "區域政情",
   Britain: "區域政情",
-  "By Invitation": "觀點與文化",
-  Letters: "觀點與文化",
-  Culture: "觀點與文化",
-  Obituary: "觀點與文化",
+  "By Invitation": "評論與書信",
+  Letters: "評論與書信",
+  Culture: "文化與人物",
+  Obituary: "文化與人物",
 };
 
 function publishedDateFromUrl(sourceUrl, fallback = "") {
@@ -568,7 +568,7 @@ const previousArticles = (previousOutput?.articles || [])
     ...article,
     issueKey: article.issueKey || previousOutput.issueKey,
     issueDate: article.issueDate || previousOutput.issueDate,
-    categoryZh: article.categoryZh || sectionCategories[article.section] || "其他",
+    categoryZh: sectionCategories[article.section] || article.categoryZh || "其他",
     publishedEn: publishedDateFromUrl(article.sourceUrl, article.publishedEn),
   }));
 const articles = [...currentIssueArticles, ...previousArticles];
