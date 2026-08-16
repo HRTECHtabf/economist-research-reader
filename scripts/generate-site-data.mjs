@@ -10,7 +10,7 @@ const humanizedCheckpointPath = resolve(projectRoot, ".cache/humanized-summaries
 const manualSummariesPath = resolve(projectRoot, "scripts/manual-summaries.json");
 const humanizerGuidePath = resolve(
   projectRoot,
-  ".agents/skills/humanizer-zh-tw/references/economist-research-summary.md",
+  ".agents/skills/economist-humanizer-zh-tw/references/economist-research-summary.md",
 );
 
 function readEnv(path) {

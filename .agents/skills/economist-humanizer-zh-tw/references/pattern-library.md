@@ -1,4 +1,4 @@
-# Humanizer-zh-TW 模式庫
+# Economist Humanizer zh-TW 模式庫
 
 本檔案保存繁體中文常見的 AI 寫作模式、判斷方式與改寫範例。執行方式、語調邊界與格式保留規則以 `../SKILL.md` 為準。
 

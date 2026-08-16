@@ -1,4 +1,0 @@
-interface:
-  display_name: "繁中研究摘要 Humanizer"
-  short_description: "將英文文獻的繁中研究摘要改得自然，並鎖定原文事實與語氣"
-  default_prompt: "使用 $humanizer-zh-tw，校修這份《經濟學人》繁中研究摘要並保留原文事實。"
