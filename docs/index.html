@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260816-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260816-4" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -59,11 +59,6 @@
               <input id="search-input" type="search" placeholder="搜尋英文全文、中文摘要或關鍵字…" />
             </label>
             <div class="toolbar-actions">
-              <button class="favorites-filter" id="favorites-filter" type="button" aria-pressed="false">
-                <span class="favorite-symbol" aria-hidden="true">☆</span>
-                我的收藏
-                <small id="favorites-count">0</small>
-              </button>
               <label class="select-control issue-control">
                 <span class="control-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M7 2v3m10-3v3M3.5 9h17M5.5 4.5h13a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2Z" /></svg>
@@ -77,13 +72,18 @@
                 <select id="sort-select" aria-label="文章排序方式">
                   <option value="newest">日期：新到舊</option>
                   <option value="oldest">日期：舊到新</option>
-                  <option value="category">依主題分類</option>
                 </select>
               </label>
             </div>
           </div>
 
-          <div class="filter-row" id="category-filters" aria-label="主題分類篩選"></div>
+          <div class="filter-row" id="category-filters" aria-label="文章篩選">
+            <button class="favorites-filter" id="favorites-filter" type="button" aria-pressed="false">
+              <span class="favorite-symbol" aria-hidden="true">☆</span>
+              我的收藏
+              <small id="favorites-count">0</small>
+            </button>
+          </div>
           <div class="results-meta">
             <p class="result-count" id="result-count" aria-live="polite"></p>
             <button class="clear-filters" id="clear-filters" type="button" hidden>清除篩選</button>
@@ -156,6 +156,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260816-4" defer></script>
+    <script src="./app.js?v=20260816-5" defer></script>
   </body>
 </html>

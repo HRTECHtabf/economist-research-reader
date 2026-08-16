@@ -32,7 +32,7 @@ const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";
 const ARTICLES_PER_PAGE = 5;
 const urlParams = new URLSearchParams(location.search);
 const initialPage = Number(urlParams.get("page"));
-const allowedSorts = new Set(["newest", "oldest", "category"]);
+const allowedSorts = new Set(["newest", "oldest"]);
 
 function loadFavorites() {
   try {
@@ -157,13 +157,14 @@ function setupFilters(data) {
   for (const category of ["全部", ...CATEGORY_ORDER]) {
     const button = document.createElement("button");
     button.type = "button";
+    button.className = "category-filter";
     const count = category === "全部" ? data.articles.length : counts.get(category) || 0;
     button.innerHTML = `<span>${category}</span><small>${count}</small>`;
     button.classList.toggle("active", category === state.category);
     button.addEventListener("click", () => {
       state.category = category;
       state.page = 1;
-      els.categoryFilters.querySelectorAll("button").forEach((item) => {
+      els.categoryFilters.querySelectorAll(".category-filter").forEach((item) => {
         item.classList.toggle("active", item === button);
       });
       render();
@@ -400,10 +401,6 @@ function renderCard(article) {
 
 function sortedArticles(articles) {
   return [...articles].sort((a, b) => {
-    if (state.sort === "category") {
-      const categoryDiff = CATEGORY_ORDER.indexOf(categoryFor(a)) - CATEGORY_ORDER.indexOf(categoryFor(b));
-      if (categoryDiff) return categoryDiff;
-    }
     const dateDiff = articleTimestamp(b) - articleTimestamp(a);
     return state.sort === "oldest" ? -dateDiff : dateDiff;
   });
@@ -519,7 +516,7 @@ els.clearFilters.addEventListener("click", () => {
   state.page = 1;
   els.searchInput.value = "";
   els.issueSelect.value = "全部";
-  els.categoryFilters.querySelectorAll("button").forEach((button, index) => {
+  els.categoryFilters.querySelectorAll(".category-filter").forEach((button, index) => {
     button.classList.toggle("active", index === 0);
   });
   render();
