@@ -62,6 +62,8 @@ const els = {
   favoritesFilter: document.querySelector("#favorites-filter"),
   favoritesCount: document.querySelector("#favorites-count"),
   categoryFilters: document.querySelector("#category-filters"),
+  toolbar: document.querySelector("#articles"),
+  backToFilters: document.querySelector("#back-to-filters"),
   resultCount: document.querySelector("#result-count"),
   clearFilters: document.querySelector("#clear-filters"),
   articleList: document.querySelector("#article-list"),
@@ -97,6 +99,19 @@ function saveFavorites() {
   } catch {
     // 收藏功能仍可在本次瀏覽使用；瀏覽器禁止儲存時不讓頁面中斷。
   }
+}
+
+function updateBackToFiltersVisibility() {
+  els.backToFilters.hidden = els.categoryFilters.getBoundingClientRect().bottom >= 84;
+}
+
+let backToFiltersFrame = null;
+function scheduleBackToFiltersUpdate() {
+  if (backToFiltersFrame !== null) return;
+  backToFiltersFrame = requestAnimationFrame(() => {
+    updateBackToFiltersVisibility();
+    backToFiltersFrame = null;
+  });
 }
 
 function updateFavoritesControl() {
@@ -508,6 +523,13 @@ els.favoritesFilter.addEventListener("click", () => {
   state.page = 1;
   render();
 });
+els.backToFilters.addEventListener("click", () => {
+  const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  els.toolbar.scrollIntoView({ behavior, block: "start" });
+});
+window.addEventListener("scroll", scheduleBackToFiltersUpdate, { passive: true });
+window.addEventListener("resize", scheduleBackToFiltersUpdate);
+updateBackToFiltersVisibility();
 els.clearFilters.addEventListener("click", () => {
   state.query = "";
   state.category = "全部";
