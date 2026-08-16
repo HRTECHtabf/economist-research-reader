@@ -24,41 +24,21 @@
           </span>
         </a>
         <nav aria-label="主要導覽">
-          <a href="#latest">最新一期</a>
           <a href="#articles">文章索引</a>
-          <a href="#about">關於本站</a>
         </nav>
       </div>
     </header>
 
     <main id="top">
-      <section class="hero" id="latest">
-        <div class="shell hero-grid">
+      <section class="hero">
+        <div class="shell">
           <div class="hero-copy">
             <p class="eyebrow">RESEARCH READING DESK · 研究摘要</p>
-            <h1>《經濟學人》文章索引<br />與中文摘要</h1>
+            <h1>《經濟學人》文章索引與中文摘要</h1>
             <p class="hero-lead">
               每週整理《經濟學人》文章，提供繁體中文摘要、三點論述重點與研究閱讀角度。
             </p>
-            <div class="hero-actions">
-              <a class="button primary" href="#articles">瀏覽本期文章</a>
-            </div>
           </div>
-
-          <aside class="issue-panel" aria-label="最新一期資訊">
-            <div class="issue-panel-top">
-              <span class="issue-kicker">LATEST ISSUE</span>
-              <span class="update-status">已更新</span>
-            </div>
-            <div class="issue-date" id="issue-date">載入中…</div>
-            <p class="updated-time">最近更新 <time id="site-updated">—</time></p>
-            <dl class="issue-stats">
-              <div><dt>本期文章</dt><dd id="article-count">—</dd></div>
-              <div><dt>中文摘要</dt><dd id="summary-count">—</dd></div>
-              <div><dt>主題分類</dt><dd id="category-count">6</dd></div>
-            </dl>
-            <p id="update-cadence">每週更新</p>
-          </aside>
         </div>
       </section>
 
@@ -84,6 +64,10 @@
                 我的收藏
                 <small id="favorites-count">0</small>
               </button>
+              <label class="issue-control">
+                <span>期數</span>
+                <select id="issue-select" aria-label="文章期數"></select>
+              </label>
               <label class="sort-control">
                 <span>排序</span>
                 <select id="sort-select" aria-label="文章排序方式">
@@ -101,6 +85,11 @@
             <button class="clear-filters" id="clear-filters" type="button" hidden>清除篩選</button>
           </div>
           <div class="article-list" id="article-list"></div>
+          <nav class="pagination" id="pagination" aria-label="文章分頁" hidden>
+            <button class="page-step" id="previous-page" type="button">← 上一頁</button>
+            <div class="page-numbers" id="page-numbers"></div>
+            <button class="page-step" id="next-page" type="button">下一頁 →</button>
+          </nav>
           <div class="empty-state" id="empty-state" hidden>
             <strong>找不到符合條件的文章</strong>
             <p>試著縮短搜尋文字，或切換其他主題。</p>
@@ -108,22 +97,6 @@
         </div>
       </section>
 
-      <section class="about-section" id="about">
-        <div class="shell about-grid">
-          <div>
-            <p class="eyebrow red">ABOUT THIS PROJECT</p>
-            <h2>讓研究閱讀更快進入重點。</h2>
-          </div>
-          <div class="about-copy">
-            <p>
-              本站按期整理文章，為每篇內容製作繁體中文摘要、論述重點與研究閱讀角度。分類採跨欄目的研究主題，避免原刊欄目過多而難以瀏覽。
-            </p>
-            <p>
-              中文內容用來協助初步判讀；涉及重要數字、政策與因果關係時，仍建議閱讀英文原文確認上下文。
-            </p>
-          </div>
-        </div>
-      </section>
     </main>
 
     <footer>
@@ -147,6 +120,7 @@
           </div>
           <h3 class="article-title"></h3>
           <p class="rubric"></p>
+          <p class="search-match-reasons" hidden></p>
           <div class="tags" aria-label="文章關鍵字"></div>
         </div>
 
@@ -160,10 +134,10 @@
               <h4>中文摘要</h4>
               <p class="summary"></p>
             </section>
-            <details>
-              <summary>研究閱讀角度</summary>
+            <section class="reading-section research-lens-section">
+              <h4>研究閱讀角度</h4>
               <p class="research-lens"></p>
-            </details>
+            </section>
             <details class="internal-english-block" hidden>
               <summary>內部核對：英文全文</summary>
               <div class="english-full-text"></div>

@@ -29,6 +29,10 @@ const SECTION_CATEGORIES = {
 };
 
 const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";
+const ARTICLES_PER_PAGE = 5;
+const urlParams = new URLSearchParams(location.search);
+const initialPage = Number(urlParams.get("page"));
+const allowedSorts = new Set(["newest", "oldest", "category"]);
 
 function loadFavorites() {
   try {
@@ -41,22 +45,19 @@ function loadFavorites() {
 
 const state = {
   data: null,
-  query: "",
-  category: "全部",
-  sort: "newest",
+  query: urlParams.get("q") || "",
+  category: urlParams.get("category") || "全部",
+  issue: urlParams.get("issue") || "全部",
+  sort: allowedSorts.has(urlParams.get("sort")) ? urlParams.get("sort") : "newest",
   favorites: loadFavorites(),
-  favoritesOnly: false,
+  favoritesOnly: urlParams.get("favorites") === "1",
+  page: Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1,
   internalTextById: new Map(),
 };
 
 const els = {
-  issueDate: document.querySelector("#issue-date"),
-  articleCount: document.querySelector("#article-count"),
-  summaryCount: document.querySelector("#summary-count"),
-  categoryCount: document.querySelector("#category-count"),
-  updateCadence: document.querySelector("#update-cadence"),
-  siteUpdated: document.querySelector("#site-updated"),
   searchInput: document.querySelector("#search-input"),
+  issueSelect: document.querySelector("#issue-select"),
   sortSelect: document.querySelector("#sort-select"),
   favoritesFilter: document.querySelector("#favorites-filter"),
   favoritesCount: document.querySelector("#favorites-count"),
@@ -64,6 +65,10 @@ const els = {
   resultCount: document.querySelector("#result-count"),
   clearFilters: document.querySelector("#clear-filters"),
   articleList: document.querySelector("#article-list"),
+  pagination: document.querySelector("#pagination"),
+  previousPage: document.querySelector("#previous-page"),
+  pageNumbers: document.querySelector("#page-numbers"),
+  nextPage: document.querySelector("#next-page"),
   emptyState: document.querySelector("#empty-state"),
   template: document.querySelector("#article-template"),
 };
@@ -74,6 +79,16 @@ function categoryFor(article) {
 
 function articleKey(article) {
   return `${article.issueKey || state.data?.issueKey || "unknown"}:${article.id}`;
+}
+
+function issueFor(article) {
+  return article.issueKey || state.data?.issueKey || "";
+}
+
+function formatIssueKey(issueKey) {
+  const match = issueKey.match(/^(\d{4})\.(\d{2})\.(\d{2})$/);
+  if (!match) return issueKey;
+  return `${Number(match[1])} 年 ${Number(match[2])} 月 ${Number(match[3])} 日`;
 }
 
 function saveFavorites() {
@@ -89,17 +104,6 @@ function updateFavoritesControl() {
   els.favoritesFilter.classList.toggle("active", state.favoritesOnly);
   els.favoritesFilter.setAttribute("aria-pressed", String(state.favoritesOnly));
   els.favoritesFilter.querySelector(".favorite-symbol").textContent = state.favoritesOnly ? "★" : "☆";
-}
-
-function formatIssueDate(value) {
-  const match = value?.match(/([A-Za-z]+)\s+(\d+)(?:st|nd|rd|th)\s+(\d{4})/);
-  if (!match) return value || "—";
-  const date = new Date(`${match[1]} ${match[2]}, ${match[3]} 12:00:00`);
-  return new Intl.DateTimeFormat("zh-TW", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
 }
 
 function publishedDateParts(article) {
@@ -142,24 +146,8 @@ function articleTimestamp(article) {
   return Date.parse(issueKey?.replaceAll(".", "-") || "") || 0;
 }
 
-function setupMeta(data) {
-  const currentIssueArticles = data.articles.filter(
-    (article) => !article.issueKey || article.issueKey === data.issueKey,
-  );
-  const currentSummaryCount = currentIssueArticles.filter((article) => article.summaryZh).length;
-  els.issueDate.textContent = formatIssueDate(data.issueDate);
-  els.articleCount.textContent = currentIssueArticles.length || data.articleCount;
-  els.summaryCount.textContent = `${currentSummaryCount}/${currentIssueArticles.length || data.articleCount}`;
-  els.categoryCount.textContent = CATEGORY_ORDER.length;
-  els.updateCadence.textContent = data.updateCadenceZh;
-  els.siteUpdated.textContent = new Intl.DateTimeFormat("zh-TW", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Taipei",
-  }).format(new Date(data.generatedAt || data.sourceUpdatedAt));
-}
-
 function setupFilters(data) {
+  if (!["全部", ...CATEGORY_ORDER].includes(state.category)) state.category = "全部";
   const counts = new Map(CATEGORY_ORDER.map((category) => [category, 0]));
   for (const article of data.articles) {
     const category = categoryFor(article);
@@ -174,6 +162,7 @@ function setupFilters(data) {
     button.classList.toggle("active", category === state.category);
     button.addEventListener("click", () => {
       state.category = category;
+      state.page = 1;
       els.categoryFilters.querySelectorAll("button").forEach((item) => {
         item.classList.toggle("active", item === button);
       });
@@ -183,21 +172,105 @@ function setupFilters(data) {
   }
 }
 
-function searchableText(article) {
+function setupIssueFilter(data) {
+  const issueCounts = new Map();
+  for (const article of data.articles) {
+    const issue = issueFor(article);
+    issueCounts.set(issue, (issueCounts.get(issue) || 0) + 1);
+  }
+  const issues = [...issueCounts.keys()].filter(Boolean).sort((a, b) => b.localeCompare(a));
+  if (state.issue !== "全部" && !issueCounts.has(state.issue)) state.issue = "全部";
+
+  const allOption = document.createElement("option");
+  allOption.value = "全部";
+  allOption.textContent = `全部期數（${data.articles.length}）`;
+  els.issueSelect.append(allOption);
+  for (const issue of issues) {
+    const option = document.createElement("option");
+    option.value = issue;
+    option.textContent = `${formatIssueKey(issue)}（${issueCounts.get(issue)}）`;
+    els.issueSelect.append(option);
+  }
+  els.issueSelect.value = state.issue;
+}
+
+function searchTerms(query) {
+  return query.trim().toLocaleLowerCase("zh-Hant").split(/\s+/).filter(Boolean);
+}
+
+function termMatchesText(text, term) {
+  const normalized = (text || "").toLocaleLowerCase("zh-Hant");
+  if (/^[a-z0-9]{1,3}$/.test(term)) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(normalized);
+  }
+  return normalized.includes(term);
+}
+
+function searchableFields(article) {
   return [
-    article.titleEn,
-    article.rubricEn,
-    article.section,
-    categoryFor(article),
-    article.summaryZh,
-    article.researchLensZh,
-    ...(article.keyPointsZh || []),
-    ...(article.keywordsZh || []),
-    ...(article.highlightTermsZh || []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase("zh-Hant");
+    { label: "英文標題／副標", text: [article.titleEn, article.rubricEn].filter(Boolean).join(" ") },
+    { label: "欄目／分類", text: [article.section, categoryFor(article)].filter(Boolean).join(" ") },
+    { label: "中文摘要", text: article.summaryZh || "" },
+    { label: "論述重點", text: (article.keyPointsZh || []).join(" ") },
+    { label: "研究角度", text: article.researchLensZh || "" },
+    { label: "關鍵字", text: [...(article.keywordsZh || []), ...(article.highlightTermsZh || [])].join(" ") },
+  ];
+}
+
+function matchesSearch(article, query) {
+  const fields = searchableFields(article);
+  return searchTerms(query).every((term) => fields.some((field) => termMatchesText(field.text, term)));
+}
+
+function searchMatchLabels(article) {
+  const terms = searchTerms(state.query);
+  return searchableFields(article)
+    .filter((field) => terms.some((term) => termMatchesText(field.text, term)))
+    .map((field) => field.label);
+}
+
+function searchMatchRanges(text) {
+  const normalizedText = text.toLocaleLowerCase("zh-Hant");
+  const ranges = [];
+  for (const term of searchTerms(state.query)) {
+    if (/^[a-z0-9]{1,3}$/.test(term)) {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`(^|[^a-z0-9])(${escaped})(?=[^a-z0-9]|$)`, "gi");
+      for (const match of normalizedText.matchAll(pattern)) {
+        ranges.push({ index: match.index + match[1].length, length: match[2].length });
+      }
+    } else {
+      let index = normalizedText.indexOf(term);
+      while (index >= 0) {
+        ranges.push({ index, length: term.length });
+        index = normalizedText.indexOf(term, index + term.length);
+      }
+    }
+  }
+  return ranges
+    .sort((a, b) => a.index - b.index || b.length - a.length)
+    .filter((range, index, all) => !all.slice(0, index).some(
+      (previous) => range.index < previous.index + previous.length,
+    ));
+}
+
+function appendSearchHighlightedText(element, text) {
+  const ranges = searchMatchRanges(text);
+  if (!ranges.length) {
+    element.textContent = text;
+    return;
+  }
+  let cursor = 0;
+  for (const { index, length } of ranges) {
+    if (index > cursor) element.append(document.createTextNode(text.slice(cursor, index)));
+    const mark = document.createElement("mark");
+    mark.className = "search-highlight";
+    mark.textContent = text.slice(index, index + length);
+    element.append(mark);
+    cursor = index + length;
+  }
+  if (cursor < text.length) element.append(document.createTextNode(text.slice(cursor)));
 }
 
 function highlightTermsFor(article) {
@@ -261,11 +334,20 @@ function renderCard(article) {
       String(publishedParts.day).padStart(2, "0"),
     ].join("-");
   }
-  fragment.querySelector(".article-title").textContent = article.titleEn;
+  const articleTitle = fragment.querySelector(".article-title");
+  if (state.query) appendSearchHighlightedText(articleTitle, article.titleEn);
+  else articleTitle.textContent = article.titleEn;
 
   const rubric = fragment.querySelector(".rubric");
-  rubric.textContent = article.rubricEn || "";
+  if (state.query) appendSearchHighlightedText(rubric, article.rubricEn || "");
+  else rubric.textContent = article.rubricEn || "";
   rubric.hidden = !article.rubricEn;
+
+  const matchReasons = fragment.querySelector(".search-match-reasons");
+  if (state.query) {
+    matchReasons.textContent = `命中：${searchMatchLabels(article).join("、")}`;
+    matchReasons.hidden = false;
+  }
 
   const summaryBlock = fragment.querySelector(".summary-block");
   const pendingBlock = fragment.querySelector(".pending-block");
@@ -277,15 +359,16 @@ function renderCard(article) {
     const list = fragment.querySelector(".key-points");
     for (const point of article.keyPointsZh || []) {
       const li = document.createElement("li");
-      li.textContent = point;
+      if (state.query) appendSearchHighlightedText(li, point);
+      else li.textContent = point;
       list.append(li);
     }
-    appendHighlightedText(
-      fragment.querySelector(".summary"),
-      article.summaryZh,
-      highlightTermsFor(article),
-    );
-    fragment.querySelector(".research-lens").textContent = article.researchLensZh || "";
+    const summary = fragment.querySelector(".summary");
+    if (state.query) appendSearchHighlightedText(summary, article.summaryZh);
+    else appendHighlightedText(summary, article.summaryZh, highlightTermsFor(article));
+    const researchLens = fragment.querySelector(".research-lens");
+    if (state.query) appendSearchHighlightedText(researchLens, article.researchLensZh || "");
+    else researchLens.textContent = article.researchLensZh || "";
   }
 
   const tags = fragment.querySelector(".tags");
@@ -325,18 +408,74 @@ function sortedArticles(articles) {
   });
 }
 
+function syncUrl() {
+  const params = new URLSearchParams();
+  if (state.query) params.set("q", state.query);
+  if (state.category !== "全部") params.set("category", state.category);
+  if (state.issue !== "全部") params.set("issue", state.issue);
+  if (state.sort !== "newest") params.set("sort", state.sort);
+  if (state.favoritesOnly) params.set("favorites", "1");
+  if (state.page > 1) params.set("page", state.page);
+  const queryString = params.toString();
+  history.replaceState(null, "", `${location.pathname}${queryString ? `?${queryString}` : ""}${location.hash}`);
+}
+
+function goToPage(page) {
+  state.page = page;
+  render();
+  document.querySelector("#articles").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderPagination(pageCount) {
+  els.pagination.hidden = pageCount <= 1;
+  els.previousPage.disabled = state.page === 1;
+  els.nextPage.disabled = state.page === pageCount;
+  els.pageNumbers.replaceChildren();
+
+  const visiblePages = new Set([1, pageCount, state.page - 1, state.page, state.page + 1]);
+  let previousVisiblePage = 0;
+  for (const page of [...visiblePages].filter((page) => page >= 1 && page <= pageCount).sort((a, b) => a - b)) {
+    if (page - previousVisiblePage > 1) {
+      const gap = document.createElement("span");
+      gap.className = "page-gap";
+      gap.textContent = "…";
+      gap.setAttribute("aria-hidden", "true");
+      els.pageNumbers.append(gap);
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = page;
+    button.className = "page-number";
+    button.classList.toggle("active", page === state.page);
+    if (page === state.page) button.setAttribute("aria-current", "page");
+    button.setAttribute("aria-label", `第 ${page} 頁`);
+    button.addEventListener("click", () => goToPage(page));
+    els.pageNumbers.append(button);
+    previousVisiblePage = page;
+  }
+}
+
 function render() {
   const normalizedQuery = state.query.trim().toLocaleLowerCase("zh-Hant");
   const filtered = sortedArticles(state.data.articles.filter((article) => {
     if (state.category !== "全部" && categoryFor(article) !== state.category) return false;
+    if (state.issue !== "全部" && issueFor(article) !== state.issue) return false;
     if (state.favoritesOnly && !state.favorites.has(articleKey(article))) return false;
-    if (normalizedQuery && !searchableText(article).includes(normalizedQuery)) return false;
+    if (normalizedQuery && !matchesSearch(article, normalizedQuery)) return false;
     return true;
   }));
 
-  els.articleList.replaceChildren(...filtered.map(renderCard));
-  els.resultCount.textContent = `顯示 ${filtered.length} 篇文章，共 ${state.data.articles.length} 篇`;
-  els.clearFilters.hidden = !state.query && state.category === "全部" && !state.favoritesOnly;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / ARTICLES_PER_PAGE));
+  state.page = Math.min(state.page, pageCount);
+  const pageStart = (state.page - 1) * ARTICLES_PER_PAGE;
+  const visibleArticles = filtered.slice(pageStart, pageStart + ARTICLES_PER_PAGE);
+
+  els.articleList.replaceChildren(...visibleArticles.map(renderCard));
+  const rangeStart = filtered.length ? pageStart + 1 : 0;
+  const rangeEnd = pageStart + visibleArticles.length;
+  els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）`;
+  renderPagination(pageCount);
+  els.clearFilters.hidden = !state.query && state.category === "全部" && state.issue === "全部" && !state.favoritesOnly;
   els.emptyState.hidden = filtered.length > 0;
   const emptyTitle = els.emptyState.querySelector("strong");
   const emptyHint = els.emptyState.querySelector("p");
@@ -348,30 +487,44 @@ function render() {
     emptyHint.textContent = "試著縮短搜尋文字，或切換其他主題。";
   }
   updateFavoritesControl();
+  syncUrl();
 }
 
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
+  state.page = 1;
   render();
 });
 els.sortSelect.addEventListener("change", (event) => {
   state.sort = event.target.value;
+  state.page = 1;
+  render();
+});
+els.issueSelect.addEventListener("change", (event) => {
+  state.issue = event.target.value;
+  state.page = 1;
   render();
 });
 els.favoritesFilter.addEventListener("click", () => {
   state.favoritesOnly = !state.favoritesOnly;
+  state.page = 1;
   render();
 });
 els.clearFilters.addEventListener("click", () => {
   state.query = "";
   state.category = "全部";
+  state.issue = "全部";
   state.favoritesOnly = false;
+  state.page = 1;
   els.searchInput.value = "";
+  els.issueSelect.value = "全部";
   els.categoryFilters.querySelectorAll("button").forEach((button, index) => {
     button.classList.toggle("active", index === 0);
   });
   render();
 });
+els.previousPage.addEventListener("click", () => goToPage(state.page - 1));
+els.nextPage.addEventListener("click", () => goToPage(state.page + 1));
 
 async function loadInternalEnglishText() {
   if (!["localhost", "127.0.0.1"].includes(location.hostname)) return;
@@ -394,8 +547,10 @@ fetch("./data/articles.json")
   })
   .then(async (data) => {
     state.data = data;
-    setupMeta(data);
+    els.searchInput.value = state.query;
+    els.sortSelect.value = state.sort;
     setupFilters(data);
+    setupIssueFilter(data);
     await loadInternalEnglishText();
     render();
   })
