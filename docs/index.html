@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-7" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-8" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -25,6 +25,8 @@
         </a>
         <nav aria-label="主要導覽">
           <a href="#articles">文章索引</a>
+          <a href="./trends.html">趨勢儀表板</a>
+          <button class="tour-launch" id="tour-launch" type="button">功能導覽</button>
         </nav>
       </div>
     </header>
@@ -52,17 +54,18 @@
             <p>從主題、日期或關鍵字開始，搜尋中英文內容。先讀中文摘要掌握脈絡，再查看論述重點、研究角度與中英文全文。</p>
           </div>
 
-          <div class="toolbar" id="articles">
+          <div class="toolbar" id="articles" data-tour="search">
             <div class="search-box">
               <label class="sr-only" for="search-input">搜尋文章</label>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
               <input id="search-input" type="search" placeholder="搜尋英文全文、中文摘要或關鍵字…" />
               <button class="search-clear" id="clear-search" type="button" hidden>清除搜尋</button>
             </div>
-            <div class="quick-tags" aria-label="快速搜尋標籤">
+            <div class="quick-tags" aria-label="快速搜尋標籤" data-tour="tags">
               <span class="quick-tags-label">標籤搜尋（可複選）</span>
               <div class="quick-tags-list" id="quick-tags-list"></div>
               <button class="manage-tags-button" id="manage-tags-button" type="button">＋ 管理我的標籤</button>
+              <a class="all-tags-link" href="./trends.html#tag-catalogue">查看全部標籤與趨勢 →</a>
             </div>
             <div class="toolbar-actions">
               <label class="select-control issue-control">
@@ -83,7 +86,7 @@
             </div>
           </div>
 
-          <div class="filter-row" id="category-filters" aria-label="文章篩選">
+          <div class="filter-row" id="category-filters" aria-label="文章篩選" data-tour="filters">
             <button class="favorites-filter" id="favorites-filter" type="button" aria-pressed="false">
               <span class="favorite-symbol" aria-hidden="true">☆</span>
               我的收藏
@@ -122,7 +125,7 @@
     </button>
 
     <template id="article-template">
-      <article class="article-card">
+      <article class="article-card" data-tour="article">
         <div class="card-intro">
           <button class="favorite-button" type="button" aria-pressed="false" title="加入收藏">
             <span aria-hidden="true">☆</span>
@@ -137,8 +140,8 @@
           <p class="rubric"></p>
           <p class="search-match-reasons" hidden></p>
           <a class="source-link" target="_blank" rel="noreferrer">前往《經濟學人》原站 <span>↗</span></a>
-          <div class="tags" aria-label="文章關鍵字"></div>
-          <nav class="reading-modes" aria-label="文章閱讀模式">
+          <div class="tags" aria-label="文章關鍵字" data-tour="article-tags"></div>
+          <nav class="reading-modes" aria-label="文章閱讀模式" data-tour="reading-modes">
             <span class="sidebar-label">閱讀模式</span>
             <button class="reading-mode active" type="button" data-mode="guide" aria-pressed="true">
               <span>中文導讀</span><small>摘要與重點</small>
@@ -150,7 +153,7 @@
               <span>英文全文</span><small>留意版權問題</small>
             </button>
           </nav>
-          <section class="note-index" aria-label="我的筆記">
+          <section class="note-index" aria-label="我的筆記" data-tour="notes">
             <div class="note-index-heading">
               <span class="sidebar-label">我的筆記</span>
               <small class="note-count">0</small>
@@ -240,6 +243,22 @@
       <p class="tag-storage-hint">登入同步接上前，自訂標籤會先保存在這台裝置。</p>
     </dialog>
 
-    <script src="./app.js?v=20260817-10" defer></script>
+    <div class="feature-tour" id="feature-tour" hidden>
+      <div class="tour-spotlight" id="tour-spotlight" aria-hidden="true"></div>
+      <section class="tour-panel" id="tour-panel" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-description">
+        <div class="tour-panel-heading">
+          <span class="tour-progress" id="tour-progress"></span>
+          <button class="tour-close" id="tour-close" type="button" aria-label="關閉功能導覽">×</button>
+        </div>
+        <h2 id="tour-title"></h2>
+        <p id="tour-description"></p>
+        <div class="tour-actions">
+          <button class="tour-previous" id="tour-previous" type="button">← 上一步</button>
+          <button class="tour-next" id="tour-next" type="button">下一步 →</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="./app.js?v=20260817-12" defer></script>
   </body>
 </html>
