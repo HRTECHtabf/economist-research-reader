@@ -241,9 +241,7 @@ function notesForArticle(key) {
 }
 
 function noteLanguageLabel(note) {
-  const paragraph = note.contextId.match(/:p(\d+)$/)?.[1];
-  const language = note.contextId.startsWith("en:") ? "EN" : "中";
-  return paragraph ? `${language} · ${paragraph}` : language;
+  return note.contextId.startsWith("en:") ? "EN" : "中文";
 }
 
 function noteMode(note) {
@@ -545,11 +543,12 @@ async function focusNote(note) {
     render();
   }
   requestAnimationFrame(() => {
-    const target = document.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`);
+    const highlight = document.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`);
+    const paragraphSelector = `[data-article-key="${CSS.escape(note.articleKey)}"][data-context-id="${CSS.escape(note.contextId)}"]`;
+    const target = highlight || document.querySelector(paragraphSelector);
     target?.scrollIntoView({ behavior: "auto", block: "center" });
     target?.classList.add("note-flash");
     setTimeout(() => target?.classList.remove("note-flash"), 1300);
-    openNoteEditor(note, target?.getBoundingClientRect());
   });
 }
 
