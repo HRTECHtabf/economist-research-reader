@@ -2,7 +2,7 @@ const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLAYBACK_DELAY = 2000;
 const GRAPH_WIDTH = 1000;
-const GRAPH_HEIGHT = 640;
+const GRAPH_HEIGHT = 760;
 const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const TOUR_STEPS = [
   {
@@ -893,9 +893,9 @@ function layoutGraph(nodes, edges) {
   const maxCount = Math.max(1, ...nodes.map((node) => node.count));
   const centers = COMMUNITY_NAMES.map((_, index) => {
     const angle = -Math.PI / 2 + (index / COMMUNITY_NAMES.length) * Math.PI * 2;
-    return { x: 500 + Math.cos(angle) * 300, y: 320 + Math.sin(angle) * 190 };
+    return { x: 500 + Math.cos(angle) * 320, y: 380 + Math.sin(angle) * 225 };
   });
-  const focusCenter = { x: 500, y: 320 };
+  const focusCenter = { x: 500, y: 380 };
   nodes.forEach((node, index) => {
     node.radius = node.compound ? 38 : node.selected ? 42 : 19 + Math.sqrt(node.count / maxCount) * 19;
     const center = centers[node.community] || centers[0];
@@ -905,10 +905,10 @@ function layoutGraph(nodes, edges) {
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
     node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 18;
-    if (node.id === "focus") { node.x = 500; node.y = 320; }
-    if (node.id === "focus-a") { node.x = 350; node.y = 185; }
-    if (node.id === "focus-b") { node.x = 650; node.y = 185; }
-    if (node.id === "compound") { node.x = 500; node.y = 330; }
+    if (node.id === "focus") { node.x = 500; node.y = 380; }
+    if (node.id === "focus-a") { node.x = 350; node.y = 235; }
+    if (node.id === "focus-b") { node.x = 650; node.y = 235; }
+    if (node.id === "compound") { node.x = 500; node.y = 405; }
     if (node.fixed) node.z = 110;
     node.layoutIndex = index;
   });
