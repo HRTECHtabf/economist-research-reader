@@ -105,6 +105,7 @@ const state = {
 
 const els = {
   searchInput: document.querySelector("#search-input"),
+  clearSearch: document.querySelector("#clear-search"),
   issueSelect: document.querySelector("#issue-select"),
   sortSelect: document.querySelector("#sort-select"),
   favoritesFilter: document.querySelector("#favorites-filter"),
@@ -1018,6 +1019,7 @@ function render() {
   const rangeEnd = pageStart + visibleArticles.length;
   els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）`;
   renderPagination(pageCount);
+  els.clearSearch.hidden = !state.query;
   els.clearFilters.hidden = !state.query && state.category === "全部" && state.issue === "全部" && !state.favoritesOnly;
   els.emptyState.hidden = filtered.length > 0;
   const emptyTitle = els.emptyState.querySelector("strong");
@@ -1055,6 +1057,13 @@ els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   state.page = 1;
   render();
+});
+els.clearSearch.addEventListener("click", () => {
+  state.query = "";
+  state.page = 1;
+  els.searchInput.value = "";
+  render();
+  els.searchInput.focus();
 });
 els.sortSelect.addEventListener("change", (event) => {
   state.sort = event.target.value;

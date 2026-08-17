@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-4" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-5" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -53,11 +53,12 @@
           </div>
 
           <div class="toolbar" id="articles">
-            <label class="search-box">
-              <span class="sr-only">搜尋文章</span>
+            <div class="search-box">
+              <label class="sr-only" for="search-input">搜尋文章</label>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
               <input id="search-input" type="search" placeholder="搜尋英文全文、中文摘要或關鍵字…" />
-            </label>
+              <button class="search-clear" id="clear-search" type="button" hidden>清除搜尋</button>
+            </div>
             <div class="quick-tags" aria-label="快速搜尋標籤">
               <span class="quick-tags-label">快速搜尋</span>
               <div class="quick-tags-list" id="quick-tags-list"></div>
@@ -146,7 +147,7 @@
               <span>中文全文</span><small>AI 輔助翻譯</small>
             </button>
             <button class="reading-mode" type="button" data-mode="en" aria-pressed="false">
-              <span>English</span><small>英文全文</small>
+              <span>英文全文</span><small>留意版權問題</small>
             </button>
           </nav>
           <section class="note-index" aria-label="我的筆記">
@@ -239,6 +240,6 @@
       <p class="tag-storage-hint">登入同步接上前，自訂標籤會先保存在這台裝置。</p>
     </dialog>
 
-    <script src="./app.js?v=20260817-7" defer></script>
+    <script src="./app.js?v=20260817-8" defer></script>
   </body>
 </html>
