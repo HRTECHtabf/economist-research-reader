@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="依《經濟學人》期數探索研究摘要的關鍵字趨勢、主題關聯與完整標籤索引。" />
+    <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-8" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-6" />
+  </head>
+  <body>
+    <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="./index.html" aria-label="回到文章索引">
+          <span class="brand-mark">ER</span>
+          <span><strong>《經濟學人》中文研究摘要</strong><small>Economist Research Reader</small></span>
+        </a>
+        <nav aria-label="主要導覽">
+          <a href="./index.html#articles">文章索引</a>
+          <a class="active" href="#dashboard" aria-current="page">趨勢儀表板</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="dashboard">
+      <section class="trend-hero">
+        <div class="shell trend-hero-grid">
+          <div><p class="eyebrow">RESEARCH SIGNALS · 趨勢觀測</p><h1>關鍵字趨勢儀表板</h1></div>
+          <p>先選期數，再看當期最強關聯；也可選一至兩個 tag 深入追蹤共同脈絡。切換期數後，所有結果都會重新計算。</p>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="shell">
+          <section class="trend-controls" id="trend-controls" aria-labelledby="issue-picker-title">
+            <div class="trend-control-heading">
+              <span class="eyebrow red">ISSUE</span><strong id="issue-picker-title">選擇觀測期數</strong><small id="data-range-label">資料載入中…</small>
+            </div>
+            <div class="issue-picker" id="issue-picker" role="group" aria-label="選擇資料期數"></div>
+          </section>
+
+          <section class="dashboard-card tag-overview-card" aria-labelledby="tag-overview-title">
+            <div class="card-heading tag-overview-heading">
+              <div><p class="eyebrow red">ALL TAGS</p><h2 id="tag-overview-title">全部 tag</h2></div>
+              <p>所有 tag 直接列在這裡。點一個查看它的關聯圈；再點一個，便會從兩者的共同文章找出第三層關聯。</p>
+            </div>
+            <div class="focus-strip">
+              <div><small>分析焦點（最多兩個；排名會顯示第三層 tag）</small><div class="selected-tag-list" id="selected-tag-list"><span>尚未選擇，顯示全站最強關聯</span></div></div>
+              <button id="clear-focus" type="button" hidden>清除選擇</button>
+            </div>
+            <div class="tag-overview-tools">
+              <label><span class="sr-only">搜尋全部 tag</span><input id="tag-overview-search" type="search" placeholder="搜尋 tag 名稱…" /></label>
+              <label><span class="sr-only">全部 tag 排序方式</span><select id="tag-overview-sort"><option value="count">依文章數</option><option value="trend">依近期變化</option><option value="name">依名稱</option></select></label>
+              <p id="tag-overview-count"></p>
+            </div>
+            <div class="tag-overview-grid" id="tag-overview-grid"></div>
+          </section>
+
+          <div class="signal-cards" id="signal-cards" aria-live="polite"></div>
+
+          <section class="dashboard-card relationship-card" aria-labelledby="relationship-title">
+            <div class="card-heading relationship-heading">
+              <div><p class="eyebrow red">ASSOCIATION MAP</p><h2 id="relationship-title">全站最強關聯</h2></div>
+              <div><span class="analysis-mode" id="analysis-mode">全局模式</span><p id="relationship-description">以標準化關聯分數找出比隨機情況更常一起出現的 tag，並對少量樣本保守降權。</p></div>
+            </div>
+            <div class="relationship-layout">
+              <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 關聯網絡圖"></div>
+              <div class="relationship-ranking">
+                <div class="ranking-heading"><strong id="ranking-title">關聯排名</strong><small>強度 0–100</small></div>
+                <div class="relationship-list" id="relationship-list"></div>
+              </div>
+            </div>
+            <p class="relationship-method">關聯分數以 NPMI 衡量共同出現是否高於隨機預期，再依共同文章數收縮；「低樣本」結果請搭配原文判讀。</p>
+          </section>
+
+          <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
+            <div class="card-heading">
+              <div><p class="eyebrow red">KEYWORD CLOUD</p><h2 id="cloud-title">時間性關鍵字雲</h2></div>
+              <p>越常出現的 tag 越靠近中心、字體越大；顏色表示相較前一期的升降。游標靠近時文字會產生磁性移動。</p>
+            </div>
+            <div class="cloud-legend" aria-label="關鍵字雲圖例">
+              <span><i class="trend-down-extreme"></i>急降</span><span><i class="trend-down-strong"></i>明顯降溫</span><span><i class="trend-down"></i>小幅降溫</span><span><i class="trend-flat"></i>持平</span><span><i class="trend-up"></i>小幅升溫</span><span><i class="trend-up-strong"></i>明顯升溫</span><span><i class="trend-up-extreme"></i>急升</span><small>字體大小與中心距離＝文章占比</small>
+            </div>
+            <div class="keyword-cloud" id="keyword-cloud" aria-label="互動式關鍵字雲"></div>
+          </section>
+
+          <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
+            <div class="card-heading catalogue-heading">
+              <div><p class="eyebrow red">TAG TREND</p><h2 id="catalogue-title">單一 tag 趨勢</h2></div>
+              <p>一次只看一個 tag，按各期文章占比比較變化；選取單一期時，該期會以紅框標示。</p>
+            </div>
+            <div class="catalogue-tools">
+              <label><span>選擇 tag</span><select id="detail-tag-select" aria-label="選擇要查看趨勢的 tag"></select></label>
+              <a id="detail-article-link" href="./index.html#articles">查看這個 tag 的文章 →</a>
+            </div>
+            <div class="tag-detail-summary" id="tag-detail-summary" aria-live="polite"></div>
+            <div class="tag-detail-chart" id="tag-detail-chart" role="img" aria-label="單一 tag 各期趨勢圖"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
+    <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
+    <script src="./trends.js?v=20260817-6" defer></script>
+  </body>
+</html>

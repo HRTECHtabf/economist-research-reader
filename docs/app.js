@@ -33,6 +33,43 @@ const NOTES_STORAGE_KEY = "economist-research-reader:notes:v1";
 const SAVED_TAGS_STORAGE_KEY = "economist-research-reader:saved-search-tags:v1";
 const COMMON_SEARCH_TAGS = ["人工智慧", "金融市場", "貨幣政策", "能源市場", "中國", "國際貿易"];
 const ARTICLES_PER_PAGE = 5;
+const TOUR_STEPS = [
+  {
+    selector: '[data-tour="search"]',
+    title: "從搜尋開始",
+    description: "輸入中英文關鍵字，會同時搜尋標題、全文、中文摘要、研究角度與文章標籤。",
+  },
+  {
+    selector: '[data-tour="tags"]',
+    title: "組合多個標籤",
+    description: "點選常用或自訂標籤可複選；系統會優先列出同時命中較多標籤的文章。也可前往趨勢儀表板瀏覽完整標籤。",
+  },
+  {
+    selector: '[data-tour="filters"]',
+    title: "縮小研究範圍",
+    description: "依主題分類、期數或收藏狀態篩選文章，適合先圈定研究範圍再閱讀。",
+  },
+  {
+    selector: '[data-tour="article"]',
+    title: "一張卡片，一篇文章",
+    description: "左側是文章資訊與閱讀工具，右側是中文導讀。每頁顯示五篇，閱讀時不會被過多內容淹沒。",
+  },
+  {
+    selector: '[data-tour="article-tags"]',
+    title: "從文章延伸主題",
+    description: "文章標籤都能直接點選；點一下加入搜尋，再點一次移除，方便沿著主題探索相關文章。",
+  },
+  {
+    selector: '[data-tour="reading-modes"]',
+    title: "切換三種閱讀模式",
+    description: "可在中文導讀、AI 輔助翻譯的中文全文與英文全文之間切換，研究引用仍建議回到英文原文核對。",
+  },
+  {
+    selector: '[data-tour="notes"]',
+    title: "留下私人筆記",
+    description: "在中英文全文選取文字即可新增筆記。之後可從這裡快速回到做過標記的段落。",
+  },
+];
 const urlParams = new URLSearchParams(location.search);
 const initialPage = Number(urlParams.get("page"));
 const allowedSorts = new Set(["newest", "oldest"]);
@@ -87,6 +124,7 @@ function loadSavedTags() {
 
 const state = {
   data: null,
+  keywordSet: new Set(),
   query: urlParams.get("q") || "",
   selectedTags: initialSelectedTags,
   category: urlParams.get("category") || "全部",
@@ -143,7 +181,19 @@ const els = {
   tagManagerForm: document.querySelector("#tag-manager-form"),
   tagQueryInput: document.querySelector("#tag-query-input"),
   savedTagsList: document.querySelector("#saved-tags-list"),
+  tourLaunch: document.querySelector("#tour-launch"),
+  featureTour: document.querySelector("#feature-tour"),
+  tourSpotlight: document.querySelector("#tour-spotlight"),
+  tourPanel: document.querySelector("#tour-panel"),
+  tourProgress: document.querySelector("#tour-progress"),
+  tourTitle: document.querySelector("#tour-title"),
+  tourDescription: document.querySelector("#tour-description"),
+  tourPrevious: document.querySelector("#tour-previous"),
+  tourNext: document.querySelector("#tour-next"),
+  tourClose: document.querySelector("#tour-close"),
 };
+
+let tourStepIndex = -1;
 
 function categoryFor(article) {
   return article.categoryZh || SECTION_CATEGORIES[article.section] || "其他";
@@ -726,7 +776,10 @@ function matchesSearch(article, query) {
 }
 
 function matchingSelectedTags(article) {
-  return [...state.selectedTags].filter((tag) => matchesSearch(article, tag));
+  return [...state.selectedTags].filter((tag) => {
+    if (state.keywordSet.has(tag)) return (article.keywordsZh || []).includes(tag);
+    return matchesSearch(article, tag);
+  });
 }
 
 function selectedTagMatchCount(article) {
@@ -1097,6 +1150,72 @@ function renderPreservingViewport(viewport, readingPosition = null) {
   });
 }
 
+function positionTourStep() {
+  if (tourStepIndex < 0 || els.featureTour.hidden) return;
+  const step = TOUR_STEPS[tourStepIndex];
+  const target = document.querySelector(step.selector);
+  if (!target) return;
+  const padding = 7;
+  const rect = target.getBoundingClientRect();
+  const left = Math.max(padding, rect.left - padding);
+  const top = Math.max(padding, rect.top - padding);
+  const right = Math.min(innerWidth - padding, rect.right + padding);
+  const bottom = Math.min(innerHeight - padding, rect.bottom + padding);
+  Object.assign(els.tourSpotlight.style, {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${Math.max(12, right - left)}px`,
+    height: `${Math.max(12, bottom - top)}px`,
+  });
+
+  if (innerWidth <= 560) return;
+  const panelWidth = Math.min(360, innerWidth - 24);
+  const panelHeight = els.tourPanel.offsetHeight;
+  const gap = 18;
+  let panelLeft = Math.max(12, Math.min(innerWidth - panelWidth - 12, left));
+  let panelTop = bottom + gap;
+  if (panelTop + panelHeight > innerHeight - 12) panelTop = top - panelHeight - gap;
+  if (panelTop < 12) {
+    panelTop = Math.max(12, Math.min(innerHeight - panelHeight - 12, top));
+    panelLeft = right + gap;
+    if (panelLeft + panelWidth > innerWidth - 12) panelLeft = left - panelWidth - gap;
+    panelLeft = Math.max(12, Math.min(innerWidth - panelWidth - 12, panelLeft));
+  }
+  els.tourPanel.style.left = `${panelLeft}px`;
+  els.tourPanel.style.top = `${panelTop}px`;
+}
+
+function showTourStep(index) {
+  const boundedIndex = Math.max(0, Math.min(TOUR_STEPS.length - 1, index));
+  const step = TOUR_STEPS[boundedIndex];
+  const target = document.querySelector(step.selector);
+  if (!target) return;
+  tourStepIndex = boundedIndex;
+  els.featureTour.hidden = false;
+  document.body.classList.add("tour-open");
+  els.tourProgress.textContent = `功能導覽 ${boundedIndex + 1} / ${TOUR_STEPS.length}`;
+  els.tourTitle.textContent = step.title;
+  els.tourDescription.textContent = step.description;
+  els.tourPrevious.disabled = boundedIndex === 0;
+  els.tourNext.textContent = boundedIndex === TOUR_STEPS.length - 1 ? "完成" : "下一步 →";
+  target.scrollIntoView({
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+  });
+  requestAnimationFrame(() => {
+    positionTourStep();
+    setTimeout(positionTourStep, 260);
+    els.tourNext.focus({ preventScroll: true });
+  });
+}
+
+function closeFeatureTour() {
+  tourStepIndex = -1;
+  els.featureTour.hidden = true;
+  document.body.classList.remove("tour-open");
+  els.tourLaunch.focus({ preventScroll: true });
+}
+
 els.searchInput.addEventListener("input", (event) => {
   state.query = event.target.value;
   state.page = 1;
@@ -1183,9 +1302,21 @@ els.tagManagerForm.addEventListener("submit", (event) => {
   renderSavedTags();
   renderQuickTags();
 });
+els.tourLaunch.addEventListener("click", () => showTourStep(0));
+els.tourClose.addEventListener("click", closeFeatureTour);
+els.tourPrevious.addEventListener("click", () => showTourStep(tourStepIndex - 1));
+els.tourNext.addEventListener("click", () => {
+  if (tourStepIndex >= TOUR_STEPS.length - 1) closeFeatureTour();
+  else showTourStep(tourStepIndex + 1);
+});
+els.featureTour.addEventListener("click", (event) => {
+  if (event.target === els.featureTour) closeFeatureTour();
+});
+window.addEventListener("resize", positionTourStep);
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  if (els.noteDrawer.classList.contains("open")) closeNoteEditor();
+  if (!els.featureTour.hidden) closeFeatureTour();
+  else if (els.noteDrawer.classList.contains("open")) closeNoteEditor();
   else hideSelectionToolbar();
 });
 document.addEventListener("pointerdown", (event) => {
@@ -1222,6 +1353,7 @@ fetch("./data/articles.json", { cache: "no-store" })
   })
   .then(async (data) => {
     state.data = data;
+    state.keywordSet = new Set(data.articles.flatMap((article) => article.keywordsZh || []));
     els.searchInput.value = state.query;
     els.sortSelect.value = state.sort;
     setupFilters(data);
