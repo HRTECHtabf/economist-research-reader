@@ -47,7 +47,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="trends"]',
     title: "前往趨勢儀表板",
-    description: "趨勢儀表板會按期播放關鍵字雲與熱門 tag 排名；每一期都是獨立資料，不使用移動平均。關聯圖有自己的固定分析期數，不會跟著播放跳動。",
+    description: "趨勢儀表板的各區塊可獨立選期；只有熱門 tag 每 2 秒輪播，關鍵字雲與關聯圖固定在各自選定的期數。關聯空間圖可按住拖曳，水平旋轉一整圈。",
   },
   {
     selector: '[data-tour="filters"]',

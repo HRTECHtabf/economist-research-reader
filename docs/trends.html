@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-11" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-12" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -28,31 +28,16 @@
       <section class="trend-hero">
         <div class="shell trend-hero-grid">
           <div><p class="eyebrow">RESEARCH SIGNALS · 趨勢觀測</p><h1>關鍵字趨勢儀表板</h1></div>
-          <p>未指定期數時，儀表板會從最早一期自動播放到最新一期；也可停在特定期數，或選一至兩個 tag 深入追蹤共同脈絡。</p>
+          <p>各分析區塊可獨立選擇期數；熱門 tag 會快速輪播，也可隨時停下來逐期查看。</p>
         </div>
       </section>
 
       <section class="dashboard-section">
         <div class="shell">
-          <section class="trend-controls" id="trend-controls" aria-labelledby="issue-picker-title">
-            <div class="trend-control-heading">
-              <span class="eyebrow red">ISSUE PLAYER</span><strong id="issue-picker-title">期數動態播放</strong><small id="data-range-label">資料載入中…</small>
-              <div class="playback-controls">
-                <button class="playback-toggle" id="playback-toggle" type="button" aria-pressed="true">暫停播放</button>
-                <span class="playback-status" id="playback-status" aria-live="polite"></span>
-              </div>
-              <span class="playback-meter" aria-hidden="true"><i id="playback-progress"></i></span>
-            </div>
-            <div class="period-stage">
-              <div class="current-period" aria-live="polite"><span>目前顯示</span><strong id="current-period-title">載入中…</strong><small id="current-period-range"></small></div>
-              <div class="issue-picker" id="issue-picker" role="group" aria-label="選擇資料期數"></div>
-            </div>
-          </section>
-
           <section class="dashboard-card tag-overview-card" aria-labelledby="tag-overview-title">
             <div class="card-heading tag-overview-heading">
               <div><p class="eyebrow red">ALL TAGS</p><h2 id="tag-overview-title">全部 tag</h2></div>
-              <p>所有 tag 直接列在這裡。點一個查看它的關聯圈；再點一個，便會從兩者的共同文章找出第三層關聯。自動播放時，篇數會跟著期數更新。</p>
+              <div><p>所有 tag 直接列在這裡。這個區塊有自己的期數，不會被其他圖表影響。</p><label class="module-period-control"><span>全部 tag 期數</span><select id="overview-issue" aria-label="選擇全部 tag 統計期數"></select></label></div>
             </div>
             <div class="focus-strip">
               <div><small>分析焦點（最多兩個；排名會顯示第三層 tag）</small><div class="selected-tag-list" id="selected-tag-list"><span>尚未選擇，顯示固定分析期數的最強關聯</span></div></div>
@@ -71,7 +56,7 @@
           <section class="dashboard-card relationship-card" aria-labelledby="relationship-title">
             <div class="card-heading relationship-heading">
               <div><p class="eyebrow red">ASSOCIATION MAP</p><h2 id="relationship-title">固定單期關聯</h2></div>
-              <div><span class="analysis-mode" id="analysis-mode">全局模式</span><p id="relationship-description">以標準化關聯分數找出比隨機情況更常一起出現的 tag，並對少量樣本保守降權。</p><label class="relationship-period-control"><span>固定分析期數</span><select id="relationship-issue" aria-label="選擇關聯圖分析期數"></select><small>這張圖不跟隨上方自動播放</small></label></div>
+              <div><span class="analysis-mode" id="analysis-mode">全局模式</span><p id="relationship-description">以標準化關聯分數找出比隨機情況更常一起出現的 tag，並對少量樣本保守降權。</p><label class="relationship-period-control"><span>固定分析期數</span><select id="relationship-issue" aria-label="選擇關聯圖分析期數"></select><small>這張圖不跟隨熱門 tag 輪播</small></label></div>
             </div>
             <div class="relationship-layout">
               <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 3D 空間社群關聯網絡圖"></div>
@@ -86,7 +71,7 @@
           <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
             <div class="card-heading">
               <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">時間性關鍵字雲</h2><span id="cloud-help"></span></span></div>
-              <p>越常出現的 tag 越靠近中心、字體越大；顏色表示相較前一期的升降。游標靠近時文字會產生磁性移動。</p>
+              <div><p>越常出現的 tag 越靠近中心、字體越大；顏色表示相較前一期的升降。雲固定顯示選定期數，不會自動閃動。</p><label class="module-period-control"><span>關鍵字雲期數</span><select id="cloud-issue" aria-label="選擇關鍵字雲期數"></select></label></div>
             </div>
             <div class="cloud-legend" aria-label="關鍵字雲圖例">
               <span><i class="trend-down-extreme"></i>急降</span><span><i class="trend-down-strong"></i>明顯降溫</span><span><i class="trend-down"></i>小幅降溫</span><span><i class="trend-flat"></i><b id="trend-flat-label">持平</b></span><span><i class="trend-up"></i>小幅升溫</span><span><i class="trend-up-strong"></i>明顯升溫</span><span><i class="trend-up-extreme"></i>急升</span><small>字體大小與中心距離＝文章占比</small>
@@ -98,7 +83,18 @@
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
             <div class="card-heading catalogue-heading">
               <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">每期熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
-              <p>每次換期才更新一次長條、數字與名次，不使用移動平均或中間估計。點選任一列，可在固定期數的關聯圖查看它的關聯圈。</p>
+              <p>每 2 秒換到下一期；按上一期、下一期或直接選期後會自動暫停。每次換期才更新長條、數字與名次，不使用移動平均或中間估計。</p>
+            </div>
+            <div class="top-player" aria-label="熱門 tag 期數控制">
+              <div class="current-period" aria-live="polite"><span>目前顯示</span><strong id="current-period-title">載入中…</strong><small id="current-period-range"></small></div>
+              <div class="top-player-actions">
+                <button id="top-previous" type="button">← 上一期</button>
+                <button class="playback-toggle" id="playback-toggle" type="button" aria-pressed="true">暫停</button>
+                <button id="top-next" type="button">下一期 →</button>
+                <span class="playback-status" id="playback-status" aria-live="polite"></span>
+              </div>
+              <span class="playback-meter" aria-hidden="true"><i id="playback-progress"></i></span>
+              <div class="issue-picker" id="issue-picker" role="group" aria-label="選擇熱門 tag 期數"></div>
             </div>
             <div class="top-tags-heading">
               <strong id="top-tags-issue">目前期數</strong>
@@ -113,6 +109,6 @@
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
     <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-11" defer></script>
+    <script src="./trends.js?v=20260817-12" defer></script>
   </body>
 </html>

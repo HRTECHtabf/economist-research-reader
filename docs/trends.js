@@ -1,8 +1,10 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PLAYBACK_DELAY = 6500;
+const PLAYBACK_DELAY = 2000;
 const requestedIssue = params.get("issue") || "";
 const requestedRelationshipIssue = params.get("network") || "";
+const requestedOverviewIssue = params.get("overview") || "";
+const requestedCloudIssue = params.get("cloud") || "";
 
 const state = {
   data: null,
@@ -12,6 +14,8 @@ const state = {
   networkFrame: null,
   relationshipIssue: requestedRelationshipIssue,
   relationshipRenderKey: "",
+  overviewIssue: requestedOverviewIssue,
+  cloudIssue: requestedCloudIssue,
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -24,8 +28,9 @@ const state = {
 
 const els = {
   issuePicker: document.querySelector("#issue-picker"),
-  dataRangeLabel: document.querySelector("#data-range-label"),
   playbackToggle: document.querySelector("#playback-toggle"),
+  topPrevious: document.querySelector("#top-previous"),
+  topNext: document.querySelector("#top-next"),
   playbackStatus: document.querySelector("#playback-status"),
   playbackProgress: document.querySelector("#playback-progress"),
   currentPeriodTitle: document.querySelector("#current-period-title"),
@@ -36,6 +41,7 @@ const els = {
   overviewSort: document.querySelector("#tag-overview-sort"),
   overviewCount: document.querySelector("#tag-overview-count"),
   overviewGrid: document.querySelector("#tag-overview-grid"),
+  overviewIssue: document.querySelector("#overview-issue"),
   signalCards: document.querySelector("#signal-cards"),
   relationshipTitle: document.querySelector("#relationship-title"),
   relationshipDescription: document.querySelector("#relationship-description"),
@@ -49,6 +55,7 @@ const els = {
   cloudHelp: document.querySelector("#cloud-help"),
   trendFlatLabel: document.querySelector("#trend-flat-label"),
   cloudComparisonStatus: document.querySelector("#cloud-comparison-status"),
+  cloudIssue: document.querySelector("#cloud-issue"),
   topTagsHelp: document.querySelector("#top-tags-help"),
   topTagsIssue: document.querySelector("#top-tags-issue"),
   topTagsRanking: document.querySelector("#top-tags-ranking"),
@@ -167,8 +174,8 @@ function issueTitle(value) {
   return `${date.getUTCFullYear()} 年 ${date.getUTCMonth() + 1} 月 ${date.getUTCDate()} 日號`;
 }
 
-function articlesInWindow() {
-  return state.issue ? state.data.articles.filter((article) => issueDate(article) === state.issue) : state.data.articles;
+function articlesInWindow(issue = state.issue) {
+  return issue ? state.data.articles.filter((article) => issueDate(article) === issue) : state.data.articles;
 }
 
 function periodKey(article) {
@@ -189,7 +196,7 @@ function trendFor(values) {
   return { delta, percent: previous ? (delta / previous) * 100 : recent ? Infinity : 0, recent, previous };
 }
 
-function tagStatistics(articles, periods, includeAll = false) {
+function tagStatistics(articles, periods, includeAll = false, comparisonIssue = state.issue) {
   const stats = new Map();
   const totals = new Map(periods.map((period) => [period, 0]));
   for (const article of articles) totals.set(periodKey(article), (totals.get(periodKey(article)) || 0) + 1);
@@ -213,10 +220,10 @@ function tagStatistics(articles, periods, includeAll = false) {
       return total ? (item.series[index] / total) * 100 : 0;
     });
     item.trend = trendFor(item.rateSeries.slice(-2));
-    if (state.issue) {
-      const issueIndex = state.issues.indexOf(state.issue);
+    if (comparisonIssue) {
+      const issueIndex = state.issues.indexOf(comparisonIssue);
       const previousIssue = issueIndex > 0 ? state.issues[issueIndex - 1] : "";
-      const currentArticles = state.data.articles.filter((article) => issueDate(article) === state.issue);
+      const currentArticles = state.data.articles.filter((article) => issueDate(article) === comparisonIssue);
       const previousArticles = previousIssue ? state.data.articles.filter((article) => issueDate(article) === previousIssue) : [];
       const currentRate = currentArticles.length ? (countContaining(currentArticles, [item.tag]) / currentArticles.length) * 100 : 0;
       const previousRate = previousArticles.length ? (countContaining(previousArticles, [item.tag]) / previousArticles.length) * 100 : 0;
@@ -249,8 +256,8 @@ function trendText(trend) {
   return `${trend.percent > 0 ? "+" : ""}${Math.round(trend.percent)}%`;
 }
 
-function trendTextForSelection(trend) {
-  return state.issue === state.issues[0] ? "無前期資料" : trendText(trend);
+function trendTextForSelection(trend, issue = state.issue) {
+  return issue === state.issues[0] ? "無前期資料" : trendText(trend);
 }
 
 function countContaining(articles, tags) {
@@ -325,6 +332,8 @@ function syncUrl() {
   const next = new URLSearchParams();
   if (!state.autoPlay && state.issue) next.set("issue", state.issue);
   if (state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
+  if (state.overviewIssue && state.overviewIssue !== state.issues.at(-1)) next.set("overview", state.overviewIssue);
+  if (state.cloudIssue && state.cloudIssue !== state.issues.at(-1)) next.set("cloud", state.cloudIssue);
   for (const tag of state.selectedTags) next.append("tag", tag);
   const query = next.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
@@ -353,10 +362,10 @@ function restartPlaybackProgress() {
 function renderPlaybackState() {
   const index = Math.max(0, state.issues.indexOf(state.issue));
   const nextIssue = state.issues[(index + 1) % Math.max(1, state.issues.length)] || state.issue;
-  els.playbackToggle.textContent = state.autoPlay ? "暫停播放" : "從頭播放";
+  els.playbackToggle.textContent = state.autoPlay ? "暫停" : "播放";
   els.playbackToggle.setAttribute("aria-pressed", String(state.autoPlay));
   els.playbackStatus.textContent = state.autoPlay
-    ? `停留中 · 下一期 ${issueTitle(nextIssue)}`
+    ? `下一期 ${issueTitle(nextIssue)}`
     : `已停在 ${issueTitle(state.issue)}`;
   els.currentPeriodTitle.textContent = `第 ${index + 1} / ${state.issues.length} 期 · ${issueTitle(state.issue)}`;
   els.currentPeriodRange.textContent = `本期文章日期 ${issueRange(state.issue, true)}`;
@@ -370,15 +379,14 @@ function schedulePlayback() {
   state.playbackTimer = setTimeout(() => {
     const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
     state.issue = state.issues[(currentIndex + 1) % state.issues.length];
-    renderAll();
+    renderTopModule();
     schedulePlayback();
   }, PLAYBACK_DELAY);
 }
 
 function startPlayback() {
   state.autoPlay = true;
-  state.issue = state.issues[0];
-  renderAll();
+  renderTopModule();
   schedulePlayback();
 }
 
@@ -386,7 +394,15 @@ function pauseAtIssue(issue) {
   state.autoPlay = false;
   state.issue = issue;
   clearPlaybackTimer();
-  renderAll();
+  renderTopModule();
+}
+
+function stepTopIssue(direction) {
+  const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
+  state.autoPlay = false;
+  state.issue = state.issues[(currentIndex + direction + state.issues.length) % state.issues.length];
+  clearPlaybackTimer();
+  renderTopModule();
 }
 
 function renderIssuePicker() {
@@ -415,16 +431,21 @@ function renderIssuePicker() {
   });
 }
 
-function renderRelationshipIssueControl() {
-  const selected = state.relationshipIssue;
-  els.relationshipIssue.replaceChildren();
+function fillIssueSelect(select, selected) {
+  select.replaceChildren();
   [...state.issues].reverse().forEach((issue) => {
     const option = document.createElement("option");
     option.value = issue;
     option.textContent = `${issueTitle(issue)}｜${issueRange(issue, true)}`;
     option.selected = issue === selected;
-    els.relationshipIssue.append(option);
+    select.append(option);
   });
+}
+
+function renderIndependentIssueControls() {
+  fillIssueSelect(els.overviewIssue, state.overviewIssue);
+  fillIssueSelect(els.relationshipIssue, state.relationshipIssue);
+  fillIssueSelect(els.cloudIssue, state.cloudIssue);
 }
 
 function renderRelationshipPanel() {
@@ -432,7 +453,7 @@ function renderRelationshipPanel() {
   if (state.relationshipRenderKey === renderKey && els.relationshipNetwork.childElementCount) return;
   state.relationshipRenderKey = renderKey;
   const articles = state.data.articles.filter((article) => issueDate(article) === state.relationshipIssue);
-  const stats = tagStatistics(articles, [state.relationshipIssue], true);
+  const stats = tagStatistics(articles, [state.relationshipIssue], true, state.relationshipIssue);
   renderRelationships(articles, stats, relationshipsFor(articles));
 }
 
@@ -502,7 +523,7 @@ function highlightTag(tag, event, articles, statsByTag) {
   title.textContent = tag;
   const details = document.createElement("span");
   const topRelated = relations.slice(0, 3).map((item) => item.target).join("、") || "尚無穩定關聯";
-  details.textContent = `${stat?.count || 0} 篇 · ${trendTextForSelection(stat?.trend || { percent: 0 })}｜主要關聯：${topRelated}`;
+  details.textContent = `${stat?.count || 0} 篇 · ${trendTextForSelection(stat?.trend || { percent: 0 }, state.overviewIssue)}｜主要關聯：${topRelated}`;
   els.tooltip.append(title, details);
   els.tooltip.hidden = false;
   requestAnimationFrame(() => positionTooltip(event));
@@ -563,7 +584,7 @@ function appendSignalCard(label, value, description, accent = false, help = null
 function renderSignals(articles, periods, stats, relationships) {
   els.signalCards.replaceChildren();
   const activeTags = stats.filter((item) => item.count > 0);
-  appendSignalCard("觀測期數", state.issue ? "1 期" : `${periods.length} 期`, state.issue ? `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}` : `${issueTitle(state.issues[0])}至 ${issueTitle(state.issues.at(-1))}`);
+  appendSignalCard("觀測期數", "1 期", `${issueTitle(state.overviewIssue)}｜${issueRange(state.overviewIssue, true)}`);
   appendSignalCard("涵蓋文章", `${articles.length} 篇`, `目前期間共涵蓋 ${activeTags.length} 個 tag`, false, {
     title: "涵蓋文章怎麼算？",
     body: "文章數是目前所選期數的文章總數；tag 數會把這些文章使用過的 tag 去除重複後計算。",
@@ -590,7 +611,7 @@ function renderSignals(articles, periods, stats, relationships) {
     });
   }
   const rising = [...activeTags].filter((item) => item.trend.delta > 0).sort((a, b) => b.trend.delta - a.trend.delta || b.count - a.count)[0];
-  appendSignalCard(state.issue ? "較前一期升溫" : "近期升溫", rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : state.issue === state.issues[0] ? "最早一期沒有前期資料可比較" : "目前沒有明顯升溫的 tag", false, {
+  appendSignalCard("較前一期升溫", rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : state.overviewIssue === state.issues[0] ? "最早一期沒有前期資料可比較" : "目前沒有明顯升溫的 tag", false, {
     title: "升溫怎麼算？",
     body: "先算每個 tag 在當期文章中的占比，再與前一期占比比較；卡片挑出占比增加最多的 tag。百分比表示相對增幅，不是增加的文章篇數。",
   });
@@ -755,7 +776,18 @@ function renderNetwork(articles, stats, relationships) {
     edgeElements.push({ edge, path, index });
   });
   const nodeElements = new Map();
-  const view = { pointerX: 0, pointerY: 0, targetX: 0, targetY: 0 };
+  const orbit = {
+    yaw: -.2,
+    pitch: -.16,
+    targetYaw: -.2,
+    targetPitch: -.16,
+    dragging: false,
+    pointerId: null,
+    lastX: 0,
+    lastY: 0,
+    moved: false,
+    suppressClickUntil: 0,
+  };
   function projectNode(node, rotationX, rotationY) {
     const x = node.baseX - 500;
     const y = node.baseY - 250;
@@ -770,9 +802,7 @@ function renderNetwork(articles, stats, relationships) {
     return { x: 500 + x1 * scale, y: 250 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
   }
   function updatePositions() {
-    const rotationY = -.2 + view.pointerX * .36;
-    const rotationX = -.16 + view.pointerY * .24;
-    const projected = new Map(nodes.map((node) => [node.id, projectNode(node, rotationX, rotationY)]));
+    const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
     edgeElements.forEach(({ edge, path, index }) => {
       const a = projected.get(edge.a), b = projected.get(edge.b);
       const dx = b.x - a.x, dy = b.y - a.y;
@@ -789,6 +819,19 @@ function renderNetwork(articles, stats, relationships) {
       group.style.opacity = String(Math.max(.48, Math.min(1, .72 + point.z / 720)));
       group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
+  }
+  function animateOrbit() {
+    orbit.yaw += (orbit.targetYaw - orbit.yaw) * .24;
+    orbit.pitch += (orbit.targetPitch - orbit.pitch) * .24;
+    updatePositions();
+    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005) {
+      state.networkFrame = requestAnimationFrame(animateOrbit);
+    } else {
+      state.networkFrame = null;
+    }
+  }
+  function requestOrbitFrame() {
+    if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
   }
   nodes.forEach((node, index) => {
     const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, "data-minor": String(node.count <= 5 && !node.selected), tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
@@ -808,32 +851,62 @@ function renderNetwork(articles, stats, relationships) {
       nodeElements.forEach((element) => element.classList.remove("hovered", "related", "dimmed"));
       edgeElements.forEach(({ path }) => path.classList.remove("dimmed"));
     });
-    group.addEventListener("click", () => { if (!node.compound) toggleFocusTag(node.tag); });
+    group.addEventListener("click", (event) => {
+      if (performance.now() < orbit.suppressClickUntil) { event.preventDefault(); return; }
+      if (!node.compound) toggleFocusTag(node.tag);
+    });
     group.addEventListener("keydown", (event) => {
       if (!node.compound && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleFocusTag(node.tag); }
     });
     nodeLayer.append(group);
     nodeElements.set(node.id, group);
   });
-  els.relationshipNetwork.onpointermove = (event) => {
-    const rect = els.relationshipNetwork.getBoundingClientRect();
-    view.targetX = ((event.clientX - rect.left) / Math.max(1, rect.width) - .5) * 2;
-    view.targetY = ((event.clientY - rect.top) / Math.max(1, rect.height) - .5) * 2;
-    view.pointerX = view.targetX;
-    view.pointerY = view.targetY;
-    updatePositions();
+  els.relationshipNetwork.onpointerdown = (event) => {
+    if (event.button !== 0) return;
+    orbit.dragging = true;
+    orbit.pointerId = event.pointerId;
+    orbit.lastX = event.clientX;
+    orbit.lastY = event.clientY;
+    orbit.moved = false;
+    els.relationshipNetwork.classList.add("dragging");
+    els.relationshipNetwork.setPointerCapture?.(event.pointerId);
+    requestOrbitFrame();
   };
-  els.relationshipNetwork.onpointerleave = () => {
-    view.targetX = 0; view.targetY = 0; view.pointerX = 0; view.pointerY = 0;
-    updatePositions();
+  els.relationshipNetwork.onpointermove = (event) => {
+    if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
+    const dx = event.clientX - orbit.lastX;
+    const dy = event.clientY - orbit.lastY;
+    orbit.lastX = event.clientX;
+    orbit.lastY = event.clientY;
+    if (Math.hypot(dx, dy) > 1) orbit.moved = true;
+    orbit.targetYaw += dx * .012;
+    orbit.targetPitch = Math.max(-1.05, Math.min(1.05, orbit.targetPitch - dy * .009));
+    requestOrbitFrame();
+  };
+  function finishOrbitDrag(event) {
+    if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
+    if (orbit.moved) orbit.suppressClickUntil = performance.now() + 240;
+    orbit.dragging = false;
+    orbit.pointerId = null;
+    els.relationshipNetwork.classList.remove("dragging");
+    if (els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.releasePointerCapture(event.pointerId);
+    requestOrbitFrame();
+  }
+  els.relationshipNetwork.onpointerup = finishOrbitDrag;
+  els.relationshipNetwork.onpointercancel = finishOrbitDrag;
+  els.relationshipNetwork.ondblclick = (event) => {
+    event.preventDefault();
+    orbit.targetYaw = -.2;
+    orbit.targetPitch = -.16;
+    requestOrbitFrame();
   };
   updatePositions();
   const guide = document.createElement("div");
   guide.className = "network-guide";
-  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>移動游標改變視角 · 點節點查看關聯</span>";
+  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>按住拖曳旋轉 · 雙擊重設視角</span>";
   const key = document.createElement("div");
   key.className = "network-key";
-  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>圖面保持靜止 · 移動游標才調整角度</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表額外指標</small>';
+  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>左右可旋轉一整圈 · 上下角度有限制</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表額外指標</small>';
   els.relationshipNetwork.append(svg, guide, key);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
@@ -869,7 +942,7 @@ function renderRelationships(articles, stats, relationships) {
   const fixedIssue = issueTitle(state.relationshipIssue);
   if (!state.selectedTags.length) {
     els.relationshipTitle.textContent = "固定單期關聯"; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "最強 tag 組合";
-    els.relationshipDescription.textContent = `目前固定分析 ${fixedIssue}，不會跟著上方時間播放切換。未選 tag 時，顯示該期關聯性最強的組合。`;
+    els.relationshipDescription.textContent = `目前固定分析 ${fixedIssue}，不會跟著熱門 tag 輪播切換。未選 tag 時，顯示該期關聯性最強的組合。`;
   } else if (state.selectedTags.length === 1) {
     els.relationshipTitle.textContent = `${state.selectedTags[0]}的關聯圈`; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "相關 tag 排名";
     els.relationshipDescription.textContent = `固定以 ${fixedIssue} 查看「${state.selectedTags[0]}」與其他 tag 的標準化關聯強度。點選另一個 tag 可進入雙 tag 分析。`;
@@ -951,7 +1024,7 @@ function renderCloud(articles, stats) {
     const button = document.createElement("button"); button.type = "button"; button.className = "cloud-word"; button.dataset.tag = item.tag;
     button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, cloudWidth)}px`; button.style.visibility = "hidden";
     button.classList.toggle("selected", state.selectedTags.includes(item.tag)); button.textContent = item.tag;
-    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendTextForSelection(item.trend)}`);
+    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendTextForSelection(item.trend, state.cloudIssue)}`);
     button.addEventListener("click", () => toggleFocusTag(item.tag));
     button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag));
     button.addEventListener("pointermove", positionTooltip); button.addEventListener("pointerleave", clearTagHighlights);
@@ -964,7 +1037,7 @@ function renderCloud(articles, stats) {
 }
 
 function renderCloudComparisonStatus() {
-  const comparisonIssue = state.issue || state.issues.at(-1);
+  const comparisonIssue = state.cloudIssue || state.issues.at(-1);
   const issueIndex = state.issues.indexOf(comparisonIssue);
   const hasPrevious = issueIndex > 0;
   els.trendFlatLabel.textContent = hasPrevious ? "持平" : "無前期資料";
@@ -974,8 +1047,7 @@ function renderCloudComparisonStatus() {
     return;
   }
   const previousIssue = state.issues[issueIndex - 1];
-  const scope = state.autoPlay ? "自動播放" : "本期";
-  els.cloudComparisonStatus.textContent = `${scope}：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
+  els.cloudComparisonStatus.textContent = `固定期數：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
 }
 
 function paintTopTags(items, totalArticles, label) {
@@ -1023,36 +1095,59 @@ function renderTopTags(articles, stats) {
   );
 }
 
-function renderAll() {
-  hideCalculationHelp();
-  const articles = articlesInWindow();
-  const periods = periodsFor(articles);
-  const stats = tagStatistics(articles, periods, true);
-  const relationships = relationshipsFor(articles);
+function renderTopModule() {
+  const articles = articlesInWindow(state.issue);
+  const stats = tagStatistics(articles, [state.issue], true, state.issue);
   renderIssuePicker();
   renderPlaybackState();
-  renderRelationshipIssueControl();
-  renderTagOverview(articles, stats);
-  renderSignals(articles, periods, stats, relationships);
-  renderRelationshipPanel();
-  renderCloudComparisonStatus();
-  renderCloud(articles, stats);
   renderTopTags(articles, stats);
   syncUrl();
 }
 
+function renderOverviewModule() {
+  const articles = articlesInWindow(state.overviewIssue);
+  const stats = tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue);
+  fillIssueSelect(els.overviewIssue, state.overviewIssue);
+  renderTagOverview(articles, stats);
+  renderSignals(articles, [state.overviewIssue], stats, relationshipsFor(articles));
+  syncUrl();
+}
+
+function renderCloudModule() {
+  const articles = articlesInWindow(state.cloudIssue);
+  const stats = tagStatistics(articles, [state.cloudIssue], true, state.cloudIssue);
+  fillIssueSelect(els.cloudIssue, state.cloudIssue);
+  renderCloudComparisonStatus();
+  renderCloud(articles, stats);
+  syncUrl();
+}
+
+function renderAll() {
+  hideCalculationHelp();
+  renderIndependentIssueControls();
+  renderOverviewModule();
+  renderRelationshipPanel();
+  renderCloudModule();
+  renderTopModule();
+  syncUrl();
+}
+
 els.clearFocus.addEventListener("click", () => { state.selectedTags = []; renderAll(); });
-els.overviewSearch.addEventListener("input", () => { state.overviewQuery = els.overviewSearch.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
-els.overviewSort.addEventListener("change", () => { state.overviewSort = els.overviewSort.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
+els.overviewSearch.addEventListener("input", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewQuery = els.overviewSearch.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
+els.overviewSort.addEventListener("change", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewSort = els.overviewSort.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
+els.overviewIssue.addEventListener("change", () => { state.overviewIssue = els.overviewIssue.value; renderOverviewModule(); });
 els.relationshipIssue.addEventListener("change", () => { state.relationshipIssue = els.relationshipIssue.value; renderRelationshipPanel(); syncUrl(); });
+els.cloudIssue.addEventListener("change", () => { state.cloudIssue = els.cloudIssue.value; renderCloudModule(); });
+els.topPrevious.addEventListener("click", () => stepTopIssue(-1));
+els.topNext.addEventListener("click", () => stepTopIssue(1));
 els.playbackToggle.addEventListener("click", () => {
   if (state.autoPlay) {
     state.autoPlay = false;
     clearPlaybackTimer();
-    renderAll();
+    renderTopModule();
   } else startPlayback();
 });
-window.addEventListener("resize", () => { hideCalculationHelp(); if (state.data) renderCloud(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
+window.addEventListener("resize", () => { if (!state.data) return; hideCalculationHelp(); const articles = articlesInWindow(state.cloudIssue); renderCloud(articles, tagStatistics(articles, [state.cloudIssue], true, state.cloudIssue)); });
 window.addEventListener("scroll", hideCalculationHelp, { passive: true });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearPlaybackTimer();
@@ -1073,9 +1168,10 @@ fetch("./data/articles.json", { cache: "no-store" })
     }
     if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
     if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
+    if (!state.issues.includes(state.overviewIssue)) state.overviewIssue = state.issues.at(-1) || state.issue;
+    if (!state.issues.includes(state.cloudIssue)) state.cloudIssue = state.issues.at(-1) || state.issue;
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
-    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；每期停留 6.5 秒，資料只在換期時更新一次`;
     renderStaticCalculationHelp();
     renderAll();
     schedulePlayback();
