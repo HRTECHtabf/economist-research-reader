@@ -71,9 +71,15 @@ const TOUR_STEPS = [
   },
   {
     selector: '[data-tour="notes"]',
-    title: "留下私人筆記",
-    description: "先切換到中文全文或英文全文，再用滑鼠拖曳反白文字。按下浮出的「＋ 加入筆記」，寫下想法並儲存；之後可從左側筆記索引回到原段落。",
-    demo: "note",
+    title: "反白文字，加入筆記",
+    description: "先切換到中文全文或英文全文，再用滑鼠拖曳反白想記錄的文字。放開滑鼠後，文字旁會出現「＋ 加入筆記」。",
+    demo: "note-select",
+  },
+  {
+    selector: '[data-tour="notes"]',
+    title: "寫下想法並儲存",
+    description: "按下「＋ 加入筆記」後會開啟筆記欄。輸入研究想法並儲存，之後可從左側筆記索引回到原段落。",
+    demo: "note-write",
   },
 ];
 const urlParams = new URLSearchParams(location.search);
@@ -1193,35 +1199,38 @@ function positionTourStep() {
 }
 
 function renderTourDemo(type) {
+  const isNoteDemo = type === "note-select" || type === "note-write";
   els.tourDemo.replaceChildren();
-  els.tourDemo.hidden = type !== "note";
-  els.tourPanel.classList.toggle("has-demo", type === "note");
-  if (type !== "note") return;
+  els.tourDemo.hidden = !isNoteDemo;
+  els.tourPanel.classList.toggle("has-demo", isNoteDemo);
+  if (!isNoteDemo) return;
 
-  const steps = document.createElement("ol");
-  ["切換到中文全文或英文全文", "拖曳反白想記錄的句子", "按「＋ 加入筆記」", "寫下想法後按「儲存筆記」"].forEach((text) => {
-    const item = document.createElement("li");
-    item.textContent = text;
-    steps.append(item);
-  });
   const example = document.createElement("div");
   example.className = "tour-note-example";
   const label = document.createElement("small");
-  label.textContent = "操作示意";
+  label.textContent = type === "note-select" ? "步驟 1｜反白後" : "步驟 2｜按下加入筆記後";
   const source = document.createElement("p");
   source.append("央行表示，", Object.assign(document.createElement("mark"), { textContent: "利率決策仍取決於通膨與勞動市場資料" }), "。");
-  const action = document.createElement("span");
-  action.className = "tour-note-action";
-  action.textContent = "＋ 加入筆記";
-  const editor = document.createElement("div");
-  editor.className = "tour-note-editor";
-  const editorLabel = document.createElement("b");
-  editorLabel.textContent = "我的想法";
-  const editorBody = document.createElement("p");
-  editorBody.textContent = "待追蹤：下一次利率會議前，通膨與就業數據是否同向變化？";
-  editor.append(editorLabel, editorBody);
-  example.append(label, source, action, editor);
-  els.tourDemo.append(steps, example);
+  example.append(label, source);
+  if (type === "note-select") {
+    const action = document.createElement("span");
+    action.className = "tour-note-action";
+    action.textContent = "＋ 加入筆記";
+    example.append(action);
+  } else {
+    const editor = document.createElement("div");
+    editor.className = "tour-note-editor";
+    const editorLabel = document.createElement("b");
+    editorLabel.textContent = "我的想法";
+    const editorBody = document.createElement("p");
+    editorBody.textContent = "待追蹤：下一次利率會議前，通膨與就業數據是否同向變化？";
+    const save = document.createElement("span");
+    save.className = "tour-note-save";
+    save.textContent = "儲存筆記";
+    editor.append(editorLabel, editorBody, save);
+    example.append(editor);
+  }
+  els.tourDemo.append(example);
 }
 
 function showTourStep(index) {
@@ -1244,7 +1253,7 @@ function showTourStep(index) {
   });
   requestAnimationFrame(() => {
     positionTourStep();
-    setTimeout(positionTourStep, 260);
+    [120, 260, 480, 760].forEach((delay) => setTimeout(positionTourStep, delay));
     els.tourNext.focus({ preventScroll: true });
   });
 }
@@ -1370,6 +1379,7 @@ document.addEventListener("pointerdown", (event) => {
 window.addEventListener("scroll", () => {
   hideSelectionToolbar();
   hideNotePreview();
+  if (!els.featureTour.hidden) positionTourStep();
 }, { passive: true });
 
 async function loadInternalEnglishText() {
