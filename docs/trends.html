@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-9" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-10" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -71,7 +71,7 @@
               <div><span class="analysis-mode" id="analysis-mode">全局模式</span><p id="relationship-description">以標準化關聯分數找出比隨機情況更常一起出現的 tag，並對少量樣本保守降權。</p></div>
             </div>
             <div class="relationship-layout">
-              <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 社群關聯網絡圖"></div>
+              <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 3D 空間社群關聯網絡圖"></div>
               <div class="relationship-ranking">
                 <div class="ranking-heading"><strong id="ranking-title">關聯排名</strong><span class="ranking-metric"><small>強度 0–100</small><span id="relationship-help"></span></span></div>
                 <div class="relationship-list" id="relationship-list"></div>
@@ -94,8 +94,8 @@
 
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
             <div class="card-heading catalogue-heading">
-              <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">本期熱門 tag Top 10</h2><span id="top-tags-help"></span></span></div>
-              <p>依目前播放期數重新排名；橫條表示該 tag 在當期文章中的占比。點選任一列，可直接查看它的關聯圈。</p>
+              <div><p class="eyebrow red">TAG RACE</p><span class="heading-title-line"><h2 id="catalogue-title">熱門 tag 動態 Top 15</h2><span id="top-tags-help"></span></span></div>
+              <p>長條、數字與名次會在相鄰兩期之間持續變化；中間畫面是視覺補間，不代表另有每日資料。點選任一列，可直接查看它的關聯圈。</p>
             </div>
             <div class="top-tags-heading">
               <strong id="top-tags-issue">目前期數</strong>
@@ -110,6 +110,6 @@
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
     <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-9" defer></script>
+    <script src="./trends.js?v=20260817-10" defer></script>
   </body>
 </html>
