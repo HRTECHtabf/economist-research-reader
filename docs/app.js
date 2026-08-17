@@ -467,6 +467,34 @@ function closeNoteEditor() {
   window.getSelection()?.removeAllRanges();
 }
 
+function captureReadingPosition(source) {
+  if (!source?.articleKey || !source?.contextId) return null;
+  const selector = `[data-article-key="${CSS.escape(source.articleKey)}"][data-context-id="${CSS.escape(source.contextId)}"]`;
+  const anchor = document.querySelector(selector);
+  const scroller = anchor?.closest(".full-text");
+  if (!anchor || !scroller) return null;
+  const anchorRect = anchor.getBoundingClientRect();
+  const scrollerRect = scroller.getBoundingClientRect();
+  return {
+    articleKey: source.articleKey,
+    contextId: source.contextId,
+    scrollTop: scroller.scrollTop,
+    relativeTop: anchorRect.top - scrollerRect.top,
+  };
+}
+
+function restoreReadingPosition(position) {
+  if (!position) return;
+  const selector = `[data-article-key="${CSS.escape(position.articleKey)}"][data-context-id="${CSS.escape(position.contextId)}"]`;
+  const anchor = document.querySelector(selector);
+  const scroller = anchor?.closest(".full-text");
+  if (!anchor || !scroller) return;
+  const anchorRect = anchor.getBoundingClientRect();
+  const scrollerRect = scroller.getBoundingClientRect();
+  const relativeTop = anchorRect.top - scrollerRect.top;
+  scroller.scrollTop = position.scrollTop + relativeTop - position.relativeTop;
+}
+
 function saveCurrentNote() {
   const body = els.noteEditor.value.trim();
   if (!body) {
@@ -477,11 +505,13 @@ function saveCurrentNote() {
   }
   els.noteEditor.setCustomValidity("");
   const now = new Date().toISOString();
+  let noteSource = state.pendingSelection;
   if (state.editingNoteId) {
     const note = state.notes.find((item) => item.id === state.editingNoteId);
     if (!note) return;
     note.body = body;
     note.updatedAt = now;
+    noteSource = note;
   } else if (state.pendingSelection) {
     state.notes.push({
       id: crypto.randomUUID?.() || `note-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -492,9 +522,10 @@ function saveCurrentNote() {
     });
   } else return;
   const viewport = { x: scrollX, y: scrollY };
+  const readingPosition = captureReadingPosition(noteSource);
   saveNotes();
   closeNoteEditor();
-  renderPreservingViewport(viewport);
+  renderPreservingViewport(viewport, readingPosition);
 }
 
 function deleteCurrentNote() {
@@ -1004,14 +1035,20 @@ function render() {
   syncUrl();
 }
 
-function renderPreservingViewport(viewport) {
+function renderPreservingViewport(viewport, readingPosition = null) {
   const root = document.documentElement;
   root.classList.add("preserve-scroll-position");
   render();
+  restoreReadingPosition(readingPosition);
   window.scrollTo(viewport.x, viewport.y);
   requestAnimationFrame(() => {
+    restoreReadingPosition(readingPosition);
     window.scrollTo(viewport.x, viewport.y);
-    requestAnimationFrame(() => root.classList.remove("preserve-scroll-position"));
+    requestAnimationFrame(() => {
+      restoreReadingPosition(readingPosition);
+      window.scrollTo(viewport.x, viewport.y);
+      root.classList.remove("preserve-scroll-position");
+    });
   });
 }
 
