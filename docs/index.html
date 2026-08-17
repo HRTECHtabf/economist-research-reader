@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-2" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -156,6 +156,7 @@
             </div>
             <p class="note-empty">選取中文或英文段落，即可加入私人筆記。</p>
             <div class="note-index-list"></div>
+            <button class="note-index-more" type="button" hidden></button>
           </section>
         </div>
 
@@ -199,24 +200,22 @@
       <button id="add-selection-note" type="button">＋ 加入筆記</button>
     </div>
 
-    <aside class="note-drawer" id="note-drawer" aria-labelledby="note-drawer-title" aria-hidden="true">
-      <div class="note-drawer-header">
+    <aside class="note-popover" id="note-drawer" aria-labelledby="note-drawer-title" aria-hidden="true" hidden>
+      <div class="note-popover-header">
         <div>
           <span class="eyebrow red">PRIVATE NOTE</span>
-          <h2 id="note-drawer-title">我的筆記</h2>
+          <h2 id="note-drawer-title">寫下筆記</h2>
         </div>
-        <button class="note-drawer-close" id="note-drawer-close" type="button" aria-label="關閉筆記">×</button>
+        <button class="note-popover-close" id="note-drawer-close" type="button" aria-label="關閉筆記">×</button>
       </div>
       <blockquote id="note-quote"></blockquote>
-      <label class="note-editor-label" for="note-editor">筆記內容</label>
-      <textarea id="note-editor" rows="9" placeholder="記下判斷、疑問或待查資料…"></textarea>
-      <p class="note-storage-hint">登入同步功能接上前，筆記會先安全保存在這台裝置。</p>
-      <div class="note-drawer-actions">
+      <label class="note-editor-label" for="note-editor">我的想法</label>
+      <textarea id="note-editor" rows="4" placeholder="記下判斷、疑問或待查資料…" required></textarea>
+      <div class="note-popover-actions">
         <button class="note-delete" id="note-delete" type="button" hidden>刪除筆記</button>
         <button class="note-save" id="note-save" type="button">儲存筆記</button>
       </div>
     </aside>
-    <button class="note-drawer-backdrop" id="note-drawer-backdrop" type="button" aria-label="關閉筆記" hidden></button>
 
     <dialog class="tag-manager" id="tag-manager" aria-labelledby="tag-manager-title">
       <div class="tag-manager-header">
@@ -226,16 +225,15 @@
         </div>
         <button class="tag-manager-close" id="tag-manager-close" type="button" aria-label="關閉標籤管理">×</button>
       </div>
-      <p>把常查的主題或一組關鍵字存成標籤，下次可直接套用搜尋。</p>
+      <p>把常查的搜尋內容存成標籤，下次可直接套用。</p>
       <form id="tag-manager-form">
-        <label>標籤名稱<input id="tag-label-input" maxlength="24" placeholder="例如：供應鏈風險" required /></label>
-        <label>搜尋內容<input id="tag-query-input" maxlength="80" placeholder="例如：供應鏈 航運" required /></label>
+        <label>標籤內容<input id="tag-query-input" maxlength="80" placeholder="例如：供應鏈 航運" required /></label>
         <button type="submit">儲存標籤</button>
       </form>
       <div class="saved-tags-list" id="saved-tags-list"></div>
       <p class="tag-storage-hint">登入同步接上前，自訂標籤會先保存在這台裝置。</p>
     </dialog>
 
-    <script src="./app.js?v=20260817-1" defer></script>
+    <script src="./app.js?v=20260817-2" defer></script>
   </body>
 </html>

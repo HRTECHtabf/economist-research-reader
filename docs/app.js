@@ -58,7 +58,11 @@ function loadNotes() {
 function loadSavedTags() {
   try {
     const stored = JSON.parse(localStorage.getItem(SAVED_TAGS_STORAGE_KEY) || "[]");
-    return Array.isArray(stored) ? stored.filter((tag) => tag?.id && tag?.label && tag?.query) : [];
+    return Array.isArray(stored)
+      ? stored
+        .filter((tag) => tag?.id && tag?.query)
+        .map((tag) => ({ ...tag, label: tag.query }))
+      : [];
   } catch {
     return [];
   }
@@ -79,8 +83,10 @@ const state = {
   readingModes: new Map(),
   chineseTextByArticle: new Map(),
   chineseTextLoading: new Set(),
+  expandedNoteLists: new Set(),
   pendingSelection: null,
   editingNoteId: null,
+  noteAnchorRect: null,
 };
 
 const els = {
@@ -104,7 +110,6 @@ const els = {
   selectionToolbar: document.querySelector("#selection-toolbar"),
   addSelectionNote: document.querySelector("#add-selection-note"),
   noteDrawer: document.querySelector("#note-drawer"),
-  noteDrawerBackdrop: document.querySelector("#note-drawer-backdrop"),
   noteDrawerClose: document.querySelector("#note-drawer-close"),
   noteQuote: document.querySelector("#note-quote"),
   noteEditor: document.querySelector("#note-editor"),
@@ -115,7 +120,6 @@ const els = {
   tagManager: document.querySelector("#tag-manager"),
   tagManagerClose: document.querySelector("#tag-manager-close"),
   tagManagerForm: document.querySelector("#tag-manager-form"),
-  tagLabelInput: document.querySelector("#tag-label-input"),
   tagQueryInput: document.querySelector("#tag-query-input"),
   savedTagsList: document.querySelector("#saved-tags-list"),
 };
@@ -198,8 +202,6 @@ function renderSavedTags() {
   for (const tag of state.savedTags) {
     const row = document.createElement("div");
     row.className = "saved-tag-row";
-    const label = document.createElement("strong");
-    label.textContent = tag.label;
     const query = document.createElement("span");
     query.textContent = tag.query;
     const remove = document.createElement("button");
@@ -211,7 +213,7 @@ function renderSavedTags() {
       renderSavedTags();
       renderQuickTags();
     });
-    row.append(label, query, remove);
+    row.append(query, remove);
     els.savedTagsList.append(row);
   }
 }
@@ -287,9 +289,12 @@ function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasis
       mark.tabIndex = 0;
       mark.title = "開啟筆記";
       mark.append(content);
-      mark.addEventListener("click", () => openNoteDrawer(noteMatch));
+      mark.addEventListener("click", (event) => openNoteEditor(noteMatch, event.currentTarget.getBoundingClientRect()));
       mark.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") openNoteDrawer(noteMatch);
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openNoteEditor(noteMatch, event.currentTarget.getBoundingClientRect());
+        }
       });
       content = mark;
     }
@@ -320,11 +325,19 @@ function captureSelection(element) {
   });
   if (overlap) {
     hideSelectionToolbar();
-    openNoteDrawer(overlap);
+    openNoteEditor(overlap, range.getBoundingClientRect());
     return;
   }
   state.pendingSelection = { articleKey: articleKeyValue, contextId, start, end, quote };
   const rect = range.getBoundingClientRect();
+  state.noteAnchorRect = {
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
   els.selectionToolbar.hidden = false;
   const toolbarWidth = 112;
   els.selectionToolbar.style.left = `${Math.max(8, Math.min(innerWidth - toolbarWidth - 8, rect.left + rect.width / 2 - toolbarWidth / 2))}px`;
@@ -335,31 +348,67 @@ function hideSelectionToolbar() {
   els.selectionToolbar.hidden = true;
 }
 
-function openNoteDrawer(note = null) {
+function positionNoteEditor(anchorRect) {
+  const margin = 12;
+  const gap = 9;
+  const editorRect = els.noteDrawer.getBoundingClientRect();
+  const anchor = anchorRect || {
+    left: innerWidth / 2,
+    right: innerWidth / 2,
+    top: innerHeight / 2,
+    bottom: innerHeight / 2,
+    width: 0,
+  };
+  const anchorWidth = anchor.width || anchor.right - anchor.left;
+  const centeredLeft = anchor.left + anchorWidth / 2 - editorRect.width / 2;
+  const left = Math.max(margin, Math.min(innerWidth - editorRect.width - margin, centeredLeft));
+  const below = anchor.bottom + gap;
+  const above = anchor.top - editorRect.height - gap;
+  const top = below + editorRect.height <= innerHeight - margin ? below : Math.max(margin, above);
+  els.noteDrawer.style.left = `${left}px`;
+  els.noteDrawer.style.top = `${top}px`;
+  els.noteDrawer.classList.add("positioned");
+}
+
+function openNoteEditor(note = null, anchorRect = null) {
   state.editingNoteId = note?.id || null;
   const source = note || state.pendingSelection;
   if (!source) return;
   els.noteQuote.textContent = source.quote;
   els.noteEditor.value = note?.body || "";
+  els.noteEditor.setCustomValidity("");
   els.noteDelete.hidden = !note;
+  els.noteDrawer.hidden = false;
+  els.noteDrawer.classList.remove("positioned");
   els.noteDrawer.classList.add("open");
   els.noteDrawer.setAttribute("aria-hidden", "false");
-  els.noteDrawerBackdrop.hidden = false;
   hideSelectionToolbar();
-  setTimeout(() => els.noteEditor.focus(), 0);
+  requestAnimationFrame(() => {
+    positionNoteEditor(anchorRect || state.noteAnchorRect);
+    els.noteEditor.focus();
+  });
 }
 
-function closeNoteDrawer() {
+function closeNoteEditor() {
   els.noteDrawer.classList.remove("open");
+  els.noteDrawer.classList.remove("positioned");
   els.noteDrawer.setAttribute("aria-hidden", "true");
-  els.noteDrawerBackdrop.hidden = true;
+  els.noteDrawer.hidden = true;
   state.editingNoteId = null;
   state.pendingSelection = null;
+  state.noteAnchorRect = null;
   window.getSelection()?.removeAllRanges();
 }
 
 function saveCurrentNote() {
   const body = els.noteEditor.value.trim();
+  if (!body) {
+    els.noteEditor.setCustomValidity("請先寫下筆記內容");
+    els.noteEditor.reportValidity();
+    els.noteEditor.focus();
+    return;
+  }
+  els.noteEditor.setCustomValidity("");
   const now = new Date().toISOString();
   if (state.editingNoteId) {
     const note = state.notes.find((item) => item.id === state.editingNoteId);
@@ -376,7 +425,7 @@ function saveCurrentNote() {
     });
   } else return;
   saveNotes();
-  closeNoteDrawer();
+  closeNoteEditor();
   render();
 }
 
@@ -384,19 +433,24 @@ function deleteCurrentNote() {
   if (!state.editingNoteId || !window.confirm("確定刪除這則筆記？")) return;
   state.notes = state.notes.filter((note) => note.id !== state.editingNoteId);
   saveNotes();
-  closeNoteDrawer();
+  closeNoteEditor();
   render();
 }
 
-function focusNote(note) {
+async function focusNote(note) {
   state.readingModes.set(note.articleKey, noteMode(note));
-  render();
+  const article = state.data?.articles.find((item) => articleKey(item) === note.articleKey);
+  if (noteMode(note) === "zh" && article && !state.chineseTextByArticle.has(note.articleKey)) {
+    await loadChineseFullText(article);
+  } else {
+    render();
+  }
   requestAnimationFrame(() => {
     const target = document.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`);
-    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.scrollIntoView({ behavior: "auto", block: "center" });
     target?.classList.add("note-flash");
     setTimeout(() => target?.classList.remove("note-flash"), 1300);
-    openNoteDrawer(note);
+    openNoteEditor(note, target?.getBoundingClientRect());
   });
 }
 
@@ -759,21 +813,35 @@ function renderCard(article) {
   const noteCount = fragment.querySelector(".note-count");
   const noteEmpty = fragment.querySelector(".note-empty");
   const noteList = fragment.querySelector(".note-index-list");
+  const noteMore = fragment.querySelector(".note-index-more");
   noteCount.textContent = articleNotes.length;
   noteEmpty.hidden = articleNotes.length > 0;
-  for (const note of articleNotes) {
+  const noteListExpanded = state.expandedNoteLists.has(key);
+  const visibleNotes = noteListExpanded ? articleNotes : articleNotes.slice(0, 4);
+  noteList.classList.toggle("expanded", noteListExpanded);
+  for (const note of visibleNotes) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "note-index-item";
     const language = document.createElement("small");
     language.className = "note-index-language";
     language.textContent = noteLanguageLabel(note);
-    const quote = document.createElement("span");
-    quote.className = "note-index-quote";
-    quote.textContent = note.quote;
-    button.append(language, quote);
+    const body = document.createElement("span");
+    body.className = "note-index-body";
+    body.textContent = note.body || "（尚未填寫筆記內容）";
+    button.title = `原文：${note.quote}`;
+    button.append(language, body);
     button.addEventListener("click", () => focusNote(note));
     noteList.append(button);
+  }
+  if (articleNotes.length > 4) {
+    noteMore.hidden = false;
+    noteMore.textContent = noteListExpanded ? "收起筆記" : `查看另外 ${articleNotes.length - 4} 則`;
+    noteMore.addEventListener("click", () => {
+      if (state.expandedNoteLists.has(key)) state.expandedNoteLists.delete(key);
+      else state.expandedNoteLists.add(key);
+      render();
+    });
   }
   return fragment;
 }
@@ -910,17 +978,16 @@ els.clearFilters.addEventListener("click", () => {
 });
 els.previousPage.addEventListener("click", () => goToPage(state.page - 1));
 els.nextPage.addEventListener("click", () => goToPage(state.page + 1));
-els.addSelectionNote.addEventListener("click", () => openNoteDrawer());
+els.addSelectionNote.addEventListener("click", () => openNoteEditor(null, state.noteAnchorRect));
 els.noteSave.addEventListener("click", saveCurrentNote);
 els.noteDelete.addEventListener("click", deleteCurrentNote);
-els.noteDrawerClose.addEventListener("click", closeNoteDrawer);
-els.noteDrawerBackdrop.addEventListener("click", closeNoteDrawer);
+els.noteDrawerClose.addEventListener("click", closeNoteEditor);
+els.noteEditor.addEventListener("input", () => els.noteEditor.setCustomValidity(""));
 els.manageTagsButton.addEventListener("click", () => {
-  els.tagLabelInput.value = "";
   els.tagQueryInput.value = state.query.trim();
   renderSavedTags();
   els.tagManager.showModal();
-  setTimeout(() => (state.query.trim() ? els.tagLabelInput : els.tagQueryInput).focus(), 0);
+  setTimeout(() => els.tagQueryInput.focus(), 0);
 });
 els.tagManagerClose.addEventListener("click", () => els.tagManager.close());
 els.tagManager.addEventListener("click", (event) => {
@@ -928,38 +995,41 @@ els.tagManager.addEventListener("click", (event) => {
 });
 els.tagManagerForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const label = els.tagLabelInput.value.trim();
   const query = els.tagQueryInput.value.trim();
-  if (!label || !query) return;
-  const duplicate = state.savedTags.find((tag) => tag.label === label || tag.query === query);
+  if (!query) return;
+  const duplicate = state.savedTags.find((tag) => tag.query === query);
   if (duplicate) {
-    duplicate.label = label;
     duplicate.query = query;
+    duplicate.label = query;
   } else {
     state.savedTags.push({
       id: crypto.randomUUID?.() || `tag-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      label,
+      label: query,
       query,
       createdAt: new Date().toISOString(),
     });
   }
   saveSavedTags();
-  els.tagLabelInput.value = "";
-  els.tagQueryInput.value = state.query.trim();
+  els.tagQueryInput.value = "";
   renderSavedTags();
   renderQuickTags();
 });
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  if (els.noteDrawer.classList.contains("open")) closeNoteDrawer();
+  if (els.noteDrawer.classList.contains("open")) closeNoteEditor();
   else hideSelectionToolbar();
 });
 document.addEventListener("pointerdown", (event) => {
+  if (els.noteDrawer.classList.contains("open") && !els.noteDrawer.contains(event.target) && !els.selectionToolbar.contains(event.target)) {
+    closeNoteEditor();
+  }
   if (!els.selectionToolbar.hidden && !els.selectionToolbar.contains(event.target)) {
     hideSelectionToolbar();
   }
 });
-window.addEventListener("scroll", hideSelectionToolbar, { passive: true });
+window.addEventListener("scroll", () => {
+  hideSelectionToolbar();
+}, { passive: true });
 
 async function loadInternalEnglishText() {
   if (!["localhost", "127.0.0.1"].includes(location.hostname)) return;
