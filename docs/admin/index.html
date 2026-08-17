@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>維護狀態｜Economist Research Reader</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../styles.css?v=20260817-1" />
+    <link rel="stylesheet" href="./admin.css?v=20260817-1" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="../">
+          <span class="brand-mark">ER</span>
+          <span><strong>維護狀態</strong><small>Economist Research Reader</small></span>
+        </a>
+        <nav><a href="../">返回文章索引</a></nav>
+      </div>
+    </header>
+    <main class="admin-main">
+      <div class="shell">
+        <div class="admin-heading">
+          <div><p class="eyebrow red">OPERATIONS</p><h1>網站維護狀態</h1></div>
+          <p>這裡只顯示可公開的內容與排程狀態；API 金鑰、登入資料及錯誤明細不會送到瀏覽器。</p>
+        </div>
+        <section class="status-grid" aria-label="網站內容狀態">
+          <article class="status-card"><span>文章資料庫</span><strong id="article-count">—</strong><small>篇文章</small></article>
+          <article class="status-card"><span>中文全文</span><strong id="translation-count">—</strong><small id="translation-detail">載入中</small></article>
+          <article class="status-card"><span>最新一期</span><strong id="latest-issue">—</strong><small id="latest-issue-count">載入中</small></article>
+          <article class="status-card"><span>最近更新</span><strong id="generated-at">—</strong><small>中文全文稽核時間</small></article>
+        </section>
+        <div class="admin-columns">
+          <section class="admin-panel">
+            <div class="panel-heading"><div><p class="eyebrow red">AUTOMATION</p><h2>每週更新紀錄</h2></div><span id="workflow-overall" class="status-pill">讀取中</span></div>
+            <p class="schedule-copy">Asia/Taipei 週五 13:17–週六 01:17 每兩小時偵測；週六 11:17 補查。只有新期數才會呼叫模型。</p>
+            <div class="run-list" id="run-list"><p>正在讀取 GitHub Actions…</p></div>
+          </section>
+          <section class="admin-panel">
+            <div class="panel-heading"><div><p class="eyebrow red">INTEGRATIONS</p><h2>串接與資料保護</h2></div></div>
+            <dl class="integration-list">
+              <div><dt>Azure OpenAI</dt><dd>金鑰存於 GitHub Secrets／本機環境，不會寫入網站。</dd></div>
+              <div><dt>發布規則</dt><dd>導讀或全文任一步失敗，就保留舊站，不發布半成品。</dd></div>
+              <div><dt>帳號同步</dt><dd class="pending">資料表與權限規則已備妥；等待 Supabase 專案連線後啟用。</dd></div>
+              <div><dt>私人筆記</dt><dd>未登入時保存在本機；後端啟用後依帳號隔離同步。</dd></div>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </main>
+    <script src="./admin.js?v=20260817-1" defer></script>
+  </body>
+</html>

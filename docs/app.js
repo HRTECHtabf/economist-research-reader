@@ -29,6 +29,9 @@ const SECTION_CATEGORIES = {
 };
 
 const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";
+const NOTES_STORAGE_KEY = "economist-research-reader:notes:v1";
+const SAVED_TAGS_STORAGE_KEY = "economist-research-reader:saved-search-tags:v1";
+const COMMON_SEARCH_TAGS = ["AI", "通膨", "利率", "能源", "中國", "航運"];
 const ARTICLES_PER_PAGE = 5;
 const urlParams = new URLSearchParams(location.search);
 const initialPage = Number(urlParams.get("page"));
@@ -43,6 +46,24 @@ function loadFavorites() {
   }
 }
 
+function loadNotes() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY) || "[]");
+    return Array.isArray(stored) ? stored.filter((note) => note?.id && note?.articleKey) : [];
+  } catch {
+    return [];
+  }
+}
+
+function loadSavedTags() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SAVED_TAGS_STORAGE_KEY) || "[]");
+    return Array.isArray(stored) ? stored.filter((tag) => tag?.id && tag?.label && tag?.query) : [];
+  } catch {
+    return [];
+  }
+}
+
 const state = {
   data: null,
   query: urlParams.get("q") || "",
@@ -50,9 +71,16 @@ const state = {
   issue: urlParams.get("issue") || "全部",
   sort: allowedSorts.has(urlParams.get("sort")) ? urlParams.get("sort") : "newest",
   favorites: loadFavorites(),
+  notes: loadNotes(),
+  savedTags: loadSavedTags(),
   favoritesOnly: urlParams.get("favorites") === "1",
   page: Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1,
   internalTextById: new Map(),
+  readingModes: new Map(),
+  chineseTextByArticle: new Map(),
+  chineseTextLoading: new Set(),
+  pendingSelection: null,
+  editingNoteId: null,
 };
 
 const els = {
@@ -73,6 +101,23 @@ const els = {
   nextPage: document.querySelector("#next-page"),
   emptyState: document.querySelector("#empty-state"),
   template: document.querySelector("#article-template"),
+  selectionToolbar: document.querySelector("#selection-toolbar"),
+  addSelectionNote: document.querySelector("#add-selection-note"),
+  noteDrawer: document.querySelector("#note-drawer"),
+  noteDrawerBackdrop: document.querySelector("#note-drawer-backdrop"),
+  noteDrawerClose: document.querySelector("#note-drawer-close"),
+  noteQuote: document.querySelector("#note-quote"),
+  noteEditor: document.querySelector("#note-editor"),
+  noteSave: document.querySelector("#note-save"),
+  noteDelete: document.querySelector("#note-delete"),
+  quickTagsList: document.querySelector("#quick-tags-list"),
+  manageTagsButton: document.querySelector("#manage-tags-button"),
+  tagManager: document.querySelector("#tag-manager"),
+  tagManagerClose: document.querySelector("#tag-manager-close"),
+  tagManagerForm: document.querySelector("#tag-manager-form"),
+  tagLabelInput: document.querySelector("#tag-label-input"),
+  tagQueryInput: document.querySelector("#tag-query-input"),
+  savedTagsList: document.querySelector("#saved-tags-list"),
 };
 
 function categoryFor(article) {
@@ -98,6 +143,281 @@ function saveFavorites() {
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...state.favorites]));
   } catch {
     // 收藏功能仍可在本次瀏覽使用；瀏覽器禁止儲存時不讓頁面中斷。
+  }
+}
+
+function saveNotes() {
+  try {
+    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(state.notes));
+  } catch {
+    // 後端同步接上前先使用本機儲存；儲存被瀏覽器禁止時不讓閱讀頁中斷。
+  }
+}
+
+function saveSavedTags() {
+  try {
+    localStorage.setItem(SAVED_TAGS_STORAGE_KEY, JSON.stringify(state.savedTags));
+  } catch {
+    // 登入同步接上前先保留在本機；儲存被禁止時不讓搜尋中斷。
+  }
+}
+
+function applySearchTag(query) {
+  state.query = query;
+  state.page = 1;
+  els.searchInput.value = query;
+  render();
+}
+
+function renderQuickTags() {
+  els.quickTagsList.replaceChildren();
+  for (const tag of [
+    ...COMMON_SEARCH_TAGS.map((query) => ({ id: `common:${query}`, label: query, query, custom: false })),
+    ...state.savedTags.map((tag) => ({ ...tag, custom: true })),
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `quick-tag${tag.custom ? " custom" : ""}`;
+    button.classList.toggle("active", state.query === tag.query);
+    button.textContent = tag.label;
+    button.title = `搜尋「${tag.query}」`;
+    button.addEventListener("click", () => applySearchTag(tag.query));
+    els.quickTagsList.append(button);
+  }
+}
+
+function renderSavedTags() {
+  els.savedTagsList.replaceChildren();
+  if (!state.savedTags.length) {
+    const empty = document.createElement("p");
+    empty.className = "note-empty";
+    empty.textContent = "還沒有自訂標籤。可以把目前的搜尋內容存起來。";
+    els.savedTagsList.append(empty);
+    return;
+  }
+  for (const tag of state.savedTags) {
+    const row = document.createElement("div");
+    row.className = "saved-tag-row";
+    const label = document.createElement("strong");
+    label.textContent = tag.label;
+    const query = document.createElement("span");
+    query.textContent = tag.query;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "刪除";
+    remove.addEventListener("click", () => {
+      state.savedTags = state.savedTags.filter((item) => item.id !== tag.id);
+      saveSavedTags();
+      renderSavedTags();
+      renderQuickTags();
+    });
+    row.append(label, query, remove);
+    els.savedTagsList.append(row);
+  }
+}
+
+function notesForArticle(key) {
+  return state.notes
+    .filter((note) => note.articleKey === key)
+    .sort((a, b) => (b.updatedAt || b.createdAt || "").localeCompare(a.updatedAt || a.createdAt || ""));
+}
+
+function noteLanguageLabel(note) {
+  if (note.contextId.startsWith("en:")) return "EN";
+  return "中";
+}
+
+function noteMode(note) {
+  if (note.contextId.startsWith("en:")) return "en";
+  if (note.contextId.startsWith("zh:")) return "zh";
+  return "guide";
+}
+
+function noteRangeInText(note, text) {
+  if (
+    Number.isInteger(note.start) &&
+    Number.isInteger(note.end) &&
+    note.start >= 0 &&
+    note.end <= text.length &&
+    text.slice(note.start, note.end) === note.quote
+  ) return { start: note.start, end: note.end };
+  const foundAt = text.indexOf(note.quote || "");
+  return foundAt >= 0 ? { start: foundAt, end: foundAt + note.quote.length } : null;
+}
+
+function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasisTerms = []) {
+  element.replaceChildren();
+  element.tabIndex = 0;
+  element.dataset.articleKey = articleKeyValue;
+  element.dataset.contextId = contextId;
+  const noteRanges = notesForArticle(articleKeyValue)
+    .filter((note) => note.contextId === contextId)
+    .map((note) => ({ note, range: noteRangeInText(note, text) }))
+    .filter(({ range }) => range);
+  const emphasisRanges = emphasisTerms
+    .map((term) => ({ start: text.indexOf(term), end: text.indexOf(term) + term.length }))
+    .filter(({ start, end }) => start >= 0 && end > start);
+  const boundaries = new Set([0, text.length]);
+  for (const { range } of noteRanges) {
+    boundaries.add(range.start);
+    boundaries.add(range.end);
+  }
+  for (const range of emphasisRanges) {
+    boundaries.add(range.start);
+    boundaries.add(range.end);
+  }
+  const positions = [...boundaries].sort((a, b) => a - b);
+  for (let index = 0; index < positions.length - 1; index += 1) {
+    const start = positions[index];
+    const end = positions[index + 1];
+    if (end <= start) continue;
+    const value = text.slice(start, end);
+    const noteMatch = noteRanges.find(({ range }) => start >= range.start && end <= range.end)?.note;
+    const emphasized = emphasisRanges.some((range) => start >= range.start && end <= range.end);
+    let content = document.createTextNode(value);
+    if (emphasized) {
+      const strong = document.createElement("strong");
+      strong.append(content);
+      content = strong;
+    }
+    if (noteMatch) {
+      const mark = document.createElement("mark");
+      mark.className = "note-highlight";
+      mark.dataset.noteId = noteMatch.id;
+      mark.tabIndex = 0;
+      mark.title = "開啟筆記";
+      mark.append(content);
+      mark.addEventListener("click", () => openNoteDrawer(noteMatch));
+      mark.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") openNoteDrawer(noteMatch);
+      });
+      content = mark;
+    }
+    element.append(content);
+  }
+  element.addEventListener("mouseup", () => captureSelection(element));
+  element.addEventListener("keyup", () => captureSelection(element));
+}
+
+function captureSelection(element) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount !== 1 || selection.isCollapsed) return;
+  const range = selection.getRangeAt(0);
+  if (!element.contains(range.startContainer) || !element.contains(range.endContainer)) return;
+  const quote = range.toString().trim();
+  if (quote.length < 2) return;
+  const before = document.createRange();
+  before.selectNodeContents(element);
+  before.setEnd(range.startContainer, range.startOffset);
+  const start = before.toString().length + range.toString().indexOf(quote);
+  const end = start + quote.length;
+  const articleKeyValue = element.dataset.articleKey;
+  const contextId = element.dataset.contextId;
+  const overlap = notesForArticle(articleKeyValue).find((note) => {
+    if (note.contextId !== contextId) return false;
+    const existing = noteRangeInText(note, element.innerText);
+    return existing && start < existing.end && end > existing.start;
+  });
+  if (overlap) {
+    hideSelectionToolbar();
+    openNoteDrawer(overlap);
+    return;
+  }
+  state.pendingSelection = { articleKey: articleKeyValue, contextId, start, end, quote };
+  const rect = range.getBoundingClientRect();
+  els.selectionToolbar.hidden = false;
+  const toolbarWidth = 112;
+  els.selectionToolbar.style.left = `${Math.max(8, Math.min(innerWidth - toolbarWidth - 8, rect.left + rect.width / 2 - toolbarWidth / 2))}px`;
+  els.selectionToolbar.style.top = `${Math.max(8, rect.top - 44)}px`;
+}
+
+function hideSelectionToolbar() {
+  els.selectionToolbar.hidden = true;
+}
+
+function openNoteDrawer(note = null) {
+  state.editingNoteId = note?.id || null;
+  const source = note || state.pendingSelection;
+  if (!source) return;
+  els.noteQuote.textContent = source.quote;
+  els.noteEditor.value = note?.body || "";
+  els.noteDelete.hidden = !note;
+  els.noteDrawer.classList.add("open");
+  els.noteDrawer.setAttribute("aria-hidden", "false");
+  els.noteDrawerBackdrop.hidden = false;
+  hideSelectionToolbar();
+  setTimeout(() => els.noteEditor.focus(), 0);
+}
+
+function closeNoteDrawer() {
+  els.noteDrawer.classList.remove("open");
+  els.noteDrawer.setAttribute("aria-hidden", "true");
+  els.noteDrawerBackdrop.hidden = true;
+  state.editingNoteId = null;
+  state.pendingSelection = null;
+  window.getSelection()?.removeAllRanges();
+}
+
+function saveCurrentNote() {
+  const body = els.noteEditor.value.trim();
+  const now = new Date().toISOString();
+  if (state.editingNoteId) {
+    const note = state.notes.find((item) => item.id === state.editingNoteId);
+    if (!note) return;
+    note.body = body;
+    note.updatedAt = now;
+  } else if (state.pendingSelection) {
+    state.notes.push({
+      id: crypto.randomUUID?.() || `note-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      ...state.pendingSelection,
+      body,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else return;
+  saveNotes();
+  closeNoteDrawer();
+  render();
+}
+
+function deleteCurrentNote() {
+  if (!state.editingNoteId || !window.confirm("確定刪除這則筆記？")) return;
+  state.notes = state.notes.filter((note) => note.id !== state.editingNoteId);
+  saveNotes();
+  closeNoteDrawer();
+  render();
+}
+
+function focusNote(note) {
+  state.readingModes.set(note.articleKey, noteMode(note));
+  render();
+  requestAnimationFrame(() => {
+    const target = document.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.classList.add("note-flash");
+    setTimeout(() => target?.classList.remove("note-flash"), 1300);
+    openNoteDrawer(note);
+  });
+}
+
+async function loadChineseFullText(article) {
+  const key = articleKey(article);
+  if (state.chineseTextByArticle.has(key) || state.chineseTextLoading.has(key)) return;
+  state.chineseTextLoading.add(key);
+  render();
+  try {
+    const issue = encodeURIComponent(issueFor(article));
+    const id = encodeURIComponent(article.id);
+    const response = await fetch(`./data/fulltext/${issue}/${id}.json`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const value = await response.json();
+    if (!Array.isArray(value.paragraphsZh) || !value.paragraphsZh.length) throw new Error("缺少中文段落");
+    state.chineseTextByArticle.set(key, value);
+  } catch {
+    state.chineseTextByArticle.set(key, { unavailable: true });
+  } finally {
+    state.chineseTextLoading.delete(key);
+    render();
   }
 }
 
@@ -297,35 +617,11 @@ function highlightTermsFor(article) {
     .slice(0, 3);
 }
 
-function appendHighlightedText(element, text, terms) {
-  const matches = terms
-    .map((term) => ({ term, index: text.indexOf(term) }))
-    .filter(({ index }) => index >= 0)
-    .sort((a, b) => a.index - b.index || b.term.length - a.term.length)
-    .filter((match, index, all) => !all.slice(0, index).some(
-      (previous) => match.index < previous.index + previous.term.length,
-    ));
-
-  if (!matches.length) {
-    element.textContent = text;
-    return;
-  }
-
-  let cursor = 0;
-  for (const { term, index } of matches) {
-    if (index > cursor) element.append(document.createTextNode(text.slice(cursor, index)));
-    const strong = document.createElement("strong");
-    strong.textContent = term;
-    element.append(strong);
-    cursor = index + term.length;
-  }
-  if (cursor < text.length) element.append(document.createTextNode(text.slice(cursor)));
-}
-
 function renderCard(article) {
   const fragment = els.template.content.cloneNode(true);
   const favoriteButton = fragment.querySelector(".favorite-button");
   const key = articleKey(article);
+  const mode = state.readingModes.get(key) || "guide";
   const isFavorite = state.favorites.has(key);
   favoriteButton.classList.toggle("active", isFavorite);
   favoriteButton.setAttribute("aria-pressed", String(isFavorite));
@@ -369,29 +665,36 @@ function renderCard(article) {
   const summaryBlock = fragment.querySelector(".summary-block");
   const pendingBlock = fragment.querySelector(".pending-block");
   const hasSummary = Boolean(article.summaryZh);
-  summaryBlock.hidden = !hasSummary;
-  pendingBlock.hidden = hasSummary;
+  summaryBlock.hidden = mode === "guide" && !hasSummary;
+  pendingBlock.hidden = mode !== "guide" || hasSummary;
 
   if (hasSummary) {
+    const summary = fragment.querySelector(".summary");
+    renderAnnotatedText(summary, article.summaryZh, key, "guide:summary", highlightTermsFor(article));
     const list = fragment.querySelector(".key-points");
-    for (const point of article.keyPointsZh || []) {
+    for (const [index, point] of (article.keyPointsZh || []).entries()) {
       const li = document.createElement("li");
-      if (state.query) appendSearchHighlightedText(li, point);
-      else li.textContent = point;
+      li.className = "annotatable-paragraph";
+      renderAnnotatedText(li, point, key, `guide:keypoint-${index + 1}`);
       list.append(li);
     }
-    const summary = fragment.querySelector(".summary");
-    if (state.query) appendSearchHighlightedText(summary, article.summaryZh);
-    else appendHighlightedText(summary, article.summaryZh, highlightTermsFor(article));
     const researchLens = fragment.querySelector(".research-lens");
-    if (state.query) appendSearchHighlightedText(researchLens, article.researchLensZh || "");
-    else researchLens.textContent = article.researchLensZh || "";
+    renderAnnotatedText(researchLens, article.researchLensZh || "", key, "guide:lens");
   }
 
   const tags = fragment.querySelector(".tags");
   for (const keyword of article.keywordsZh || []) {
-    const tag = document.createElement("span");
+    const tag = document.createElement("button");
+    tag.type = "button";
     tag.textContent = keyword;
+    tag.title = `搜尋「${keyword}」`;
+    tag.addEventListener("click", () => {
+      state.query = keyword;
+      state.page = 1;
+      els.searchInput.value = keyword;
+      render();
+      els.toolbar.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     tags.append(tag);
   }
   tags.hidden = !tags.childElementCount;
@@ -401,15 +704,76 @@ function renderCard(article) {
   link.hidden = !article.sourceUrl;
 
   const internalEnglish = article.textEn || state.internalTextById.get(article.id);
-  const internalBlock = fragment.querySelector(".internal-english-block");
   if (internalEnglish) {
     const textContainer = fragment.querySelector(".english-full-text");
-    for (const paragraph of internalEnglish.split(/\n+/).filter(Boolean)) {
+    for (const [index, paragraph] of internalEnglish.split(/\n+/).filter(Boolean).entries()) {
       const p = document.createElement("p");
-      p.textContent = paragraph;
+      p.className = "annotatable-paragraph";
+      renderAnnotatedText(p, paragraph, key, `en:p${index + 1}`);
       textContainer.append(p);
     }
-    internalBlock.hidden = false;
+  }
+
+  const chineseValue = state.chineseTextByArticle.get(key);
+  const chineseContainer = fragment.querySelector(".chinese-full-text");
+  const chineseStatus = fragment.querySelector(".full-text-status");
+  if (chineseValue?.paragraphsZh?.length) {
+    for (const [index, paragraph] of chineseValue.paragraphsZh.entries()) {
+      const p = document.createElement("p");
+      p.className = "annotatable-paragraph";
+      renderAnnotatedText(p, paragraph, key, `zh:p${index + 1}`);
+      chineseContainer.append(p);
+    }
+  } else if (state.chineseTextLoading.has(key)) {
+    chineseStatus.textContent = "中文全文載入中…";
+    chineseStatus.hidden = false;
+  } else if (chineseValue?.unavailable) {
+    chineseStatus.textContent = "這篇中文全文尚未完成，請先閱讀英文原文。";
+    chineseStatus.hidden = false;
+  } else {
+    chineseStatus.textContent = "切換後將載入中文全文。";
+    chineseStatus.hidden = false;
+  }
+
+  fragment.querySelectorAll(".reading-mode").forEach((button) => {
+    const buttonMode = button.dataset.mode;
+    const active = buttonMode === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    if (buttonMode === "en" && !internalEnglish) {
+      button.disabled = true;
+      button.title = "英文全文尚未載入";
+    }
+    button.addEventListener("click", () => {
+      if (button.disabled) return;
+      state.readingModes.set(key, buttonMode);
+      if (buttonMode === "zh") loadChineseFullText(article);
+      else render();
+    });
+  });
+  fragment.querySelectorAll(".reading-pane").forEach((pane) => {
+    pane.hidden = pane.dataset.pane !== mode;
+  });
+
+  const articleNotes = notesForArticle(key);
+  const noteCount = fragment.querySelector(".note-count");
+  const noteEmpty = fragment.querySelector(".note-empty");
+  const noteList = fragment.querySelector(".note-index-list");
+  noteCount.textContent = articleNotes.length;
+  noteEmpty.hidden = articleNotes.length > 0;
+  for (const note of articleNotes) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "note-index-item";
+    const language = document.createElement("small");
+    language.className = "note-index-language";
+    language.textContent = noteLanguageLabel(note);
+    const quote = document.createElement("span");
+    quote.className = "note-index-quote";
+    quote.textContent = note.quote;
+    button.append(language, quote);
+    button.addEventListener("click", () => focusNote(note));
+    noteList.append(button);
   }
   return fragment;
 }
@@ -500,6 +864,7 @@ function render() {
     emptyHint.textContent = "試著縮短搜尋文字，或切換其他主題。";
   }
   updateFavoritesControl();
+  renderQuickTags();
   syncUrl();
 }
 
@@ -545,6 +910,56 @@ els.clearFilters.addEventListener("click", () => {
 });
 els.previousPage.addEventListener("click", () => goToPage(state.page - 1));
 els.nextPage.addEventListener("click", () => goToPage(state.page + 1));
+els.addSelectionNote.addEventListener("click", () => openNoteDrawer());
+els.noteSave.addEventListener("click", saveCurrentNote);
+els.noteDelete.addEventListener("click", deleteCurrentNote);
+els.noteDrawerClose.addEventListener("click", closeNoteDrawer);
+els.noteDrawerBackdrop.addEventListener("click", closeNoteDrawer);
+els.manageTagsButton.addEventListener("click", () => {
+  els.tagLabelInput.value = "";
+  els.tagQueryInput.value = state.query.trim();
+  renderSavedTags();
+  els.tagManager.showModal();
+  setTimeout(() => (state.query.trim() ? els.tagLabelInput : els.tagQueryInput).focus(), 0);
+});
+els.tagManagerClose.addEventListener("click", () => els.tagManager.close());
+els.tagManager.addEventListener("click", (event) => {
+  if (event.target === els.tagManager) els.tagManager.close();
+});
+els.tagManagerForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const label = els.tagLabelInput.value.trim();
+  const query = els.tagQueryInput.value.trim();
+  if (!label || !query) return;
+  const duplicate = state.savedTags.find((tag) => tag.label === label || tag.query === query);
+  if (duplicate) {
+    duplicate.label = label;
+    duplicate.query = query;
+  } else {
+    state.savedTags.push({
+      id: crypto.randomUUID?.() || `tag-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      label,
+      query,
+      createdAt: new Date().toISOString(),
+    });
+  }
+  saveSavedTags();
+  els.tagLabelInput.value = "";
+  els.tagQueryInput.value = state.query.trim();
+  renderSavedTags();
+  renderQuickTags();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (els.noteDrawer.classList.contains("open")) closeNoteDrawer();
+  else hideSelectionToolbar();
+});
+document.addEventListener("pointerdown", (event) => {
+  if (!els.selectionToolbar.hidden && !els.selectionToolbar.contains(event.target)) {
+    hideSelectionToolbar();
+  }
+});
+window.addEventListener("scroll", hideSelectionToolbar, { passive: true });
 
 async function loadInternalEnglishText() {
   if (!["localhost", "127.0.0.1"].includes(location.hostname)) return;
