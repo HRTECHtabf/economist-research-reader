@@ -12,6 +12,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+html.preserve-scroll-position { scroll-behavior: auto; }
 body {
   margin: 0;
   background: var(--paper);
@@ -153,6 +154,11 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .note-highlight:hover, .note-highlight:focus-visible { background: #ffd261; outline: 1px solid #b98100; }
 .note-flash { animation: note-flash 1.2s ease; }
 @keyframes note-flash { 0%, 100% { background: #ffe39a; } 40% { background: #ffbf38; } }
+.note-hover-preview { position: fixed; z-index: 79; width: max-content; max-width: min(320px, calc(100vw - 24px)); max-height: 190px; overflow: hidden; padding: 11px 13px; border: 1px solid #c8b36d; border-radius: 7px; background: #fff9df; color: #413b2f; box-shadow: 0 10px 30px rgba(35,29,18,.18); pointer-events: none; }
+.note-hover-preview[hidden] { display: none; }
+.note-hover-preview:not(.positioned) { visibility: hidden; }
+.note-hover-preview span { display: block; margin-bottom: 3px; color: #8b6500; font-size: 9px; font-weight: 850; letter-spacing: .11em; }
+.note-hover-preview p { display: -webkit-box; margin: 0; overflow: hidden; font-size: 11px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 7; }
 .selection-toolbar { position: fixed; z-index: 70; padding: 4px; border-radius: 6px; background: var(--ink); box-shadow: 0 8px 26px rgba(0,0,0,.2); }
 .selection-toolbar[hidden] { display: none; }
 .selection-toolbar button { border: 0; padding: 7px 10px; background: transparent; color: white; cursor: pointer; font-size: 11px; font-weight: 800; }

@@ -87,6 +87,7 @@ const state = {
   pendingSelection: null,
   editingNoteId: null,
   noteAnchorRect: null,
+  previewedNoteId: null,
 };
 
 const els = {
@@ -109,6 +110,8 @@ const els = {
   template: document.querySelector("#article-template"),
   selectionToolbar: document.querySelector("#selection-toolbar"),
   addSelectionNote: document.querySelector("#add-selection-note"),
+  noteHoverPreview: document.querySelector("#note-hover-preview"),
+  noteHoverPreviewBody: document.querySelector("#note-hover-preview-body"),
   noteDrawer: document.querySelector("#note-drawer"),
   noteDrawerClose: document.querySelector("#note-drawer-close"),
   noteQuote: document.querySelector("#note-quote"),
@@ -287,9 +290,16 @@ function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasis
       mark.className = "note-highlight";
       mark.dataset.noteId = noteMatch.id;
       mark.tabIndex = 0;
-      mark.title = "開啟筆記";
+      mark.setAttribute("aria-label", `開啟筆記：${noteMatch.body || "尚未填寫內容"}`);
       mark.append(content);
-      mark.addEventListener("click", (event) => openNoteEditor(noteMatch, event.currentTarget.getBoundingClientRect()));
+      mark.addEventListener("mouseenter", (event) => showNotePreview(noteMatch, event.currentTarget.getBoundingClientRect()));
+      mark.addEventListener("mouseleave", hideNotePreview);
+      mark.addEventListener("focus", (event) => showNotePreview(noteMatch, event.currentTarget.getBoundingClientRect()));
+      mark.addEventListener("blur", hideNotePreview);
+      mark.addEventListener("click", (event) => {
+        hideNotePreview();
+        openNoteEditor(noteMatch, event.currentTarget.getBoundingClientRect());
+      });
       mark.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -348,6 +358,38 @@ function hideSelectionToolbar() {
   els.selectionToolbar.hidden = true;
 }
 
+function showNotePreview(note, anchorRect) {
+  const body = note.body?.trim();
+  if (!body) return;
+  state.previewedNoteId = note.id;
+  els.noteHoverPreviewBody.textContent = body;
+  els.noteHoverPreview.hidden = false;
+  els.noteHoverPreview.classList.remove("positioned");
+  requestAnimationFrame(() => {
+    if (state.previewedNoteId !== note.id) return;
+    const margin = 12;
+    const gap = 8;
+    const previewRect = els.noteHoverPreview.getBoundingClientRect();
+    const anchorWidth = anchorRect.width || anchorRect.right - anchorRect.left;
+    const centeredLeft = anchorRect.left + anchorWidth / 2 - previewRect.width / 2;
+    const left = Math.max(margin, Math.min(innerWidth - previewRect.width - margin, centeredLeft));
+    const above = anchorRect.top - previewRect.height - gap;
+    const below = anchorRect.bottom + gap;
+    const top = above >= margin
+      ? above
+      : Math.min(innerHeight - previewRect.height - margin, below);
+    els.noteHoverPreview.style.left = `${left}px`;
+    els.noteHoverPreview.style.top = `${Math.max(margin, top)}px`;
+    els.noteHoverPreview.classList.add("positioned");
+  });
+}
+
+function hideNotePreview() {
+  state.previewedNoteId = null;
+  els.noteHoverPreview.hidden = true;
+  els.noteHoverPreview.classList.remove("positioned");
+}
+
 function positionNoteEditor(anchorRect) {
   const margin = 12;
   const gap = 9;
@@ -382,6 +424,7 @@ function openNoteEditor(note = null, anchorRect = null) {
   els.noteDrawer.classList.remove("positioned");
   els.noteDrawer.classList.add("open");
   els.noteDrawer.setAttribute("aria-hidden", "false");
+  hideNotePreview();
   hideSelectionToolbar();
   requestAnimationFrame(() => {
     positionNoteEditor(anchorRect || state.noteAnchorRect);
@@ -424,9 +467,10 @@ function saveCurrentNote() {
       updatedAt: now,
     });
   } else return;
+  const viewport = { x: scrollX, y: scrollY };
   saveNotes();
   closeNoteEditor();
-  render();
+  renderPreservingViewport(viewport);
 }
 
 function deleteCurrentNote() {
@@ -901,6 +945,7 @@ function renderPagination(pageCount) {
 }
 
 function render() {
+  hideNotePreview();
   const normalizedQuery = state.query.trim().toLocaleLowerCase("zh-Hant");
   const filtered = sortedArticles(state.data.articles.filter((article) => {
     if (state.category !== "全部" && categoryFor(article) !== state.category) return false;
@@ -934,6 +979,17 @@ function render() {
   updateFavoritesControl();
   renderQuickTags();
   syncUrl();
+}
+
+function renderPreservingViewport(viewport) {
+  const root = document.documentElement;
+  root.classList.add("preserve-scroll-position");
+  render();
+  window.scrollTo(viewport.x, viewport.y);
+  requestAnimationFrame(() => {
+    window.scrollTo(viewport.x, viewport.y);
+    requestAnimationFrame(() => root.classList.remove("preserve-scroll-position"));
+  });
 }
 
 els.searchInput.addEventListener("input", (event) => {
@@ -1029,6 +1085,7 @@ document.addEventListener("pointerdown", (event) => {
 });
 window.addEventListener("scroll", () => {
   hideSelectionToolbar();
+  hideNotePreview();
 }, { passive: true });
 
 async function loadInternalEnglishText() {
