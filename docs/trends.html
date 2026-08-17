@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-12" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-13" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -71,7 +71,13 @@
           <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
             <div class="card-heading">
               <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">時間性關鍵字雲</h2><span id="cloud-help"></span></span></div>
-              <div><p>越常出現的 tag 越靠近中心、字體越大；顏色表示相較前一期的升降。雲固定顯示選定期數，不會自動閃動。</p><label class="module-period-control"><span>關鍵字雲期數</span><select id="cloud-issue" aria-label="選擇關鍵字雲期數"></select></label></div>
+              <div>
+                <p>越常出現的 tag 越靠近中心、字體越大；可合併全部資料、按月查看，或停在單一期數。</p>
+                <div class="cloud-period-controls">
+                  <label><span>統計方式</span><select id="cloud-scope" aria-label="選擇關鍵字雲統計方式"><option value="all">全部資料</option><option value="month">每月</option><option value="issue" selected>每期</option></select></label>
+                  <label><span id="cloud-period-label">期數</span><select id="cloud-issue" aria-label="選擇關鍵字雲資料範圍"></select></label>
+                </div>
+              </div>
             </div>
             <div class="cloud-legend" aria-label="關鍵字雲圖例">
               <span><i class="trend-down-extreme"></i>急降</span><span><i class="trend-down-strong"></i>明顯降溫</span><span><i class="trend-down"></i>小幅降溫</span><span><i class="trend-flat"></i><b id="trend-flat-label">持平</b></span><span><i class="trend-up"></i>小幅升溫</span><span><i class="trend-up-strong"></i>明顯升溫</span><span><i class="trend-up-extreme"></i>急升</span><small>字體大小與中心距離＝文章占比</small>
@@ -83,7 +89,7 @@
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
             <div class="card-heading catalogue-heading">
               <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">每期熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
-              <p>每 2 秒換到下一期；按上一期、下一期或直接選期後會自動暫停。每次換期才更新長條、數字與名次，不使用移動平均或中間估計。</p>
+              <p>每 2 秒換到下一期；原有 tag 會依名次向上或向下移動，新進榜 tag 從底部進場。按上一期、下一期或直接選期後會自動暫停。</p>
             </div>
             <div class="top-player" aria-label="熱門 tag 期數控制">
               <div class="current-period" aria-live="polite"><span>目前顯示</span><strong id="current-period-title">載入中…</strong><small id="current-period-range"></small></div>
@@ -109,6 +115,6 @@
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
     <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-12" defer></script>
+    <script src="./trends.js?v=20260817-13" defer></script>
   </body>
 </html>

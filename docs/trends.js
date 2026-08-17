@@ -1,10 +1,13 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLAYBACK_DELAY = 2000;
+const GRAPH_WIDTH = 1000;
+const GRAPH_HEIGHT = 640;
 const requestedIssue = params.get("issue") || "";
 const requestedRelationshipIssue = params.get("network") || "";
 const requestedOverviewIssue = params.get("overview") || "";
 const requestedCloudIssue = params.get("cloud") || "";
+const requestedCloudScope = params.get("cloudView") || "issue";
 
 const state = {
   data: null,
@@ -16,6 +19,8 @@ const state = {
   relationshipRenderKey: "",
   overviewIssue: requestedOverviewIssue,
   cloudIssue: requestedCloudIssue,
+  cloudScope: ["all", "month", "issue"].includes(requestedCloudScope) ? requestedCloudScope : "issue",
+  cloudMonths: [],
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -55,6 +60,8 @@ const els = {
   cloudHelp: document.querySelector("#cloud-help"),
   trendFlatLabel: document.querySelector("#trend-flat-label"),
   cloudComparisonStatus: document.querySelector("#cloud-comparison-status"),
+  cloudScope: document.querySelector("#cloud-scope"),
+  cloudPeriodLabel: document.querySelector("#cloud-period-label"),
   cloudIssue: document.querySelector("#cloud-issue"),
   topTagsHelp: document.querySelector("#top-tags-help"),
   topTagsIssue: document.querySelector("#top-tags-issue"),
@@ -115,11 +122,11 @@ function renderStaticCalculationHelp() {
   ));
   els.cloudHelp.replaceChildren(createCalculationHelp(
     "關鍵字雲怎麼算？",
-    "字體大小依 tag 文章數做平方根縮放，出現愈多就愈靠近中心。顏色比較 tag 在當期文章中的占比與前一期占比；最早一期沒有比較基準，因此灰色代表無前期資料。",
+    "字體大小依所選範圍內的 tag 文章數做平方根縮放，出現愈多就愈靠近中心。每月模式會比較前一個有資料的月份，每期模式比較前一期；全部資料沒有單一前期，因此不計升降。",
   ));
   els.topTagsHelp.replaceChildren(createCalculationHelp(
     "熱門 tag 怎麼排？",
-    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。這裡不使用移動平均，也不估計兩期之間的數值。",
+    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。換期時保留相同 tag 的列，依新名次上下移動；新進榜者才從底部進場。",
   ));
 }
 
@@ -333,7 +340,9 @@ function syncUrl() {
   if (!state.autoPlay && state.issue) next.set("issue", state.issue);
   if (state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
   if (state.overviewIssue && state.overviewIssue !== state.issues.at(-1)) next.set("overview", state.overviewIssue);
-  if (state.cloudIssue && state.cloudIssue !== state.issues.at(-1)) next.set("cloud", state.cloudIssue);
+  if (state.cloudScope !== "issue") next.set("cloudView", state.cloudScope);
+  if (state.cloudScope === "month" && state.cloudIssue) next.set("cloud", state.cloudIssue);
+  if (state.cloudScope === "issue" && state.cloudIssue && state.cloudIssue !== state.issues.at(-1)) next.set("cloud", state.cloudIssue);
   for (const tag of state.selectedTags) next.append("tag", tag);
   const query = next.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
@@ -442,10 +451,72 @@ function fillIssueSelect(select, selected) {
   });
 }
 
+function monthTitle(value) {
+  const [year, month] = value.split(".").map(Number);
+  return `${year} 年 ${month} 月`;
+}
+
+function cloudArticlesForScope(scope = state.cloudScope, key = state.cloudIssue) {
+  if (scope === "all") return state.data.articles;
+  if (scope === "month") return state.data.articles.filter((article) => issueDate(article).startsWith(`${key}.`));
+  return articlesInWindow(key);
+}
+
+function previousCloudScopeKey() {
+  if (state.cloudScope === "all") return "";
+  const keys = state.cloudScope === "month" ? state.cloudMonths : state.issues;
+  const index = keys.indexOf(state.cloudIssue);
+  return index > 0 ? keys[index - 1] : "";
+}
+
+function cloudStatistics() {
+  const articles = cloudArticlesForScope();
+  const periods = periodsFor(articles);
+  const stats = tagStatistics(articles, periods, true, "");
+  const previousKey = previousCloudScopeKey();
+  const previousArticles = previousKey ? cloudArticlesForScope(state.cloudScope, previousKey) : [];
+  stats.forEach((item) => {
+    const currentRate = articles.length ? (item.count / articles.length) * 100 : 0;
+    const previousRate = previousArticles.length ? (countContaining(previousArticles, [item.tag]) / previousArticles.length) * 100 : 0;
+    item.trend = previousKey ? trendFor([previousRate, currentRate]) : { delta: 0, percent: 0, recent: currentRate, previous: 0 };
+  });
+  return { articles, stats, previousKey };
+}
+
+function renderCloudControls() {
+  els.cloudScope.value = state.cloudScope;
+  els.cloudIssue.replaceChildren();
+  if (state.cloudScope === "all") {
+    els.cloudPeriodLabel.textContent = "範圍";
+    const option = document.createElement("option");
+    option.value = "all";
+    option.textContent = `全部 ${state.issues.length} 期｜共 ${state.data.articles.length} 篇`;
+    els.cloudIssue.append(option);
+    els.cloudIssue.disabled = true;
+    return;
+  }
+  els.cloudIssue.disabled = false;
+  if (state.cloudScope === "month") {
+    els.cloudPeriodLabel.textContent = "月份";
+    [...state.cloudMonths].reverse().forEach((month) => {
+      const issueCount = state.issues.filter((issue) => issue.startsWith(`${month}.`)).length;
+      const articleCount = cloudArticlesForScope("month", month).length;
+      const option = document.createElement("option");
+      option.value = month;
+      option.textContent = `${monthTitle(month)}｜${issueCount} 期・${articleCount} 篇`;
+      option.selected = month === state.cloudIssue;
+      els.cloudIssue.append(option);
+    });
+    return;
+  }
+  els.cloudPeriodLabel.textContent = "期數";
+  fillIssueSelect(els.cloudIssue, state.cloudIssue);
+}
+
 function renderIndependentIssueControls() {
   fillIssueSelect(els.overviewIssue, state.overviewIssue);
   fillIssueSelect(els.relationshipIssue, state.relationshipIssue);
-  fillIssueSelect(els.cloudIssue, state.cloudIssue);
+  renderCloudControls();
 }
 
 function renderRelationshipPanel() {
@@ -509,7 +580,7 @@ function positionTooltip(event) {
   els.tooltip.style.top = `${preferredTop > margin ? preferredTop : clientY + 16}px`;
 }
 
-function highlightTag(tag, event, articles, statsByTag) {
+function highlightTag(tag, event, articles, statsByTag, trendFormatter = (trend) => trendTextForSelection(trend, state.overviewIssue)) {
   const relations = relatedTags(articles, tag);
   const relationMap = new Map(relations.map((item) => [item.target, item]));
   els.overviewGrid.classList.add("has-hover");
@@ -523,7 +594,7 @@ function highlightTag(tag, event, articles, statsByTag) {
   title.textContent = tag;
   const details = document.createElement("span");
   const topRelated = relations.slice(0, 3).map((item) => item.target).join("、") || "尚無穩定關聯";
-  details.textContent = `${stat?.count || 0} 篇 · ${trendTextForSelection(stat?.trend || { percent: 0 }, state.overviewIssue)}｜主要關聯：${topRelated}`;
+  details.textContent = `${stat?.count || 0} 篇 · ${trendFormatter(stat?.trend || { percent: 0 })}｜主要關聯：${topRelated}`;
   els.tooltip.append(title, details);
   els.tooltip.hidden = false;
   requestAnimationFrame(() => positionTooltip(event));
@@ -692,7 +763,7 @@ function assignGraphCommunities(nodes, edges) {
 function layoutGraph(nodes, edges) {
   assignGraphCommunities(nodes, edges);
   const maxCount = Math.max(1, ...nodes.map((node) => node.count));
-  const centers = [{ x: 315, y: 190 }, { x: 690, y: 180 }, { x: 350, y: 370 }, { x: 690, y: 360 }, { x: 500, y: 250 }];
+  const centers = [{ x: 315, y: 220 }, { x: 690, y: 205 }, { x: 350, y: 445 }, { x: 690, y: 425 }, { x: 500, y: 320 }];
   nodes.forEach((node, index) => {
     node.radius = node.compound ? 38 : node.selected ? 42 : 19 + Math.sqrt(node.count / maxCount) * 19;
     const center = centers[node.community] || centers[0];
@@ -702,10 +773,10 @@ function layoutGraph(nodes, edges) {
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
     node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (node.community - 1.5) * 24;
-    if (node.id === "focus") { node.x = 500; node.y = 250; }
-    if (node.id === "focus-a") { node.x = 350; node.y = 145; }
-    if (node.id === "focus-b") { node.x = 650; node.y = 145; }
-    if (node.id === "compound") { node.x = 500; node.y = 260; }
+    if (node.id === "focus") { node.x = 500; node.y = 320; }
+    if (node.id === "focus-a") { node.x = 350; node.y = 185; }
+    if (node.id === "focus-b") { node.x = 650; node.y = 185; }
+    if (node.id === "compound") { node.x = 500; node.y = 330; }
     if (node.fixed) node.z = 110;
     node.layoutIndex = index;
   });
@@ -737,8 +808,8 @@ function layoutGraph(nodes, edges) {
       node.vx += (center.x - node.x) * .004;
       node.vy += (center.y - node.y) * .004;
       node.vx *= .82; node.vy *= .82;
-      node.x = Math.max(node.radius + 28, Math.min(1000 - node.radius - 28, node.x + node.vx));
-      node.y = Math.max(node.radius + 25, Math.min(500 - node.radius - 35, node.y + node.vy));
+      node.x = Math.max(node.radius + 28, Math.min(GRAPH_WIDTH - node.radius - 28, node.x + node.vx));
+      node.y = Math.max(node.radius + 34, Math.min(GRAPH_HEIGHT - node.radius - 44, node.y + node.vy));
     });
   }
   nodes.forEach((node) => { node.baseX = node.x; node.baseY = node.y; node.baseZ = node.z; });
@@ -758,7 +829,7 @@ function renderNetwork(articles, stats, relationships) {
   }
   layoutGraph(nodes, edges);
   els.relationshipNetwork.classList.add("network-3d");
-  const svg = svgElement("svg", { viewBox: "0 0 1000 500", "aria-hidden": "true" });
+  const svg = svgElement("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, "aria-hidden": "true" });
   const edgeLayer = svgElement("g");
   const nodeLayer = svgElement("g");
   svg.append(edgeLayer, nodeLayer);
@@ -789,8 +860,8 @@ function renderNetwork(articles, stats, relationships) {
     suppressClickUntil: 0,
   };
   function projectNode(node, rotationX, rotationY) {
-    const x = node.baseX - 500;
-    const y = node.baseY - 250;
+    const x = node.baseX - GRAPH_WIDTH / 2;
+    const y = node.baseY - GRAPH_HEIGHT / 2;
     const z = node.baseZ;
     const cosY = Math.cos(rotationY), sinY = Math.sin(rotationY);
     const x1 = x * cosY + z * sinY;
@@ -798,8 +869,8 @@ function renderNetwork(articles, stats, relationships) {
     const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
     const y1 = y * cosX - z1 * sinX;
     const z2 = y * sinX + z1 * cosX;
-    const scale = 760 / (760 - z2);
-    return { x: 500 + x1 * scale, y: 250 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
+    const scale = 820 / (820 - z2);
+    return { x: GRAPH_WIDTH / 2 + x1 * scale, y: GRAPH_HEIGHT / 2 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
   }
   function updatePositions() {
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
@@ -1020,15 +1091,17 @@ function renderCloud(articles, stats) {
   const items = stats.filter((item) => item.count > 0).sort((a, b) => b.count - a.count).slice(0, itemLimit);
   if (!items.length) return;
   const statsByTag = statsMapFor(stats), counts = items.map((item) => item.count), min = Math.min(...counts), max = Math.max(...counts);
+  const cloudTrendFormatter = (trend) => previousCloudScopeKey() ? trendText(trend) : "無比較基準";
   const buttons = items.map((item) => {
     const button = document.createElement("button"); button.type = "button"; button.className = "cloud-word"; button.dataset.tag = item.tag;
     button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, cloudWidth)}px`; button.style.visibility = "hidden";
     button.classList.toggle("selected", state.selectedTags.includes(item.tag)); button.textContent = item.tag;
-    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendTextForSelection(item.trend, state.cloudIssue)}`);
+    const trendLabel = cloudTrendFormatter(item.trend);
+    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendLabel}`);
     button.addEventListener("click", () => toggleFocusTag(item.tag));
-    button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag));
+    button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag, cloudTrendFormatter));
     button.addEventListener("pointermove", positionTooltip); button.addEventListener("pointerleave", clearTagHighlights);
-    button.addEventListener("focus", (event) => highlightTag(item.tag, event, articles, statsByTag)); button.addEventListener("blur", clearTagHighlights);
+    button.addEventListener("focus", (event) => highlightTag(item.tag, event, articles, statsByTag, cloudTrendFormatter)); button.addEventListener("blur", clearTagHighlights);
     els.keywordCloud.append(button); return button;
   });
   requestAnimationFrame(() => layoutCloudWords(buttons));
@@ -1036,18 +1109,70 @@ function renderCloud(articles, stats) {
   els.keywordCloud.onpointerleave = () => { resetCloudDrift(); clearTagHighlights(); };
 }
 
-function renderCloudComparisonStatus() {
-  const comparisonIssue = state.cloudIssue || state.issues.at(-1);
-  const issueIndex = state.issues.indexOf(comparisonIssue);
-  const hasPrevious = issueIndex > 0;
-  els.trendFlatLabel.textContent = hasPrevious ? "持平" : "無前期資料";
+function renderCloudComparisonStatus(articles, previousKey) {
+  const hasPrevious = Boolean(previousKey);
+  els.trendFlatLabel.textContent = hasPrevious ? "持平" : "無比較基準";
   els.cloudComparisonStatus.classList.toggle("no-baseline", !hasPrevious);
-  if (!hasPrevious) {
-    els.cloudComparisonStatus.textContent = "這是資料庫最早一期，沒有前一期可比較；灰色代表缺少比較基準，不代表趨勢持平。";
+  if (state.cloudScope === "all") {
+    els.cloudComparisonStatus.textContent = `全部資料：合併 ${state.issues.length} 期、共 ${articles.length} 篇文章。因為沒有單一前期，顏色統一表示無比較基準。`;
     return;
   }
-  const previousIssue = state.issues[issueIndex - 1];
-  els.cloudComparisonStatus.textContent = `固定期數：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
+  if (!hasPrevious) {
+    const unit = state.cloudScope === "month" ? "月份" : "期數";
+    els.cloudComparisonStatus.textContent = `這是資料庫最早${unit}，沒有前一個範圍可比較；灰色不代表趨勢持平。`;
+    return;
+  }
+  if (state.cloudScope === "month") {
+    els.cloudComparisonStatus.textContent = `每月比較：顏色比較 ${monthTitle(previousKey)} 與 ${monthTitle(state.cloudIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
+    return;
+  }
+  els.cloudComparisonStatus.textContent = `每期比較：顏色比較 ${issueTitle(previousKey)} 與 ${issueTitle(state.cloudIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
+}
+
+function createTopTagRow(tag) {
+  const row = document.createElement("li");
+  row.className = "top-tag-row";
+  row.dataset.tag = tag;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "top-tag-button";
+  const rank = document.createElement("b"); rank.className = "top-tag-rank";
+  const tagLabel = document.createElement("strong"); tagLabel.className = "top-tag-label";
+  const barTrack = document.createElement("span"); barTrack.className = "top-tag-track";
+  const bar = document.createElement("i"); barTrack.append(bar);
+  const metrics = document.createElement("span"); metrics.className = "top-tag-metrics";
+  const count = document.createElement("b"); count.className = "top-tag-count";
+  const rate = document.createElement("span"); rate.className = "top-tag-rate";
+  const trend = document.createElement("span"); trend.className = "top-tag-trend";
+  metrics.append(count, rate, trend);
+  button.append(rank, tagLabel, barTrack, metrics);
+  button.addEventListener("click", () => {
+    state.selectedTags = [row.dataset.tag];
+    renderAll();
+    document.querySelector("#relationship-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  row.append(button);
+  return row;
+}
+
+function updateTopTagRow(row, item, index, totalArticles, isNew) {
+  const rateValue = item.rate ?? ((item.count / Math.max(1, totalArticles)) * 100);
+  const previousRank = Number(row.dataset.rank || 0);
+  const nextRank = index + 1;
+  row.dataset.rank = nextRank;
+  row.dataset.movement = previousRank && nextRank < previousRank ? "up" : previousRank && nextRank > previousRank ? "down" : "flat";
+  const button = row.querySelector(".top-tag-button");
+  button.setAttribute("aria-label", `第 ${nextRank} 名，${item.tag}，${item.count.toFixed(0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
+  row.querySelector(".top-tag-rank").textContent = String(nextRank).padStart(2, "0");
+  row.querySelector(".top-tag-label").textContent = item.tag;
+  row.querySelector(".top-tag-count").textContent = `${item.count.toFixed(0)} 篇`;
+  row.querySelector(".top-tag-rate").textContent = `${rateValue.toFixed(1)}%`;
+  const trend = row.querySelector(".top-tag-trend");
+  trend.className = `top-tag-trend ${directionFor(item.trend)}`;
+  trend.textContent = trendTextForSelection(item.trend);
+  const bar = row.querySelector(".top-tag-track i");
+  row.dataset.nextBarWidth = `${Math.min(100, (rateValue / 45) * 100)}%`;
+  if (isNew) bar.style.width = "0%";
 }
 
 function paintTopTags(items, totalArticles, label) {
@@ -1056,34 +1181,62 @@ function paintTopTags(items, totalArticles, label) {
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-Hant"))
     .slice(0, 15);
   els.topTagsIssue.textContent = label;
-  els.topTagsRanking.replaceChildren();
-  els.topTagsRanking.classList.remove("is-racing");
-  visible.forEach((item, index) => {
-    const rateValue = item.rate ?? ((item.count / Math.max(1, totalArticles)) * 100);
-    const row = document.createElement("li");
-    row.className = "top-tag-row";
-    row.style.setProperty("--rank-delay", `${index * 45}ms`);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "top-tag-button";
-    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，${item.count.toFixed(0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
-    const rank = document.createElement("b"); rank.className = "top-tag-rank"; rank.textContent = String(index + 1).padStart(2, "0");
-    const label = document.createElement("strong"); label.className = "top-tag-label"; label.textContent = item.tag;
-    const barTrack = document.createElement("span"); barTrack.className = "top-tag-track";
-    const bar = document.createElement("i"); bar.style.setProperty("--bar-width", `${Math.min(100, (rateValue / 45) * 100)}%`); barTrack.append(bar);
-    const metrics = document.createElement("span"); metrics.className = "top-tag-metrics";
-    const count = document.createElement("b"); count.textContent = `${item.count.toFixed(0)} 篇`;
-    const rate = document.createElement("span"); rate.textContent = `${rateValue.toFixed(1)}%`;
-    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = trendTextForSelection(item.trend);
-    metrics.append(count, rate, trend);
-    button.append(rank, label, barTrack, metrics);
-    button.addEventListener("click", () => {
-      state.selectedTags = [item.tag];
-      renderAll();
-      document.querySelector("#relationship-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    row.append(button);
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const targetTags = new Set(visible.map((item) => item.tag));
+  const currentRows = [...els.topTagsRanking.querySelectorAll(".top-tag-row")];
+  currentRows.forEach((row) => row.getAnimations?.().forEach((animation) => animation.finish()));
+  const existing = new Map(currentRows.map((row) => [row.dataset.tag, row]));
+  const oldRects = new Map(currentRows.map((row) => [row.dataset.tag, row.getBoundingClientRect()]));
+  const listRect = els.topTagsRanking.getBoundingClientRect();
+
+  currentRows.filter((row) => !targetTags.has(row.dataset.tag)).forEach((row) => {
+    if (reduceMotion) { row.remove(); return; }
+    const rect = oldRects.get(row.dataset.tag);
+    row.classList.add("rank-leaving");
+    Object.assign(row.style, { position: "absolute", left: `${rect.left - listRect.left}px`, top: `${rect.top - listRect.top}px`, width: `${rect.width}px`, zIndex: "1" });
+    const exitDistance = Math.max(44, listRect.bottom - rect.bottom);
+    const animation = row.animate(
+      [{ transform: "translateY(0)", opacity: 1 }, { transform: `translateY(${exitDistance}px)`, opacity: 0 }],
+      { duration: 520, easing: "cubic-bezier(.35,0,.2,1)", fill: "forwards" },
+    );
+    animation.finished.finally(() => row.remove());
+  });
+
+  const rendered = visible.map((item, index) => {
+    const isNew = !existing.has(item.tag);
+    const row = existing.get(item.tag) || createTopTagRow(item.tag);
+    updateTopTagRow(row, item, index, totalArticles, isNew);
+    row.style.position = ""; row.style.left = ""; row.style.top = ""; row.style.width = ""; row.style.zIndex = "";
+    row.classList.remove("rank-leaving");
     els.topTagsRanking.append(row);
+    return { row, isNew };
+  });
+
+  requestAnimationFrame(() => {
+    rendered.forEach(({ row, isNew }) => {
+      const bar = row.querySelector(".top-tag-track i");
+      bar.style.width = row.dataset.nextBarWidth;
+      if (reduceMotion) return;
+      if (isNew) {
+        const current = row.getBoundingClientRect();
+        const updatedList = els.topTagsRanking.getBoundingClientRect();
+        const entryDistance = Math.max(54, updatedList.bottom - current.bottom);
+        row.animate(
+          [{ transform: `translateY(${entryDistance}px)`, opacity: 0 }, { transform: "translateY(0)", opacity: 1 }],
+          { duration: 620, easing: "cubic-bezier(.2,.8,.2,1)", fill: "both" },
+        );
+        return;
+      }
+      const previous = oldRects.get(row.dataset.tag);
+      const current = row.getBoundingClientRect();
+      const deltaX = previous.left - current.left;
+      const deltaY = previous.top - current.top;
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+      row.animate(
+        [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
+        { duration: 720, easing: "cubic-bezier(.22,.8,.25,1)", fill: "both" },
+      );
+    });
   });
 }
 
@@ -1114,10 +1267,9 @@ function renderOverviewModule() {
 }
 
 function renderCloudModule() {
-  const articles = articlesInWindow(state.cloudIssue);
-  const stats = tagStatistics(articles, [state.cloudIssue], true, state.cloudIssue);
-  fillIssueSelect(els.cloudIssue, state.cloudIssue);
-  renderCloudComparisonStatus();
+  const { articles, stats, previousKey } = cloudStatistics();
+  renderCloudControls();
+  renderCloudComparisonStatus(articles, previousKey);
   renderCloud(articles, stats);
   syncUrl();
 }
@@ -1137,6 +1289,11 @@ els.overviewSearch.addEventListener("input", () => { const articles = articlesIn
 els.overviewSort.addEventListener("change", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewSort = els.overviewSort.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
 els.overviewIssue.addEventListener("change", () => { state.overviewIssue = els.overviewIssue.value; renderOverviewModule(); });
 els.relationshipIssue.addEventListener("change", () => { state.relationshipIssue = els.relationshipIssue.value; renderRelationshipPanel(); syncUrl(); });
+els.cloudScope.addEventListener("change", () => {
+  state.cloudScope = els.cloudScope.value;
+  state.cloudIssue = state.cloudScope === "all" ? "all" : state.cloudScope === "month" ? state.cloudMonths.at(-1) : state.issues.at(-1);
+  renderCloudModule();
+});
 els.cloudIssue.addEventListener("change", () => { state.cloudIssue = els.cloudIssue.value; renderCloudModule(); });
 els.topPrevious.addEventListener("click", () => stepTopIssue(-1));
 els.topNext.addEventListener("click", () => stepTopIssue(1));
@@ -1147,7 +1304,7 @@ els.playbackToggle.addEventListener("click", () => {
     renderTopModule();
   } else startPlayback();
 });
-window.addEventListener("resize", () => { if (!state.data) return; hideCalculationHelp(); const articles = articlesInWindow(state.cloudIssue); renderCloud(articles, tagStatistics(articles, [state.cloudIssue], true, state.cloudIssue)); });
+window.addEventListener("resize", () => { if (!state.data) return; hideCalculationHelp(); const { articles, stats } = cloudStatistics(); renderCloud(articles, stats); });
 window.addEventListener("scroll", hideCalculationHelp, { passive: true });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearPlaybackTimer();
@@ -1159,6 +1316,7 @@ fetch("./data/articles.json", { cache: "no-store" })
   .then((data) => {
     state.data = data;
     state.issues = [...new Set(data.articles.map(issueDate).filter(Boolean))].sort();
+    state.cloudMonths = [...new Set(state.issues.map((issue) => issue.slice(0, 7)))].sort();
     if (!state.issues.includes(state.issue)) state.issue = "";
     if (!state.issue && (state.legacyFrom || state.legacyTo)) {
       const from = state.legacyFrom || state.issues[0].replaceAll(".", "-");
@@ -1169,7 +1327,10 @@ fetch("./data/articles.json", { cache: "no-store" })
     if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
     if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
     if (!state.issues.includes(state.overviewIssue)) state.overviewIssue = state.issues.at(-1) || state.issue;
-    if (!state.issues.includes(state.cloudIssue)) state.cloudIssue = state.issues.at(-1) || state.issue;
+    if (state.cloudScope === "all") state.cloudIssue = "all";
+    else if (state.cloudScope === "month") {
+      if (!state.cloudMonths.includes(state.cloudIssue)) state.cloudIssue = state.cloudMonths.at(-1) || "";
+    } else if (!state.issues.includes(state.cloudIssue)) state.cloudIssue = state.issues.at(-1) || state.issue;
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
     renderStaticCalculationHelp();
