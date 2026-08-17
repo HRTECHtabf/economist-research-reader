@@ -4,6 +4,8 @@
 
 網站：<https://hrtechtabf.github.io/economist-research-reader/>
 
+完整的專案架構、資料流程、標籤政策、品質檢查與正式提示詞，整理於 [`PROJECT_ARCHITECTURE_AND_PROMPTS.md`](PROJECT_ARCHITECTURE_AND_PROMPTS.md)。
+
 ## 目前版本
 
 - 內容每週一期，網站會在週五下午至深夜偵測更新。
