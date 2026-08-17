@@ -490,7 +490,7 @@ function restoreReadingPosition(position) {
   const anchorRect = anchor.getBoundingClientRect();
   const scrollerRect = scroller.getBoundingClientRect();
   const relativeTop = anchorRect.top - scrollerRect.top;
-  scroller.scrollTop = position.scrollTop + relativeTop - position.relativeTop;
+  scroller.scrollTop += relativeTop - position.relativeTop;
 }
 
 function saveCurrentNote() {
