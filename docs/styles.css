@@ -140,13 +140,15 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .note-index-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .note-count { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #eeeae3; color: var(--muted); font-size: 10px; }
 .note-empty { margin: 9px 0 0; color: #8a857e; font-size: 11px; line-height: 1.6; }
-.note-index-list { display: grid; gap: 6px; margin-top: 10px; }
-.note-index-list.expanded { max-height: 250px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+.note-index-list { display: flex; min-width: 0; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-color: #b8afa2 transparent; scrollbar-width: thin; }
+.note-index-list::-webkit-scrollbar { height: 4px; }
+.note-index-list::-webkit-scrollbar-thumb { border-radius: 999px; background: #b8afa2; }
+.note-index-page { display: grid; flex: 0 0 100%; gap: 6px; align-content: start; scroll-snap-align: start; }
 .note-index-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; width: 100%; padding: 7px 8px; border: 0; background: #f3efe4; color: #4d4944; cursor: pointer; text-align: left; }
 .note-index-item:hover { background: #fff0c7; }
 .note-index-language { color: var(--red); font-size: 9px; font-weight: 850; }
 .note-index-body { display: -webkit-box; overflow: hidden; font-size: 10px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.note-index-more { width: 100%; margin-top: 8px; border: 0; border-bottom: 1px solid var(--line); padding: 4px 0; background: transparent; color: var(--red); cursor: pointer; font-size: 10px; text-align: left; }
+.note-index-hint { margin: 4px 0 0; color: #8a857e; font-size: 9px; }
 .annotatable-paragraph { position: relative; }
 .annotatable-paragraph:focus-visible { outline: 2px solid #d3a11d; outline-offset: 3px; }
 .annotatable-paragraph::selection, .annotatable-paragraph *::selection { background: #ffd86a; }

@@ -37,6 +37,10 @@ const urlParams = new URLSearchParams(location.search);
 const initialPage = Number(urlParams.get("page"));
 const allowedSorts = new Set(["newest", "oldest"]);
 
+function isFullTextNote(note) {
+  return /^(?:en|zh):p\d+$/.test(note?.contextId || "");
+}
+
 function loadFavorites() {
   try {
     const stored = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]");
@@ -49,7 +53,17 @@ function loadFavorites() {
 function loadNotes() {
   try {
     const stored = JSON.parse(localStorage.getItem(NOTES_STORAGE_KEY) || "[]");
-    return Array.isArray(stored) ? stored.filter((note) => note?.id && note?.articleKey) : [];
+    const validNotes = Array.isArray(stored)
+      ? stored.filter((note) => note?.id && note?.articleKey && isFullTextNote(note))
+      : [];
+    if (Array.isArray(stored) && validNotes.length !== stored.length) {
+      try {
+        localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(validNotes));
+      } catch {
+        // 即使浏览器禁止写入，也先在本次浏览中排除旧的导读笔记。
+      }
+    }
+    return validNotes;
   } catch {
     return [];
   }
@@ -83,7 +97,6 @@ const state = {
   readingModes: new Map(),
   chineseTextByArticle: new Map(),
   chineseTextLoading: new Set(),
-  expandedNoteLists: new Set(),
   pendingSelection: null,
   editingNoteId: null,
   noteAnchorRect: null,
@@ -223,13 +236,14 @@ function renderSavedTags() {
 
 function notesForArticle(key) {
   return state.notes
-    .filter((note) => note.articleKey === key)
+    .filter((note) => note.articleKey === key && isFullTextNote(note))
     .sort((a, b) => (b.updatedAt || b.createdAt || "").localeCompare(a.updatedAt || a.createdAt || ""));
 }
 
 function noteLanguageLabel(note) {
-  if (note.contextId.startsWith("en:")) return "EN";
-  return "中";
+  const paragraph = note.contextId.match(/:p(\d+)$/)?.[1];
+  const language = note.contextId.startsWith("en:") ? "EN" : "中";
+  return paragraph ? `${language} · ${paragraph}` : language;
 }
 
 function noteMode(note) {
@@ -250,15 +264,23 @@ function noteRangeInText(note, text) {
   return foundAt >= 0 ? { start: foundAt, end: foundAt + note.quote.length } : null;
 }
 
-function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasisTerms = []) {
+function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasisTerms = [], allowNotes = true) {
   element.replaceChildren();
-  element.tabIndex = 0;
-  element.dataset.articleKey = articleKeyValue;
-  element.dataset.contextId = contextId;
-  const noteRanges = notesForArticle(articleKeyValue)
-    .filter((note) => note.contextId === contextId)
-    .map((note) => ({ note, range: noteRangeInText(note, text) }))
-    .filter(({ range }) => range);
+  if (allowNotes) {
+    element.tabIndex = 0;
+    element.dataset.articleKey = articleKeyValue;
+    element.dataset.contextId = contextId;
+  } else {
+    element.removeAttribute("tabindex");
+    delete element.dataset.articleKey;
+    delete element.dataset.contextId;
+  }
+  const noteRanges = allowNotes
+    ? notesForArticle(articleKeyValue)
+      .filter((note) => note.contextId === contextId)
+      .map((note) => ({ note, range: noteRangeInText(note, text) }))
+      .filter(({ range }) => range)
+    : [];
   const emphasisRanges = emphasisTerms
     .map((term) => ({ start: text.indexOf(term), end: text.indexOf(term) + term.length }))
     .filter(({ start, end }) => start >= 0 && end > start);
@@ -310,8 +332,10 @@ function renderAnnotatedText(element, text, articleKeyValue, contextId, emphasis
     }
     element.append(content);
   }
-  element.addEventListener("mouseup", () => captureSelection(element));
-  element.addEventListener("keyup", () => captureSelection(element));
+  if (allowNotes) {
+    element.addEventListener("mouseup", () => captureSelection(element));
+    element.addEventListener("keyup", () => captureSelection(element));
+  }
 }
 
 function captureSelection(element) {
@@ -768,16 +792,17 @@ function renderCard(article) {
 
   if (hasSummary) {
     const summary = fragment.querySelector(".summary");
-    renderAnnotatedText(summary, article.summaryZh, key, "guide:summary", highlightTermsFor(article));
+    summary.classList.remove("annotatable-paragraph");
+    renderAnnotatedText(summary, article.summaryZh, key, "guide:summary", highlightTermsFor(article), false);
     const list = fragment.querySelector(".key-points");
     for (const [index, point] of (article.keyPointsZh || []).entries()) {
       const li = document.createElement("li");
-      li.className = "annotatable-paragraph";
-      renderAnnotatedText(li, point, key, `guide:keypoint-${index + 1}`);
+      renderAnnotatedText(li, point, key, `guide:keypoint-${index + 1}`, [], false);
       list.append(li);
     }
     const researchLens = fragment.querySelector(".research-lens");
-    renderAnnotatedText(researchLens, article.researchLensZh || "", key, "guide:lens");
+    researchLens.classList.remove("annotatable-paragraph");
+    renderAnnotatedText(researchLens, article.researchLensZh || "", key, "guide:lens", [], false);
   }
 
   const tags = fragment.querySelector(".tags");
@@ -857,35 +882,33 @@ function renderCard(article) {
   const noteCount = fragment.querySelector(".note-count");
   const noteEmpty = fragment.querySelector(".note-empty");
   const noteList = fragment.querySelector(".note-index-list");
-  const noteMore = fragment.querySelector(".note-index-more");
+  const noteHint = fragment.querySelector(".note-index-hint");
   noteCount.textContent = articleNotes.length;
   noteEmpty.hidden = articleNotes.length > 0;
-  const noteListExpanded = state.expandedNoteLists.has(key);
-  const visibleNotes = noteListExpanded ? articleNotes : articleNotes.slice(0, 4);
-  noteList.classList.toggle("expanded", noteListExpanded);
-  for (const note of visibleNotes) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "note-index-item";
-    const language = document.createElement("small");
-    language.className = "note-index-language";
-    language.textContent = noteLanguageLabel(note);
-    const body = document.createElement("span");
-    body.className = "note-index-body";
-    body.textContent = note.body || "（尚未填寫筆記內容）";
-    button.title = `原文：${note.quote}`;
-    button.append(language, body);
-    button.addEventListener("click", () => focusNote(note));
-    noteList.append(button);
+  for (let pageStart = 0; pageStart < articleNotes.length; pageStart += 4) {
+    const page = document.createElement("div");
+    page.className = "note-index-page";
+    page.setAttribute("aria-label", `第 ${Math.floor(pageStart / 4) + 1} 組筆記`);
+    for (const note of articleNotes.slice(pageStart, pageStart + 4)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "note-index-item";
+      const language = document.createElement("small");
+      language.className = "note-index-language";
+      language.textContent = noteLanguageLabel(note);
+      const body = document.createElement("span");
+      body.className = "note-index-body";
+      body.textContent = note.body || "（尚未填寫筆記內容）";
+      button.title = `原文：${note.quote}`;
+      button.append(language, body);
+      button.addEventListener("click", () => focusNote(note));
+      page.append(button);
+    }
+    noteList.append(page);
   }
   if (articleNotes.length > 4) {
-    noteMore.hidden = false;
-    noteMore.textContent = noteListExpanded ? "收起筆記" : `查看另外 ${articleNotes.length - 4} 則`;
-    noteMore.addEventListener("click", () => {
-      if (state.expandedNoteLists.has(key)) state.expandedNoteLists.delete(key);
-      else state.expandedNoteLists.add(key);
-      render();
-    });
+    noteHint.hidden = false;
+    noteHint.textContent = `↔ 左右滑動查看全部 ${articleNotes.length} 則筆記`;
   }
   return fragment;
 }
