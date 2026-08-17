@@ -330,7 +330,7 @@ function toggleFocusTag(tag) {
 function renderIssuePicker() {
   els.issuePicker.replaceChildren();
   const counts = new Map(state.issues.map((issue) => [issue, state.data.articles.filter((article) => issueDate(article) === issue).length]));
-  const choices = ["", ...[...state.issues].reverse()];
+  const choices = ["", ...state.issues];
   choices.forEach((issue) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -351,6 +351,15 @@ function renderIssuePicker() {
     button.append(title, meta);
     button.addEventListener("click", () => { state.issue = issue; renderAll(); });
     els.issuePicker.append(button);
+  });
+  requestAnimationFrame(() => {
+    if (state.issues.length <= 4) return;
+    const activeButton = els.issuePicker.querySelector(".issue-choice.selected");
+    if (state.issue && activeButton) {
+      els.issuePicker.scrollLeft = Math.max(0, activeButton.offsetLeft - (els.issuePicker.clientWidth - activeButton.offsetWidth) / 2);
+    } else {
+      els.issuePicker.scrollLeft = els.issuePicker.scrollWidth;
+    }
   });
 }
 
@@ -832,6 +841,8 @@ function renderTagDetail(stats) {
     card.append(labelRow, strong, span); els.detailSummary.append(card);
   });
   els.detailChart.replaceChildren();
+  els.detailChart.style.setProperty("--period-count", Math.max(1, Math.min(4, series.length)));
+  els.detailChart.classList.toggle("many-periods", series.length > 4);
   const maxRate = Math.max(1, ...series.map((item) => item.rate));
   series.forEach((item) => {
     const column = document.createElement("button");
@@ -848,6 +859,12 @@ function renderTagDetail(stats) {
     column.append(value, track, count, label, issueLabel);
     column.addEventListener("click", () => { state.issue = item.issue; renderAll(); });
     els.detailChart.append(column);
+  });
+  requestAnimationFrame(() => {
+    if (series.length <= 4) return;
+    const activeColumn = state.issue ? els.detailChart.querySelector(".tag-period-column.selected") : els.detailChart.lastElementChild;
+    if (!activeColumn) return;
+    els.detailChart.scrollLeft = Math.max(0, activeColumn.offsetLeft - (els.detailChart.clientWidth - activeColumn.offsetWidth) / 2);
   });
   els.detailChart.setAttribute("aria-label", `${state.detailTag}各期文章占比趨勢；${series.map((item) => `${issueRange(item.issue)} ${item.rate.toFixed(1)}%`).join("，")}`);
 }
@@ -889,7 +906,7 @@ fetch("./data/articles.json", { cache: "no-store" })
     }
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
-    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；每個按鈕皆標示該期文章的實際刊登日期範圍`;
+    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；依最早到最新排列，期數較多時可左右滑動`;
     renderStaticCalculationHelp();
     renderAll();
   })

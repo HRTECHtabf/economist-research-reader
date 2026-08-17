@@ -236,7 +236,6 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .tour-panel p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .tour-demo[hidden] { display: none; }
 .tour-demo { display: grid; gap: 12px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
-.tour-demo ol { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px 20px; margin: 0; padding-left: 20px; color: #4e4943; font-size: 11px; line-height: 1.55; }
 .tour-note-example { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 11px; border: 1px solid #d8cfb7; background: #fffaf0; }
 .tour-note-example > small { grid-column: 1 / -1; color: #8b6500; font-size: 9px; font-weight: 850; letter-spacing: .1em; }
 .tour-note-example > p { color: #4b453c; font-size: 11px; }
@@ -244,6 +243,7 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .tour-note-action { align-self: center; border-radius: 999px; padding: 5px 8px; background: #171717; color: white; font-size: 9px; font-weight: 800; white-space: nowrap; }
 .tour-note-editor { grid-column: 1 / -1; padding: 9px 10px; border-left: 3px solid var(--red); background: white; }
 .tour-note-editor b { display: block; margin-bottom: 3px; color: var(--red); font-size: 9px; }.tour-note-editor p { color: #4b4742; font-size: 10px; line-height: 1.55; }
+.tour-note-save { display: block; width: max-content; margin: 8px 0 0 auto; padding: 5px 9px; background: var(--red); color: white; font-size: 9px; font-weight: 850; }
 .tour-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; }
 .tour-actions button { min-height: 38px; border: 1px solid var(--line); padding: 0 13px; background: transparent; cursor: pointer; font-size: 12px; font-weight: 800; }
 .tour-actions button:disabled { opacity: .35; cursor: default; }
@@ -297,7 +297,6 @@ footer { padding: 26px 0; background: var(--ink); color: #aaa69f; }
   .page-number { min-width: 38px; }
   .footer-inner { flex-direction: column; gap: 6px; }
   .tour-panel { left: 12px !important; right: 12px; bottom: 12px !important; top: auto !important; width: auto; }
-  .tour-demo ol { grid-template-columns: 1fr; gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
