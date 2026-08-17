@@ -7,7 +7,7 @@
     <title>維護狀態｜Economist Research Reader</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles.css?v=20260817-4" />
-    <link rel="stylesheet" href="./admin.css?v=20260818-1" />
+    <link rel="stylesheet" href="./admin.css?v=20260818-2" />
   </head>
   <body>
     <header class="site-header">
@@ -32,6 +32,41 @@
           <article class="status-card"><span>最近更新</span><strong id="generated-at">—</strong><small>中文全文稽核時間</small></article>
           <article class="status-card" id="source-sync-card"><span>來源同步</span><strong id="source-sync">檢查中</strong><small id="source-sync-detail">比對上游與 GitHub 資料</small></article>
           <article class="status-card" id="site-sync-card"><span>網站發布</span><strong id="site-sync">檢查中</strong><small id="site-sync-detail">比對 GitHub 資料與公開網站</small></article>
+        </section>
+        <section class="admin-panel guardrail-panel" aria-labelledby="guardrail-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow red">FAIL-SAFE</p><h2 id="guardrail-title">防呆機制怎麼運作</h2></div>
+            <span class="status-pill monitor-only">唯讀監測</span>
+          </div>
+          <p class="guardrail-intro">每週更新負責抓取、產製與發布；另一支獨立看門狗只負責核對結果。兩者分開運作，避免更新工作自己顯示成功，網站卻沒有真的更新。</p>
+          <ol class="guardrail-flow">
+            <li>
+              <span>01</span>
+              <strong>偵測新一期</strong>
+              <p>週五至週六檢查上游期數與來源版本。沒有變動就安全結束，有新期或來源異動才開始產製。</p>
+            </li>
+            <li>
+              <span>02</span>
+              <strong>發布前擋錯</strong>
+              <p>文章、導讀、標籤與中英文全文通過完整性稽核才會提交。任何一步失敗，都保留原本可用的網站。</p>
+            </li>
+            <li>
+              <span>03</span>
+              <strong>每日獨立核對</strong>
+              <p>每天 12:47 比對上游、GitHub 主資料、全文覆蓋率與公開網站，不只檢查排程有沒有顯示成功。</p>
+            </li>
+            <li>
+              <span>04</span>
+              <strong>異常就亮紅燈</strong>
+              <p>只要期數、版本或全文數量不一致，看門狗就會失敗，並在上方「來源同步」或「網站發布」顯示異常。</p>
+            </li>
+          </ol>
+          <div class="guardrail-actions" aria-label="異常處理方式">
+            <div><strong>上游已有新期，GitHub 還是舊期</strong><span>重新執行「Weekly Economist update」</span></div>
+            <div><strong>GitHub 已更新，公開網站仍是舊版</strong><span>重新執行 GitHub Pages 發布</span></div>
+            <div><strong>中文全文少於文章總數</strong><span>查看週更工作中的翻譯與全文稽核步驟</span></div>
+          </div>
+          <p class="guardrail-boundary"><strong>目前權限邊界：</strong>看門狗只讀取並比對資料，不會自動改資料、補跑模型或重新發布。這可避免誤觸大量 API 用量或覆蓋正確網站；確認異常後，再依上方對應方式處理。</p>
         </section>
         <div class="admin-columns">
           <section class="admin-panel">
