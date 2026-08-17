@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-14" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-15" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -20,6 +20,7 @@
         <nav aria-label="主要導覽">
           <a href="./index.html#articles">文章索引</a>
           <a class="active" href="#dashboard" aria-current="page">趨勢儀表板</a>
+          <button class="tour-launch" id="tour-launch" type="button">功能導覽</button>
         </nav>
       </div>
     </header>
@@ -34,7 +35,7 @@
 
       <section class="dashboard-section">
         <div class="shell">
-          <section class="dashboard-card tag-overview-card" aria-labelledby="tag-overview-title">
+          <section class="dashboard-card tag-overview-card" aria-labelledby="tag-overview-title" data-tour="all-tags">
             <div class="card-heading tag-overview-heading">
               <div><p class="eyebrow red">ALL TAGS</p><h2 id="tag-overview-title">全部 tag</h2></div>
               <div><p>所有 tag 直接列在這裡。這個區塊有自己的期數，不會被其他圖表影響。</p><label class="module-period-control"><span>全部 tag 期數</span><select id="overview-issue" aria-label="選擇全部 tag 統計期數"></select></label></div>
@@ -54,13 +55,13 @@
           <div class="signal-cards" id="signal-cards" aria-live="polite"></div>
 
           <section class="dashboard-card relationship-card" aria-labelledby="relationship-title">
-            <div class="card-heading relationship-heading">
+            <div class="card-heading relationship-heading" data-tour="relationship-range">
               <div><p class="eyebrow red">ASSOCIATION MAP</p><h2 id="relationship-title">tag 關聯網絡</h2></div>
               <div><span class="analysis-mode" id="analysis-mode">全部資料</span><p id="relationship-description">找出在同一篇文章中，比隨機情況更常一起出現的 tag。</p><div class="range-controls"><label><span>統計方式</span><select id="relationship-scope" aria-label="選擇關聯圖統計方式"><option value="all">全部資料</option><option value="month">每月</option><option value="issue" selected>每期</option></select></label><label><span id="relationship-period-label">期數</span><select id="relationship-issue" aria-label="選擇關聯圖資料範圍"></select></label></div></div>
             </div>
             <div class="relationship-layout">
-              <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 3D 空間社群關聯網絡圖"></div>
-              <div class="relationship-ranking">
+              <div class="relationship-network" id="relationship-network" role="group" aria-label="可旋轉的 tag 3D 空間社群關聯網絡圖" data-tour="relationship-network"></div>
+              <div class="relationship-ranking" data-tour="relationship-ranking">
                 <div class="ranking-heading"><strong id="ranking-title">關聯排名</strong><span class="ranking-metric"><small>強度 0–100</small><span id="relationship-help"></span></span></div>
                 <div class="relationship-list" id="relationship-list"></div>
               </div>
@@ -68,7 +69,7 @@
             <p class="relationship-method">關聯分數以 NPMI 衡量共同出現是否高於隨機預期，再依共同文章數收縮；「低樣本」結果請搭配原文判讀。</p>
           </section>
 
-          <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
+          <section class="dashboard-card cloud-card" aria-labelledby="cloud-title" data-tour="cloud">
             <div class="card-heading">
               <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">熱門 tag 雲</h2><span id="cloud-help"></span></span></div>
               <div>
@@ -86,7 +87,7 @@
             <div class="keyword-cloud" id="keyword-cloud" aria-label="互動式關鍵字雲"></div>
           </section>
 
-          <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
+          <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title" data-tour="top-tags">
             <div class="card-heading catalogue-heading">
               <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">每期熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
             </div>
@@ -114,6 +115,21 @@
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
     <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-14" defer></script>
+    <div class="feature-tour" id="feature-tour" hidden>
+      <div class="tour-spotlight" id="tour-spotlight" aria-hidden="true"></div>
+      <section class="tour-panel" id="tour-panel" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-description">
+        <div class="tour-panel-heading">
+          <span class="tour-progress" id="tour-progress"></span>
+          <button class="tour-close" id="tour-close" type="button" aria-label="關閉功能導覽">×</button>
+        </div>
+        <h2 id="tour-title"></h2>
+        <p id="tour-description"></p>
+        <div class="tour-actions">
+          <button class="tour-previous" id="tour-previous" type="button">← 上一步</button>
+          <button class="tour-next" id="tour-next" type="button">下一步 →</button>
+        </div>
+      </section>
+    </div>
+    <script src="./trends.js?v=20260817-15" defer></script>
   </body>
 </html>

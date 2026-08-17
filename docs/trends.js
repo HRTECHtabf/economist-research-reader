@@ -3,6 +3,39 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const PLAYBACK_DELAY = 2000;
 const GRAPH_WIDTH = 1000;
 const GRAPH_HEIGHT = 640;
+const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const TOUR_STEPS = [
+  {
+    selector: '[data-tour="all-tags"]',
+    title: "先從全部 tag 找主題",
+    description: "搜尋或瀏覽目前期數的所有 tag。點選一個 tag 可查看相關主題；最多選兩個，用來找同時包含兩者的文章。",
+  },
+  {
+    selector: '[data-tour="relationship-range"]',
+    title: "決定關聯分析的時間範圍",
+    description: "關聯圖可分別查看全部資料、單一月份或單一期數。切換範圍後，節點、連線與右側排名都會重新計算。",
+  },
+  {
+    selector: '[data-tour="relationship-network"]',
+    title: "旋轉並辨認關聯網絡",
+    description: "按住空白處拖曳可旋轉視角；滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
+  },
+  {
+    selector: '[data-tour="relationship-ranking"]',
+    title: "用分數比較共同出現強度",
+    description: "右側分數衡量兩個 tag 是否比隨機預期更常出現在同一篇文章，並對少量樣本保守降權。分數不是因果關係，也不等於文章重要性。",
+  },
+  {
+    selector: '[data-tour="cloud"]',
+    title: "從熱門 tag 雲看主題分布",
+    description: "越常出現的 tag 字體越大、越靠近中心；顏色比較前一期或前一月的文章占比。這裡也能獨立選擇全部、每月或每期。",
+  },
+  {
+    selector: '[data-tour="top-tags"]',
+    title: "逐期比較熱門 tag",
+    description: "排行會依序播放各期，也可用上一期、下一期或期數按鈕自行查看。手動選擇後會暫停，方便比較名次升降。",
+  },
+];
 const requestedIssue = params.get("issue") || "";
 const requestedRelationshipIssue = params.get("network") || "";
 const requestedRelationshipScope = params.get("networkView") || "issue";
@@ -72,7 +105,19 @@ const els = {
   topTagsRanking: document.querySelector("#top-tags-ranking"),
   tooltip: document.querySelector("#tag-tooltip"),
   calculationTooltip: document.querySelector("#calculation-tooltip"),
+  tourLaunch: document.querySelector("#tour-launch"),
+  featureTour: document.querySelector("#feature-tour"),
+  tourSpotlight: document.querySelector("#tour-spotlight"),
+  tourPanel: document.querySelector("#tour-panel"),
+  tourProgress: document.querySelector("#tour-progress"),
+  tourTitle: document.querySelector("#tour-title"),
+  tourDescription: document.querySelector("#tour-description"),
+  tourPrevious: document.querySelector("#tour-previous"),
+  tourNext: document.querySelector("#tour-next"),
+  tourClose: document.querySelector("#tour-close"),
 };
+
+let tourStepIndex = -1;
 
 function positionCalculationTooltip(button) {
   const margin = 12;
@@ -132,6 +177,67 @@ function renderStaticCalculationHelp() {
     "熱門 tag 怎麼排？",
     "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。百分比是含有該 tag 的文章占當期全部文章的比例。",
   ));
+}
+
+function positionTourStep() {
+  if (tourStepIndex < 0 || els.featureTour.hidden) return;
+  const target = document.querySelector(TOUR_STEPS[tourStepIndex].selector);
+  if (!target) return;
+  const padding = 7;
+  const rect = target.getBoundingClientRect();
+  const left = Math.max(padding, rect.left - padding);
+  const top = Math.max(padding, rect.top - padding);
+  const right = Math.min(innerWidth - padding, rect.right + padding);
+  const bottom = Math.min(innerHeight - padding, rect.bottom + padding);
+  Object.assign(els.tourSpotlight.style, {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${Math.max(12, right - left)}px`,
+    height: `${Math.max(12, bottom - top)}px`,
+  });
+  if (innerWidth <= 560) return;
+  const panelWidth = els.tourPanel.offsetWidth;
+  const panelHeight = els.tourPanel.offsetHeight;
+  const gap = 18;
+  let panelLeft = Math.max(12, Math.min(innerWidth - panelWidth - 12, left));
+  let panelTop = bottom + gap;
+  if (panelTop + panelHeight > innerHeight - 12) panelTop = top - panelHeight - gap;
+  if (panelTop < 12) {
+    panelTop = Math.max(12, Math.min(innerHeight - panelHeight - 12, top));
+    panelLeft = right + gap;
+    if (panelLeft + panelWidth > innerWidth - 12) panelLeft = left - panelWidth - gap;
+    panelLeft = Math.max(12, Math.min(innerWidth - panelWidth - 12, panelLeft));
+  }
+  els.tourPanel.style.left = `${panelLeft}px`;
+  els.tourPanel.style.top = `${panelTop}px`;
+}
+
+function showTourStep(index) {
+  const boundedIndex = Math.max(0, Math.min(TOUR_STEPS.length - 1, index));
+  const step = TOUR_STEPS[boundedIndex];
+  const target = document.querySelector(step.selector);
+  if (!target) return;
+  tourStepIndex = boundedIndex;
+  els.featureTour.hidden = false;
+  document.body.classList.add("tour-open");
+  els.tourProgress.textContent = `趨勢導覽 ${boundedIndex + 1} / ${TOUR_STEPS.length}`;
+  els.tourTitle.textContent = step.title;
+  els.tourDescription.textContent = step.description;
+  els.tourPrevious.disabled = boundedIndex === 0;
+  els.tourNext.textContent = boundedIndex === TOUR_STEPS.length - 1 ? "完成" : "下一步 →";
+  target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  requestAnimationFrame(() => {
+    positionTourStep();
+    [120, 260, 480, 760].forEach((delay) => setTimeout(positionTourStep, delay));
+    els.tourNext.focus({ preventScroll: true });
+  });
+}
+
+function closeFeatureTour() {
+  tourStepIndex = -1;
+  els.featureTour.hidden = true;
+  document.body.classList.remove("tour-open");
+  els.tourLaunch.focus({ preventScroll: true });
 }
 
 function issueDate(article) {
@@ -778,14 +884,18 @@ function assignGraphCommunities(nodes, edges) {
   const sizes = new Map();
   labels.forEach((label) => sizes.set(label, (sizes.get(label) || 0) + 1));
   const ordered = [...sizes].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([label]) => label);
-  const normalized = new Map(ordered.map((label, index) => [label, index % 4]));
-  nodes.forEach((node) => { node.community = node.compound ? 4 : node.selected ? 3 : normalized.get(labels.get(node.id)) || 0; });
+  const normalized = new Map(ordered.map((label, index) => [label, Math.min(index, COMMUNITY_NAMES.length - 1)]));
+  nodes.forEach((node) => { node.community = node.compound || node.selected ? COMMUNITY_NAMES.length : normalized.get(labels.get(node.id)) || 0; });
 }
 
 function layoutGraph(nodes, edges) {
   assignGraphCommunities(nodes, edges);
   const maxCount = Math.max(1, ...nodes.map((node) => node.count));
-  const centers = [{ x: 315, y: 220 }, { x: 690, y: 205 }, { x: 350, y: 445 }, { x: 690, y: 425 }, { x: 500, y: 320 }];
+  const centers = COMMUNITY_NAMES.map((_, index) => {
+    const angle = -Math.PI / 2 + (index / COMMUNITY_NAMES.length) * Math.PI * 2;
+    return { x: 500 + Math.cos(angle) * 300, y: 320 + Math.sin(angle) * 190 };
+  });
+  const focusCenter = { x: 500, y: 320 };
   nodes.forEach((node, index) => {
     node.radius = node.compound ? 38 : node.selected ? 42 : 19 + Math.sqrt(node.count / maxCount) * 19;
     const center = centers[node.community] || centers[0];
@@ -794,7 +904,7 @@ function layoutGraph(nodes, edges) {
     node.x = center.x + Math.cos(angle) * distance;
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
-    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (node.community - 1.5) * 24;
+    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 18;
     if (node.id === "focus") { node.x = 500; node.y = 320; }
     if (node.id === "focus-a") { node.x = 350; node.y = 185; }
     if (node.id === "focus-b") { node.x = 650; node.y = 185; }
@@ -826,7 +936,7 @@ function layoutGraph(nodes, edges) {
     });
     nodes.forEach((node) => {
       if (node.fixed) return;
-      const center = state.selectedTags.length ? centers[4] : (centers[node.community] || centers[0]);
+      const center = state.selectedTags.length ? focusCenter : (centers[node.community] || centers[0]);
       node.vx += (center.x - node.x) * .004;
       node.vy += (center.y - node.y) * .004;
       node.vx *= .82; node.vy *= .82;
@@ -835,6 +945,25 @@ function layoutGraph(nodes, edges) {
     });
   }
   nodes.forEach((node) => { node.baseX = node.x; node.baseY = node.y; node.baseZ = node.z; });
+}
+
+function communityLabel(node) {
+  if (node.compound) return "共同文章";
+  if (node.selected) return "已選 tag";
+  return `關聯社群 ${COMMUNITY_NAMES[node.community] || "A"}`;
+}
+
+function communitySummaries(nodes) {
+  return COMMUNITY_NAMES.map((_, community) => {
+    const members = nodes
+      .filter((node) => node.community === community && !node.selected && !node.compound)
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-Hant"));
+    if (!members.length) return null;
+    return {
+      community,
+      representativeTags: members.slice(0, 3).map((node) => node.tag),
+    };
+  }).filter(Boolean);
 }
 
 function renderNetwork(articles, stats, relationships) {
@@ -851,7 +980,33 @@ function renderNetwork(articles, stats, relationships) {
   }
   layoutGraph(nodes, edges);
   els.relationshipNetwork.classList.add("network-3d");
-  const svg = svgElement("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, "aria-hidden": "true" });
+  const nodeTooltip = document.createElement("div");
+  nodeTooltip.className = "network-node-tooltip";
+  nodeTooltip.hidden = true;
+  const tooltipTitle = document.createElement("strong");
+  const tooltipMeta = document.createElement("span");
+  nodeTooltip.append(tooltipTitle, tooltipMeta);
+  function positionNodeTooltip(event) {
+    if (!event || nodeTooltip.hidden) return;
+    const rect = els.relationshipNetwork.getBoundingClientRect();
+    const width = nodeTooltip.offsetWidth || 180;
+    const height = nodeTooltip.offsetHeight || 50;
+    const left = Math.max(10, Math.min(rect.width - width - 10, event.clientX - rect.left + 14));
+    const top = Math.max(10, Math.min(rect.height - height - 10, event.clientY - rect.top + 14));
+    nodeTooltip.style.left = `${left}px`;
+    nodeTooltip.style.top = `${top}px`;
+  }
+  function showNodeTooltip(node, event) {
+    tooltipTitle.textContent = node.tag;
+    tooltipMeta.textContent = `${node.count} 篇文章 · ${communityLabel(node)}`;
+    nodeTooltip.hidden = false;
+    if (event) positionNodeTooltip(event);
+    else { nodeTooltip.style.left = "12px"; nodeTooltip.style.top = "54px"; }
+  }
+  function hideNodeTooltip() {
+    nodeTooltip.hidden = true;
+  }
+  const svg = svgElement("svg", { viewBox: `0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`, role: "group", "aria-label": "tag 關聯節點；可用 Tab 鍵逐一查看" });
   const edgeLayer = svgElement("g");
   const nodeLayer = svgElement("g");
   svg.append(edgeLayer, nodeLayer);
@@ -912,6 +1067,11 @@ function renderNetwork(articles, stats, relationships) {
       group.style.opacity = String(Math.max(.48, Math.min(1, .72 + point.z / 720)));
       group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
+    [...nodes]
+      .sort((a, b) => projected.get(a.id).z - projected.get(b.id).z)
+      .forEach((node) => nodeLayer.append(nodeElements.get(node.id)));
+    const activeNode = nodeLayer.querySelector(".network-node.hovered, .network-node:focus");
+    if (activeNode) nodeLayer.append(activeNode);
   }
   function animateOrbit() {
     orbit.yaw += (orbit.targetYaw - orbit.yaw) * .24;
@@ -934,16 +1094,22 @@ function renderNetwork(articles, stats, relationships) {
     const count = svgElement("text", { y: "4", class: "node-count" }); count.textContent = node.count;
     const label = svgElement("text", { y: node.radius + 17, class: "network-label" }); label.textContent = [...node.tag].length > 9 ? `${[...node.tag].slice(0, 8).join("")}…` : node.tag;
     group.append(title, circle, count, label);
-    group.addEventListener("pointerenter", () => {
+    group.addEventListener("pointerenter", (event) => {
+      nodeLayer.append(group);
+      showNodeTooltip(node, event);
       const neighbors = new Set([node.id]);
       edges.forEach((edge) => { if (edge.a === node.id) neighbors.add(edge.b); if (edge.b === node.id) neighbors.add(edge.a); });
       nodeElements.forEach((element, id) => { element.classList.toggle("hovered", id === node.id); element.classList.toggle("related", neighbors.has(id) && id !== node.id); element.classList.toggle("dimmed", !neighbors.has(id)); });
       edgeElements.forEach(({ edge, path }) => path.classList.toggle("dimmed", edge.a !== node.id && edge.b !== node.id));
     });
     group.addEventListener("pointerleave", () => {
+      hideNodeTooltip();
       nodeElements.forEach((element) => element.classList.remove("hovered", "related", "dimmed"));
       edgeElements.forEach(({ path }) => path.classList.remove("dimmed"));
     });
+    group.addEventListener("pointermove", positionNodeTooltip);
+    group.addEventListener("focus", () => { nodeLayer.append(group); showNodeTooltip(node); });
+    group.addEventListener("blur", hideNodeTooltip);
     group.addEventListener("click", (event) => {
       if (performance.now() < orbit.suppressClickUntil) { event.preventDefault(); return; }
       if (!node.compound) toggleFocusTag(node.tag);
@@ -999,10 +1165,29 @@ function renderNetwork(articles, stats, relationships) {
   guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>按住拖曳旋轉 · 雙擊重設視角</span>";
   const key = document.createElement("div");
   key.className = "network-key";
-  const selectedKey = state.selectedTags.length ? '<span><i class="selected-node"></i>已選 tag</span>' : "";
-  const compoundKey = state.selectedTags.length === 2 ? '<span><i class="community-4"></i>共同文章</span>' : "";
-  key.innerHTML = `${selectedKey}<span><i class="community-0"></i>關聯社群 A</span><span><i class="community-1"></i>關聯社群 B</span><span><i class="community-2"></i>關聯社群 C</span><span><i class="community-3"></i>關聯社群 D</span>${compoundKey}<b>拖曳旋轉 · 雙擊重設</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表強度</small>`;
-  els.relationshipNetwork.append(svg, guide, key);
+  const appendKeyItem = (className, label, titleText = "") => {
+    const item = document.createElement("span");
+    const marker = document.createElement("i");
+    marker.className = className;
+    item.append(marker, label);
+    if (titleText) item.title = titleText;
+    key.append(item);
+  };
+  if (state.selectedTags.length) appendKeyItem("selected-node", "已選 tag");
+  communitySummaries(nodes).forEach(({ community, representativeTags }) => {
+    appendKeyItem(
+      `community-${community}`,
+      `社群 ${COMMUNITY_NAMES[community]}：${representativeTags.slice(0, 2).join("、")}`,
+      `這群目前以 ${representativeTags.join("、")} 為代表`,
+    );
+  });
+  if (state.selectedTags.length === 2) appendKeyItem("compound-node", "共同文章");
+  const orbitHint = document.createElement("b");
+  orbitHint.textContent = "拖曳旋轉 · 雙擊重設";
+  const legendNote = document.createElement("small");
+  legendNote.textContent = "社群是依目前範圍的連線密度自動形成，不是固定主題分類；冒號後列出該群代表 tag。大小＝文章篇數；遠近只用來分開重疊節點。";
+  key.append(orbitHint, legendNote);
+  els.relationshipNetwork.append(svg, guide, key, nodeTooltip);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
 }
@@ -1335,8 +1520,23 @@ els.playbackToggle.addEventListener("click", () => {
     renderTopModule();
   } else startPlayback();
 });
-window.addEventListener("resize", () => { if (!state.data) return; hideCalculationHelp(); const { articles, stats } = cloudStatistics(); renderCloud(articles, stats); });
-window.addEventListener("scroll", hideCalculationHelp, { passive: true });
+els.tourLaunch.addEventListener("click", () => showTourStep(0));
+els.tourClose.addEventListener("click", closeFeatureTour);
+els.tourPrevious.addEventListener("click", () => showTourStep(tourStepIndex - 1));
+els.tourNext.addEventListener("click", () => {
+  if (tourStepIndex >= TOUR_STEPS.length - 1) closeFeatureTour();
+  else showTourStep(tourStepIndex + 1);
+});
+els.featureTour.addEventListener("click", (event) => { if (event.target === els.featureTour) closeFeatureTour(); });
+window.addEventListener("resize", () => {
+  positionTourStep();
+  if (!state.data) return;
+  hideCalculationHelp();
+  const { articles, stats } = cloudStatistics();
+  renderCloud(articles, stats);
+});
+window.addEventListener("scroll", () => { hideCalculationHelp(); positionTourStep(); }, { passive: true });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !els.featureTour.hidden) closeFeatureTour(); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearPlaybackTimer();
   else if (state.autoPlay) schedulePlayback();
