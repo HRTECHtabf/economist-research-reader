@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-13" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-14" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -40,7 +40,7 @@
               <div><p>所有 tag 直接列在這裡。這個區塊有自己的期數，不會被其他圖表影響。</p><label class="module-period-control"><span>全部 tag 期數</span><select id="overview-issue" aria-label="選擇全部 tag 統計期數"></select></label></div>
             </div>
             <div class="focus-strip">
-              <div><small>分析焦點（最多兩個；排名會顯示第三層 tag）</small><div class="selected-tag-list" id="selected-tag-list"><span>尚未選擇，顯示固定分析期數的最強關聯</span></div></div>
+              <div><small>分析焦點（最多兩個；排名會顯示共同文章的相關 tag）</small><div class="selected-tag-list" id="selected-tag-list"><span>尚未選擇，顯示目前資料範圍的最強關聯</span></div></div>
               <button id="clear-focus" type="button" hidden>清除選擇</button>
             </div>
             <div class="tag-overview-tools">
@@ -55,8 +55,8 @@
 
           <section class="dashboard-card relationship-card" aria-labelledby="relationship-title">
             <div class="card-heading relationship-heading">
-              <div><p class="eyebrow red">ASSOCIATION MAP</p><h2 id="relationship-title">固定單期關聯</h2></div>
-              <div><span class="analysis-mode" id="analysis-mode">全局模式</span><p id="relationship-description">以標準化關聯分數找出比隨機情況更常一起出現的 tag，並對少量樣本保守降權。</p><label class="relationship-period-control"><span>固定分析期數</span><select id="relationship-issue" aria-label="選擇關聯圖分析期數"></select><small>這張圖不跟隨熱門 tag 輪播</small></label></div>
+              <div><p class="eyebrow red">ASSOCIATION MAP</p><h2 id="relationship-title">tag 關聯網絡</h2></div>
+              <div><span class="analysis-mode" id="analysis-mode">全部資料</span><p id="relationship-description">找出在同一篇文章中，比隨機情況更常一起出現的 tag。</p><div class="range-controls"><label><span>統計方式</span><select id="relationship-scope" aria-label="選擇關聯圖統計方式"><option value="all">全部資料</option><option value="month">每月</option><option value="issue" selected>每期</option></select></label><label><span id="relationship-period-label">期數</span><select id="relationship-issue" aria-label="選擇關聯圖資料範圍"></select></label></div></div>
             </div>
             <div class="relationship-layout">
               <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 3D 空間社群關聯網絡圖"></div>
@@ -70,10 +70,10 @@
 
           <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
             <div class="card-heading">
-              <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">時間性關鍵字雲</h2><span id="cloud-help"></span></span></div>
+              <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">熱門 tag 雲</h2><span id="cloud-help"></span></span></div>
               <div>
-                <p>越常出現的 tag 越靠近中心、字體越大；可合併全部資料、按月查看，或停在單一期數。</p>
-                <div class="cloud-period-controls">
+                <p>同一篇文章的相同 tag 只算一次；涵蓋文章越多，位置越靠近中心、字體越大。顏色比較前一個範圍的文章占比。</p>
+                <div class="range-controls">
                   <label><span>統計方式</span><select id="cloud-scope" aria-label="選擇關鍵字雲統計方式"><option value="all">全部資料</option><option value="month">每月</option><option value="issue" selected>每期</option></select></label>
                   <label><span id="cloud-period-label">期數</span><select id="cloud-issue" aria-label="選擇關鍵字雲資料範圍"></select></label>
                 </div>
@@ -89,7 +89,6 @@
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
             <div class="card-heading catalogue-heading">
               <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">每期熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
-              <p>每 2 秒換到下一期；原有 tag 會依名次向上或向下移動，新進榜 tag 從底部進場。按上一期、下一期或直接選期後會自動暫停。</p>
             </div>
             <div class="top-player" aria-label="熱門 tag 期數控制">
               <div class="current-period" aria-live="polite"><span>目前顯示</span><strong id="current-period-title">載入中…</strong><small id="current-period-range"></small></div>
@@ -115,6 +114,6 @@
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
     <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-13" defer></script>
+    <script src="./trends.js?v=20260817-14" defer></script>
   </body>
 </html>

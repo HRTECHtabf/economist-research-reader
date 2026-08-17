@@ -47,7 +47,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="trends"]',
     title: "前往趨勢儀表板",
-    description: "熱門 tag 每 2 秒依新名次上下移動；關鍵字雲可切換全部、每月或每期。關聯空間圖有獨立期數，可在宇宙場景中拖曳旋轉。",
+    description: "趨勢儀表板可用全部資料、每月或每期查看 tag 關聯與熱門 tag 雲；下方熱門排行也能逐期比較。關聯空間圖可拖曳旋轉。",
   },
   {
     selector: '[data-tour="filters"]',
