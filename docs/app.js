@@ -45,6 +45,11 @@ const TOUR_STEPS = [
     description: "點選常用或自訂標籤可複選；系統會優先列出同時命中較多標籤的文章。也可前往趨勢儀表板瀏覽完整標籤。",
   },
   {
+    selector: '[data-tour="trends"]',
+    title: "前往趨勢儀表板",
+    description: "趨勢儀表板會把文章與 tag 分開呈現。可切換期數、查看完整 tag、關聯分數、關鍵字雲與單一 tag 的跨期變化；計算方式可從畫面上的問號查看。",
+  },
+  {
     selector: '[data-tour="filters"]',
     title: "縮小研究範圍",
     description: "依主題分類、期數或收藏狀態篩選文章，適合先圈定研究範圍再閱讀。",
@@ -67,7 +72,8 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="notes"]',
     title: "留下私人筆記",
-    description: "在中英文全文選取文字即可新增筆記。之後可從這裡快速回到做過標記的段落。",
+    description: "先切換到中文全文或英文全文，再用滑鼠拖曳反白文字。按下浮出的「＋ 加入筆記」，寫下想法並儲存；之後可從左側筆記索引回到原段落。",
+    demo: "note",
   },
 ];
 const urlParams = new URLSearchParams(location.search);
@@ -188,6 +194,7 @@ const els = {
   tourProgress: document.querySelector("#tour-progress"),
   tourTitle: document.querySelector("#tour-title"),
   tourDescription: document.querySelector("#tour-description"),
+  tourDemo: document.querySelector("#tour-demo"),
   tourPrevious: document.querySelector("#tour-previous"),
   tourNext: document.querySelector("#tour-next"),
   tourClose: document.querySelector("#tour-close"),
@@ -1169,7 +1176,7 @@ function positionTourStep() {
   });
 
   if (innerWidth <= 560) return;
-  const panelWidth = Math.min(360, innerWidth - 24);
+  const panelWidth = els.tourPanel.offsetWidth;
   const panelHeight = els.tourPanel.offsetHeight;
   const gap = 18;
   let panelLeft = Math.max(12, Math.min(innerWidth - panelWidth - 12, left));
@@ -1185,6 +1192,38 @@ function positionTourStep() {
   els.tourPanel.style.top = `${panelTop}px`;
 }
 
+function renderTourDemo(type) {
+  els.tourDemo.replaceChildren();
+  els.tourDemo.hidden = type !== "note";
+  els.tourPanel.classList.toggle("has-demo", type === "note");
+  if (type !== "note") return;
+
+  const steps = document.createElement("ol");
+  ["切換到中文全文或英文全文", "拖曳反白想記錄的句子", "按「＋ 加入筆記」", "寫下想法後按「儲存筆記」"].forEach((text) => {
+    const item = document.createElement("li");
+    item.textContent = text;
+    steps.append(item);
+  });
+  const example = document.createElement("div");
+  example.className = "tour-note-example";
+  const label = document.createElement("small");
+  label.textContent = "操作示意";
+  const source = document.createElement("p");
+  source.append("央行表示，", Object.assign(document.createElement("mark"), { textContent: "利率決策仍取決於通膨與勞動市場資料" }), "。");
+  const action = document.createElement("span");
+  action.className = "tour-note-action";
+  action.textContent = "＋ 加入筆記";
+  const editor = document.createElement("div");
+  editor.className = "tour-note-editor";
+  const editorLabel = document.createElement("b");
+  editorLabel.textContent = "我的想法";
+  const editorBody = document.createElement("p");
+  editorBody.textContent = "待追蹤：下一次利率會議前，通膨與就業數據是否同向變化？";
+  editor.append(editorLabel, editorBody);
+  example.append(label, source, action, editor);
+  els.tourDemo.append(steps, example);
+}
+
 function showTourStep(index) {
   const boundedIndex = Math.max(0, Math.min(TOUR_STEPS.length - 1, index));
   const step = TOUR_STEPS[boundedIndex];
@@ -1196,6 +1235,7 @@ function showTourStep(index) {
   els.tourProgress.textContent = `功能導覽 ${boundedIndex + 1} / ${TOUR_STEPS.length}`;
   els.tourTitle.textContent = step.title;
   els.tourDescription.textContent = step.description;
+  renderTourDemo(step.demo);
   els.tourPrevious.disabled = boundedIndex === 0;
   els.tourNext.textContent = boundedIndex === TOUR_STEPS.length - 1 ? "完成" : "下一步 →";
   target.scrollIntoView({
