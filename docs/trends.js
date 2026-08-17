@@ -18,7 +18,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="relationship-network"]',
     title: "旋轉並辨認關聯網絡",
-    description: "按住空白處拖曳可旋轉視角；滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
+    description: "按住空白處拖曳可旋轉視角；電腦可用滾輪，手機可用雙指縮放，也可使用右上角按鈕。滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
   },
   {
     selector: '[data-tour="relationship-ranking"]',
@@ -32,11 +32,13 @@ const TOUR_STEPS = [
   },
   {
     selector: '[data-tour="top-tags"]',
-    title: "逐期比較熱門 tag",
-    description: "排行會依序播放各期，也可用上一期、下一期或期數按鈕自行查看。手動選擇後會暫停，方便比較名次升降。",
+    title: "逐期或逐月比較熱門 tag",
+    description: "排行可切換每期或每月，並依序播放各個時間範圍。也可用前後按鈕或選單自行查看；手動選擇後會暫停，方便比較名次升降。",
   },
 ];
 const requestedIssue = params.get("issue") || "";
+const requestedTopPeriod = params.get("top") || requestedIssue;
+const requestedTopScope = params.get("topView") || "issue";
 const requestedRelationshipIssue = params.get("network") || "";
 const requestedRelationshipScope = params.get("networkView") || "issue";
 const requestedOverviewIssue = params.get("overview") || "";
@@ -45,8 +47,9 @@ const requestedCloudScope = params.get("cloudView") || "issue";
 
 const state = {
   data: null,
-  issue: requestedIssue,
-  autoPlay: !requestedIssue,
+  issue: requestedTopPeriod,
+  topScope: ["month", "issue"].includes(requestedTopScope) ? requestedTopScope : "issue",
+  autoPlay: !requestedTopPeriod,
   playbackTimer: null,
   networkFrame: null,
   relationshipIssue: requestedRelationshipIssue,
@@ -75,6 +78,9 @@ const els = {
   playbackProgress: document.querySelector("#playback-progress"),
   currentPeriodTitle: document.querySelector("#current-period-title"),
   currentPeriodRange: document.querySelector("#current-period-range"),
+  topScope: document.querySelector("#top-scope"),
+  topPeriodLabel: document.querySelector("#top-period-label"),
+  topPeriod: document.querySelector("#top-period"),
   selectedTagList: document.querySelector("#selected-tag-list"),
   clearFocus: document.querySelector("#clear-focus"),
   overviewSearch: document.querySelector("#tag-overview-search"),
@@ -175,7 +181,7 @@ function renderStaticCalculationHelp() {
   ));
   els.topTagsHelp.replaceChildren(createCalculationHelp(
     "熱門 tag 怎麼排？",
-    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。百分比是含有該 tag 的文章占當期全部文章的比例。",
+    "依目前選擇的期數或月份分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。百分比是含有該 tag 的文章占該期或該月全部文章的比例。",
   ));
 }
 
@@ -374,7 +380,8 @@ function trendText(trend) {
 }
 
 function trendTextForSelection(trend, issue = state.issue) {
-  return issue === state.issues[0] ? "無前期資料" : trendText(trend);
+  const keys = topKeys();
+  return issue === keys[0] ? `無前${state.topScope === "month" ? "月" : "期"}資料` : trendText(trend);
 }
 
 function countContaining(articles, tags) {
@@ -447,7 +454,8 @@ function relationshipsFor(articles) {
 
 function syncUrl() {
   const next = new URLSearchParams();
-  if (!state.autoPlay && state.issue) next.set("issue", state.issue);
+  if (state.topScope !== "issue") next.set("topView", state.topScope);
+  if (!state.autoPlay && state.issue) next.set("top", state.issue);
   if (state.relationshipScope !== "issue") next.set("networkView", state.relationshipScope);
   if (state.relationshipScope === "month" && state.relationshipIssue) next.set("network", state.relationshipIssue);
   if (state.relationshipScope === "issue" && state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
@@ -481,25 +489,33 @@ function restartPlaybackProgress() {
 }
 
 function renderPlaybackState() {
-  const index = Math.max(0, state.issues.indexOf(state.issue));
-  const nextIssue = state.issues[(index + 1) % Math.max(1, state.issues.length)] || state.issue;
+  const keys = topKeys();
+  const index = Math.max(0, keys.indexOf(state.issue));
+  const nextKey = keys[(index + 1) % Math.max(1, keys.length)] || state.issue;
+  const unit = state.topScope === "month" ? "月" : "期";
   els.playbackToggle.textContent = state.autoPlay ? "暫停" : "播放";
   els.playbackToggle.setAttribute("aria-pressed", String(state.autoPlay));
   els.playbackStatus.textContent = state.autoPlay
-    ? `下一期 ${issueTitle(nextIssue)}`
-    : `已停在 ${issueTitle(state.issue)}`;
-  els.currentPeriodTitle.textContent = `第 ${index + 1} / ${state.issues.length} 期 · ${issueTitle(state.issue)}`;
-  els.currentPeriodRange.textContent = `本期文章日期 ${issueRange(state.issue, true)}`;
+    ? `下一${unit} ${topPeriodTitle(nextKey)}`
+    : `已停在 ${topPeriodTitle(state.issue)}`;
+  els.currentPeriodTitle.textContent = `第 ${index + 1} / ${keys.length} 個範圍 · ${topPeriodTitle(state.issue)}`;
+  if (state.topScope === "month") {
+    const issueCount = state.issues.filter((issue) => issue.startsWith(`${state.issue}.`)).length;
+    els.currentPeriodRange.textContent = `本月涵蓋 ${issueCount} 期、${articlesForScope("month", state.issue).length} 篇文章`;
+  } else els.currentPeriodRange.textContent = `本期文章日期 ${issueRange(state.issue, true)}`;
+  els.topPrevious.textContent = `← 上一${unit}`;
+  els.topNext.textContent = `下一${unit} →`;
   if (!state.autoPlay) els.playbackProgress.classList.remove("running");
 }
 
 function schedulePlayback() {
+  const keys = topKeys();
   clearPlaybackTimer();
-  if (!state.autoPlay || document.hidden || state.issues.length < 2) return;
+  if (!state.autoPlay || document.hidden || keys.length < 2) return;
   restartPlaybackProgress();
   state.playbackTimer = setTimeout(() => {
-    const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
-    state.issue = state.issues[(currentIndex + 1) % state.issues.length];
+    const currentIndex = Math.max(0, keys.indexOf(state.issue));
+    state.issue = keys[(currentIndex + 1) % keys.length];
     renderTopModule();
     schedulePlayback();
   }, PLAYBACK_DELAY);
@@ -519,17 +535,19 @@ function pauseAtIssue(issue) {
 }
 
 function stepTopIssue(direction) {
-  const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
+  const keys = topKeys();
+  const currentIndex = Math.max(0, keys.indexOf(state.issue));
   state.autoPlay = false;
-  state.issue = state.issues[(currentIndex + direction + state.issues.length) % state.issues.length];
+  state.issue = keys[(currentIndex + direction + keys.length) % keys.length];
   clearPlaybackTimer();
   renderTopModule();
 }
 
 function renderIssuePicker() {
   els.issuePicker.replaceChildren();
-  const counts = new Map(state.issues.map((issue) => [issue, state.data.articles.filter((article) => issueDate(article) === issue).length]));
-  state.issues.forEach((issue) => {
+  const keys = topKeys();
+  els.issuePicker.setAttribute("aria-label", `選擇熱門 tag ${state.topScope === "month" ? "月份" : "期數"}`);
+  keys.forEach((issue) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "issue-choice";
@@ -538,8 +556,11 @@ function renderIssuePicker() {
     button.setAttribute("aria-pressed", String(state.issue === issue));
     const title = document.createElement("strong");
     const meta = document.createElement("small");
-    title.textContent = issueTitle(issue);
-    meta.textContent = `${issueRange(issue)}｜${counts.get(issue)} 篇`;
+    title.textContent = topPeriodTitle(issue);
+    if (state.topScope === "month") {
+      const issueCount = state.issues.filter((item) => item.startsWith(`${issue}.`)).length;
+      meta.textContent = `${issueCount} 期｜${articlesForScope("month", issue).length} 篇`;
+    } else meta.textContent = `${issueRange(issue)}｜${articlesForScope("issue", issue).length} 篇`;
     button.append(title, meta);
     button.addEventListener("click", () => pauseAtIssue(issue));
     els.issuePicker.append(button);
@@ -566,6 +587,14 @@ function fillIssueSelect(select, selected) {
 function monthTitle(value) {
   const [year, month] = value.split(".").map(Number);
   return `${year} 年 ${month} 月`;
+}
+
+function topKeys() {
+  return state.topScope === "month" ? state.months : state.issues;
+}
+
+function topPeriodTitle(value) {
+  return state.topScope === "month" ? monthTitle(value) : issueTitle(value);
 }
 
 function articlesForScope(scope, key) {
@@ -1029,12 +1058,18 @@ function renderNetwork(articles, stats, relationships) {
     pitch: -.16,
     targetYaw: -.2,
     targetPitch: -.16,
+    zoom: 1,
+    targetZoom: 1,
     dragging: false,
     pointerId: null,
     lastX: 0,
     lastY: 0,
     moved: false,
     suppressClickUntil: 0,
+    pointers: new Map(),
+    pinching: false,
+    pinchStartDistance: 0,
+    pinchStartZoom: 1,
   };
   function projectNode(node, rotationX, rotationY) {
     const x = node.baseX - GRAPH_WIDTH / 2;
@@ -1046,8 +1081,9 @@ function renderNetwork(articles, stats, relationships) {
     const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
     const y1 = y * cosX - z1 * sinX;
     const z2 = y * sinX + z1 * cosX;
-    const scale = 820 / (820 - z2);
-    return { x: GRAPH_WIDTH / 2 + x1 * scale, y: GRAPH_HEIGHT / 2 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
+    const perspectiveScale = 820 / (820 - z2);
+    const scale = perspectiveScale * orbit.zoom;
+    return { x: GRAPH_WIDTH / 2 + x1 * scale, y: GRAPH_HEIGHT / 2 + y1 * scale, z: z2, scale: Math.max(.48, Math.min(2.35, scale)) };
   }
   function updatePositions() {
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
@@ -1076,8 +1112,9 @@ function renderNetwork(articles, stats, relationships) {
   function animateOrbit() {
     orbit.yaw += (orbit.targetYaw - orbit.yaw) * .24;
     orbit.pitch += (orbit.targetPitch - orbit.pitch) * .24;
+    orbit.zoom += (orbit.targetZoom - orbit.zoom) * .24;
     updatePositions();
-    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005) {
+    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005 || Math.abs(orbit.targetZoom - orbit.zoom) > .0005) {
       state.networkFrame = requestAnimationFrame(animateOrbit);
     } else {
       state.networkFrame = null;
@@ -1085,6 +1122,21 @@ function renderNetwork(articles, stats, relationships) {
   }
   function requestOrbitFrame() {
     if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
+  }
+  function setNetworkZoom(nextZoom) {
+    orbit.targetZoom = Math.max(.58, Math.min(2.15, nextZoom));
+    const zoomLevel = els.relationshipNetwork.querySelector(".network-zoom-level");
+    if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round(orbit.targetZoom * 100)}%`;
+    const zoomOut = els.relationshipNetwork.querySelector('[data-network-zoom="out"]');
+    const zoomIn = els.relationshipNetwork.querySelector('[data-network-zoom="in"]');
+    if (zoomOut) zoomOut.disabled = orbit.targetZoom <= .581;
+    if (zoomIn) zoomIn.disabled = orbit.targetZoom >= 2.149;
+    requestOrbitFrame();
+  }
+  function resetNetworkView() {
+    orbit.targetYaw = -.2;
+    orbit.targetPitch = -.16;
+    setNetworkZoom(1);
   }
   nodes.forEach((node, index) => {
     const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, "data-minor": String(node.count <= 5 && !node.selected), tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
@@ -1121,17 +1173,40 @@ function renderNetwork(articles, stats, relationships) {
     nodeElements.set(node.id, group);
   });
   els.relationshipNetwork.onpointerdown = (event) => {
+    if (event.target.closest?.(".network-zoom-controls")) return;
     if (event.button !== 0) return;
+    orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    els.relationshipNetwork.setPointerCapture?.(event.pointerId);
+    if (orbit.pointers.size >= 2) {
+      const [first, second] = [...orbit.pointers.values()];
+      orbit.pinching = true;
+      orbit.dragging = false;
+      orbit.pinchStartDistance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+      orbit.pinchStartZoom = orbit.targetZoom;
+      orbit.moved = true;
+      els.relationshipNetwork.classList.add("dragging");
+      return;
+    }
     orbit.dragging = true;
     orbit.pointerId = event.pointerId;
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
     orbit.moved = false;
     els.relationshipNetwork.classList.add("dragging");
-    els.relationshipNetwork.setPointerCapture?.(event.pointerId);
     requestOrbitFrame();
   };
   els.relationshipNetwork.onpointermove = (event) => {
+    if (!orbit.pointers.has(event.pointerId)) return;
+    orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (orbit.pinching && orbit.pointers.size >= 2) {
+      event.preventDefault();
+      const [first, second] = [...orbit.pointers.values()];
+      const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+      setNetworkZoom(orbit.pinchStartZoom * (distance / orbit.pinchStartDistance));
+      orbit.moved = true;
+      orbit.suppressClickUntil = performance.now() + 300;
+      return;
+    }
     if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
     const dx = event.clientX - orbit.lastX;
     const dy = event.clientY - orbit.lastY;
@@ -1143,26 +1218,69 @@ function renderNetwork(articles, stats, relationships) {
     requestOrbitFrame();
   };
   function finishOrbitDrag(event) {
-    if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
-    if (orbit.moved) orbit.suppressClickUntil = performance.now() + 240;
-    orbit.dragging = false;
-    orbit.pointerId = null;
-    els.relationshipNetwork.classList.remove("dragging");
+    if (!orbit.pointers.has(event.pointerId)) return;
+    const moved = orbit.moved || orbit.pinching;
+    orbit.pointers.delete(event.pointerId);
     if (els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.releasePointerCapture(event.pointerId);
+    if (orbit.pointers.size === 1) {
+      const [pointerId, position] = [...orbit.pointers.entries()][0];
+      orbit.pinching = false;
+      orbit.dragging = true;
+      orbit.pointerId = pointerId;
+      orbit.lastX = position.x;
+      orbit.lastY = position.y;
+      orbit.moved = true;
+    } else {
+      orbit.pinching = false;
+      orbit.dragging = false;
+      orbit.pointerId = null;
+      orbit.moved = false;
+      els.relationshipNetwork.classList.remove("dragging");
+    }
+    if (moved) orbit.suppressClickUntil = performance.now() + 300;
     requestOrbitFrame();
   }
   els.relationshipNetwork.onpointerup = finishOrbitDrag;
   els.relationshipNetwork.onpointercancel = finishOrbitDrag;
+  els.relationshipNetwork.onwheel = (event) => {
+    event.preventDefault();
+    const factor = Math.exp(-event.deltaY * .0015);
+    setNetworkZoom(orbit.targetZoom * factor);
+  };
   els.relationshipNetwork.ondblclick = (event) => {
     event.preventDefault();
-    orbit.targetYaw = -.2;
-    orbit.targetPitch = -.16;
-    requestOrbitFrame();
+    resetNetworkView();
   };
   updatePositions();
   const guide = document.createElement("div");
   guide.className = "network-guide";
-  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>按住拖曳旋轉 · 雙擊重設視角</span>";
+  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>拖曳旋轉 · 滾輪／雙指／按鈕縮放 · 雙擊重設</span>";
+  const zoomControls = document.createElement("div");
+  zoomControls.className = "network-zoom-controls";
+  const zoomOutButton = document.createElement("button");
+  zoomOutButton.type = "button";
+  zoomOutButton.dataset.networkZoom = "out";
+  zoomOutButton.setAttribute("aria-label", "縮小關聯圖");
+  zoomOutButton.textContent = "−";
+  const zoomResetButton = document.createElement("button");
+  zoomResetButton.type = "button";
+  zoomResetButton.dataset.networkZoom = "reset";
+  zoomResetButton.setAttribute("aria-label", "重設關聯圖視角與縮放");
+  zoomResetButton.textContent = "↺";
+  const zoomInButton = document.createElement("button");
+  zoomInButton.type = "button";
+  zoomInButton.dataset.networkZoom = "in";
+  zoomInButton.setAttribute("aria-label", "放大關聯圖");
+  zoomInButton.textContent = "+";
+  [zoomOutButton, zoomResetButton, zoomInButton].forEach((button) => button.addEventListener("pointerdown", (event) => event.stopPropagation()));
+  zoomOutButton.addEventListener("click", () => setNetworkZoom(orbit.targetZoom / 1.22));
+  zoomResetButton.addEventListener("click", resetNetworkView);
+  zoomInButton.addEventListener("click", () => setNetworkZoom(orbit.targetZoom * 1.22));
+  zoomControls.append(zoomOutButton, zoomResetButton, zoomInButton);
+  const zoomLevel = document.createElement("span");
+  zoomLevel.className = "network-zoom-level";
+  zoomLevel.setAttribute("aria-live", "polite");
+  zoomLevel.textContent = "縮放 100%";
   const key = document.createElement("div");
   key.className = "network-key";
   const appendKeyItem = (className, label, titleText = "") => {
@@ -1183,11 +1301,11 @@ function renderNetwork(articles, stats, relationships) {
   });
   if (state.selectedTags.length === 2) appendKeyItem("compound-node", "共同文章");
   const orbitHint = document.createElement("b");
-  orbitHint.textContent = "拖曳旋轉 · 雙擊重設";
+  orbitHint.textContent = "拖曳旋轉 · 滾輪或雙指縮放 · 雙擊重設";
   const legendNote = document.createElement("small");
   legendNote.textContent = "社群是依目前範圍的連線密度自動形成，不是固定主題分類；冒號後列出該群代表 tag。大小＝文章篇數；遠近只用來分開重疊節點。";
   key.append(orbitHint, legendNote);
-  els.relationshipNetwork.append(svg, guide, key, nodeTooltip);
+  els.relationshipNetwork.append(svg, guide, zoomControls, zoomLevel, key, nodeTooltip);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
 }
@@ -1371,7 +1489,7 @@ function updateTopTagRow(row, item, index, totalArticles, isNew) {
   row.dataset.rank = nextRank;
   row.dataset.movement = previousRank && nextRank < previousRank ? "up" : previousRank && nextRank > previousRank ? "down" : "flat";
   const button = row.querySelector(".top-tag-button");
-  button.setAttribute("aria-label", `第 ${nextRank} 名，${item.tag}，${item.count.toFixed(0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
+  button.setAttribute("aria-label", `第 ${nextRank} 名，${item.tag}，${item.count.toFixed(0)} 篇，占${state.topScope === "month" ? "當月" : "當期"} ${rateValue.toFixed(1)}%`);
   row.querySelector(".top-tag-rank").textContent = String(nextRank).padStart(2, "0");
   row.querySelector(".top-tag-label").textContent = item.tag;
   row.querySelector(".top-tag-count").textContent = `${item.count.toFixed(0)} 篇`;
@@ -1450,16 +1568,29 @@ function paintTopTags(items, totalArticles, label) {
 }
 
 function renderTopTags(articles, stats) {
+  const label = state.topScope === "month"
+    ? `${monthTitle(state.issue)}｜${state.issues.filter((issue) => issue.startsWith(`${state.issue}.`)).length} 期｜共 ${articles.length} 篇`
+    : `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}｜共 ${articles.length} 篇`;
   paintTopTags(
     stats.map((item) => ({ ...item, rate: (item.count / Math.max(1, articles.length)) * 100 })),
     articles.length,
-    `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}｜共 ${articles.length} 篇`,
+    label,
   );
 }
 
 function renderTopModule() {
-  const articles = articlesInWindow(state.issue);
-  const stats = tagStatistics(articles, [state.issue], true, state.issue);
+  const keys = topKeys();
+  if (!keys.includes(state.issue)) state.issue = keys[0] || "";
+  const articles = articlesForScope(state.topScope, state.issue);
+  const stats = tagStatistics(articles, periodsFor(articles), true, "");
+  const previousIndex = keys.indexOf(state.issue) - 1;
+  const previousArticles = previousIndex >= 0 ? articlesForScope(state.topScope, keys[previousIndex]) : [];
+  stats.forEach((item) => {
+    const currentRate = articles.length ? (item.count / articles.length) * 100 : 0;
+    const previousRate = previousArticles.length ? (countContaining(previousArticles, [item.tag]) / previousArticles.length) * 100 : 0;
+    item.trend = previousIndex >= 0 ? trendFor([previousRate, currentRate]) : { delta: 0, percent: 0, recent: currentRate, previous: 0 };
+  });
+  renderRangeControls(els.topScope, els.topPeriod, els.topPeriodLabel, state.topScope, state.issue);
   renderIssuePicker();
   renderPlaybackState();
   renderTopTags(articles, stats);
@@ -1511,6 +1642,14 @@ els.cloudScope.addEventListener("change", () => {
   renderCloudModule();
 });
 els.cloudIssue.addEventListener("change", () => { state.cloudIssue = els.cloudIssue.value; renderCloudModule(); });
+els.topScope.addEventListener("change", () => {
+  state.topScope = els.topScope.value;
+  state.issue = topKeys().at(-1) || "";
+  state.autoPlay = false;
+  clearPlaybackTimer();
+  renderTopModule();
+});
+els.topPeriod.addEventListener("change", () => pauseAtIssue(els.topPeriod.value));
 els.topPrevious.addEventListener("click", () => stepTopIssue(-1));
 els.topNext.addEventListener("click", () => stepTopIssue(1));
 els.playbackToggle.addEventListener("click", () => {
@@ -1548,14 +1687,15 @@ fetch("./data/articles.json", { cache: "no-store" })
     state.data = data;
     state.issues = [...new Set(data.articles.map(issueDate).filter(Boolean))].sort();
     state.months = [...new Set(state.issues.map((issue) => issue.slice(0, 7)))].sort();
-    if (!state.issues.includes(state.issue)) state.issue = "";
-    if (!state.issue && (state.legacyFrom || state.legacyTo)) {
+    const initialTopKeys = topKeys();
+    if (!initialTopKeys.includes(state.issue)) state.issue = "";
+    if (state.topScope === "issue" && !state.issue && (state.legacyFrom || state.legacyTo)) {
       const from = state.legacyFrom || state.issues[0].replaceAll(".", "-");
       const to = state.legacyTo || state.issues.at(-1).replaceAll(".", "-");
       const matched = state.issues.filter((issue) => { const date = issue.replaceAll(".", "-"); return date >= from && date <= to; });
       if (matched.length === 1) { state.issue = matched[0]; state.autoPlay = false; }
     }
-    if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
+    if (!state.issue) { state.issue = initialTopKeys[0] || ""; state.autoPlay = true; }
     if (state.relationshipScope === "all") state.relationshipIssue = "all";
     else if (state.relationshipScope === "month") {
       if (!state.months.includes(state.relationshipIssue)) state.relationshipIssue = state.months.at(-1) || "";

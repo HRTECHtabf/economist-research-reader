@@ -6,8 +6,8 @@
     <meta name="description" content="依《經濟學人》期數探索研究摘要的關鍵字趨勢、主題關聯與完整標籤索引。" />
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-10" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-16" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-11" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-19" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -19,7 +19,7 @@
         </a>
         <nav aria-label="主要導覽">
           <a href="./index.html#articles">文章索引</a>
-          <a class="active" href="#dashboard" aria-current="page">趨勢儀表板</a>
+          <a class="active trends-nav-link" href="#dashboard" aria-current="page">趨勢儀表板</a>
           <button class="tour-launch" id="tour-launch" type="button">功能導覽</button>
         </nav>
       </div>
@@ -29,7 +29,7 @@
       <section class="trend-hero">
         <div class="shell trend-hero-grid">
           <div><p class="eyebrow">RESEARCH SIGNALS · 趨勢觀測</p><h1>關鍵字趨勢儀表板</h1></div>
-          <p>各分析區塊可獨立選擇期數；熱門 tag 會快速輪播，也可隨時停下來逐期查看。</p>
+          <p>各分析區塊可獨立選擇期數或月份；熱門 tag 會快速輪播，也可隨時停下來逐期或逐月查看。</p>
         </div>
       </section>
 
@@ -89,9 +89,13 @@
 
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title" data-tour="top-tags">
             <div class="card-heading catalogue-heading">
-              <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">每期熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
+              <div><p class="eyebrow red">TOP TAGS</p><span class="heading-title-line"><h2 id="catalogue-title">熱門 tag Top 15</h2><span id="top-tags-help"></span></span></div>
             </div>
-            <div class="top-player" aria-label="熱門 tag 期數控制">
+            <div class="top-player" aria-label="熱門 tag 時間範圍控制">
+              <div class="range-controls top-range-controls">
+                <label><span>統計方式</span><select id="top-scope" aria-label="選擇熱門 tag 統計方式"><option value="issue" selected>每期</option><option value="month">每月</option></select></label>
+                <label><span id="top-period-label">期數</span><select id="top-period" aria-label="選擇熱門 tag 資料範圍"></select></label>
+              </div>
               <div class="current-period" aria-live="polite"><span>目前顯示</span><strong id="current-period-title">載入中…</strong><small id="current-period-range"></small></div>
               <div class="top-player-actions">
                 <button id="top-previous" type="button">← 上一期</button>
@@ -100,11 +104,11 @@
                 <span class="playback-status" id="playback-status" aria-live="polite"></span>
               </div>
               <span class="playback-meter" aria-hidden="true"><i id="playback-progress"></i></span>
-              <div class="issue-picker" id="issue-picker" role="group" aria-label="選擇熱門 tag 期數"></div>
+              <div class="issue-picker" id="issue-picker" role="group" aria-label="選擇熱門 tag 時間範圍"></div>
             </div>
             <div class="top-tags-heading">
               <strong id="top-tags-issue">目前期數</strong>
-              <span>文章篇數 · 當期占比 · 較前一期變化</span>
+              <span>文章篇數 · 範圍占比 · 較前一範圍變化</span>
             </div>
             <ol class="top-tags-ranking" id="top-tags-ranking" aria-live="polite"></ol>
           </section>
@@ -130,6 +134,6 @@
         </div>
       </section>
     </div>
-    <script src="./trends.js?v=20260817-16" defer></script>
+    <script src="./trends.js?v=20260817-19" defer></script>
   </body>
 </html>
