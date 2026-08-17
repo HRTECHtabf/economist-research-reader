@@ -31,13 +31,79 @@ const els = {
   rankingTitle: document.querySelector("#ranking-title"),
   relationshipNetwork: document.querySelector("#relationship-network"),
   relationshipList: document.querySelector("#relationship-list"),
+  relationshipHelp: document.querySelector("#relationship-help"),
   keywordCloud: document.querySelector("#keyword-cloud"),
+  cloudHelp: document.querySelector("#cloud-help"),
+  trendFlatLabel: document.querySelector("#trend-flat-label"),
+  cloudComparisonStatus: document.querySelector("#cloud-comparison-status"),
   detailTagSelect: document.querySelector("#detail-tag-select"),
   detailArticleLink: document.querySelector("#detail-article-link"),
   detailSummary: document.querySelector("#tag-detail-summary"),
   detailChart: document.querySelector("#tag-detail-chart"),
+  detailHelp: document.querySelector("#detail-help"),
   tooltip: document.querySelector("#tag-tooltip"),
+  calculationTooltip: document.querySelector("#calculation-tooltip"),
 };
+
+function positionCalculationTooltip(button) {
+  const margin = 12;
+  const anchor = button.getBoundingClientRect();
+  const tooltip = els.calculationTooltip;
+  const rect = tooltip.getBoundingClientRect();
+  const left = Math.max(margin, Math.min(innerWidth - rect.width - margin, anchor.left + anchor.width / 2 - rect.width / 2));
+  const below = anchor.bottom + 9;
+  const top = below + rect.height <= innerHeight - margin ? below : Math.max(margin, anchor.top - rect.height - 9);
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function showCalculationHelp(button) {
+  els.calculationTooltip.replaceChildren();
+  const title = document.createElement("strong");
+  title.textContent = button.dataset.helpTitle;
+  const body = document.createElement("span");
+  body.textContent = button.dataset.helpBody;
+  els.calculationTooltip.append(title, body);
+  els.calculationTooltip.hidden = false;
+  requestAnimationFrame(() => positionCalculationTooltip(button));
+}
+
+function hideCalculationHelp() {
+  els.calculationTooltip.hidden = true;
+}
+
+function createCalculationHelp(title, body) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "calculation-help";
+  button.textContent = "?";
+  button.dataset.helpTitle = title;
+  button.dataset.helpBody = body;
+  button.setAttribute("aria-label", `${title}：${body}`);
+  button.setAttribute("aria-describedby", "calculation-tooltip");
+  button.addEventListener("pointerenter", () => showCalculationHelp(button));
+  button.addEventListener("pointerleave", () => { if (document.activeElement !== button) hideCalculationHelp(); });
+  button.addEventListener("focus", () => showCalculationHelp(button));
+  button.addEventListener("blur", hideCalculationHelp);
+  button.addEventListener("click", (event) => { event.stopPropagation(); showCalculationHelp(button); });
+  button.addEventListener("keydown", (event) => { if (event.key === "Escape") button.blur(); });
+  return button;
+}
+
+function renderStaticCalculationHelp() {
+  els.relationshipHelp.replaceChildren(createCalculationHelp(
+    "關聯強度怎麼算？",
+    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。雙 tag 模式會先把兩個 tag 的交集視為一個主題，再與第三個 tag 比較。分數不是機率、重要性或因果關係。",
+  ));
+  els.cloudHelp.replaceChildren(createCalculationHelp(
+    "關鍵字雲怎麼算？",
+    "字體大小依 tag 文章數做平方根縮放，出現愈多就愈靠近中心。顏色比較 tag 在當期文章中的占比與前一期占比；最早一期沒有比較基準，因此灰色代表無前期資料。",
+  ));
+  els.detailHelp.replaceChildren(createCalculationHelp(
+    "單一 tag 趨勢怎麼算？",
+    "各期占比＝含有此 tag 的文章數 ÷ 該期文章總數。較前一期的變化＝當期占比減前一期占比，單位是百分點；用占比可避免各期收錄篇數不同造成誤判。",
+  ));
+}
 
 function issueDate(article) {
   return article.issueKey || state.data?.issueKey || "";
@@ -170,6 +236,10 @@ function trendText(trend) {
   if (trend.percent === Infinity) return "近期新出現";
   if (Math.abs(trend.percent) < 1) return "持平";
   return `${trend.percent > 0 ? "+" : ""}${Math.round(trend.percent)}%`;
+}
+
+function trendTextForSelection(trend) {
+  return state.issue === state.issues[0] ? "無前期資料" : trendText(trend);
 }
 
 function countContaining(articles, tags) {
@@ -350,7 +420,7 @@ function highlightTag(tag, event, articles, statsByTag) {
   title.textContent = tag;
   const details = document.createElement("span");
   const topRelated = relations.slice(0, 3).map((item) => item.target).join("、") || "尚無穩定關聯";
-  details.textContent = `${stat?.count || 0} 篇 · ${trendText(stat?.trend || { percent: 0 })}｜主要關聯：${topRelated}`;
+  details.textContent = `${stat?.count || 0} 篇 · ${trendTextForSelection(stat?.trend || { percent: 0 })}｜主要關聯：${topRelated}`;
   els.tooltip.append(title, details);
   els.tooltip.hidden = false;
   requestAnimationFrame(() => positionTooltip(event));
@@ -394,13 +464,17 @@ function renderTagOverview(articles, stats) {
   }
 }
 
-function appendSignalCard(label, value, description, accent = false) {
+function appendSignalCard(label, value, description, accent = false, help = null) {
   const card = document.createElement("article");
   card.className = `signal-card${accent ? " accent" : ""}`;
+  const labelRow = document.createElement("span");
+  labelRow.className = "signal-label-row";
   const small = document.createElement("small"); small.textContent = label;
   const strong = document.createElement("strong"); strong.textContent = value;
   const paragraph = document.createElement("p"); paragraph.textContent = description;
-  card.append(small, strong, paragraph);
+  labelRow.append(small);
+  if (help) labelRow.append(createCalculationHelp(help.title, help.body));
+  card.append(labelRow, strong, paragraph);
   els.signalCards.append(card);
 }
 
@@ -408,21 +482,36 @@ function renderSignals(articles, periods, stats, relationships) {
   els.signalCards.replaceChildren();
   const activeTags = stats.filter((item) => item.count > 0);
   appendSignalCard("觀測期數", state.issue ? "1 期" : `${periods.length} 期`, state.issue ? `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}` : `${issueTitle(state.issues[0])}至 ${issueTitle(state.issues.at(-1))}`);
-  appendSignalCard("涵蓋文章", `${articles.length} 篇`, `目前期間共涵蓋 ${activeTags.length} 個 tag`);
+  appendSignalCard("涵蓋文章", `${articles.length} 篇`, `目前期間共涵蓋 ${activeTags.length} 個 tag`, false, {
+    title: "涵蓋文章怎麼算？",
+    body: "文章數是目前所選期數的文章總數；tag 數會把這些文章使用過的 tag 去除重複後計算。",
+  });
   if (!state.selectedTags.length) {
     const strongest = relationships[0];
-    appendSignalCard("最強關聯", strongest ? strongest.tags.join(" × ") : "資料不足", strongest ? `關聯強度 ${strongest.score}；共同 ${strongest.support} 篇` : "請擴大時間範圍", true);
+    appendSignalCard("最強關聯", strongest ? strongest.tags.join(" × ") : "資料不足", strongest ? `關聯強度 ${strongest.score}；共同 ${strongest.support} 篇` : "請擴大時間範圍", true, {
+      title: "最強關聯怎麼算？",
+      body: "比較所有 tag 組合的 NPMI，再依共同文章數折減小樣本。熱門但沒有特別常一起出現的 tag，不會只靠篇數排到前面。",
+    });
   } else if (state.selectedTags.length === 1) {
     const strongest = relationships[0];
     const focusCount = countContaining(articles, state.selectedTags);
-    appendSignalCard("單 tag 模式", state.selectedTags[0], `${focusCount} 篇；最強延伸 ${strongest?.target || "資料不足"}`, true);
+    appendSignalCard("單 tag 模式", state.selectedTags[0], `${focusCount} 篇；最強延伸 ${strongest?.target || "資料不足"}`, true, {
+      title: "單 tag 模式怎麼算？",
+      body: "先找出含有焦點 tag 的文章，再逐一比較其他 tag 與它共同出現的程度；最強延伸是經 NPMI 與低樣本折減後分數最高者。",
+    });
   } else {
     const pairCount = countContaining(articles, state.selectedTags);
     const strongest = relationships[0];
-    appendSignalCard("雙 tag 交集", `${pairCount} 篇`, `${state.selectedTags.join(" × ")}；最強延伸 ${strongest?.target || "資料不足"}`, true);
+    appendSignalCard("雙 tag 交集", `${pairCount} 篇`, `${state.selectedTags.join(" × ")}；最強延伸 ${strongest?.target || "資料不足"}`, true, {
+      title: "雙 tag 交集怎麼算？",
+      body: "交集篇數是同一篇文章同時含有兩個焦點 tag 的數量。第三層排名再把這個交集視為一個主題，與其他 tag 計算關聯。",
+    });
   }
   const rising = [...activeTags].filter((item) => item.trend.delta > 0).sort((a, b) => b.trend.delta - a.trend.delta || b.count - a.count)[0];
-  appendSignalCard(state.issue ? "較前一期升溫" : "近期升溫", rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : state.issue === state.issues[0] ? "最早一期沒有前期資料可比較" : "目前沒有明顯升溫的 tag");
+  appendSignalCard(state.issue ? "較前一期升溫" : "近期升溫", rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : state.issue === state.issues[0] ? "最早一期沒有前期資料可比較" : "目前沒有明顯升溫的 tag", false, {
+    title: "升溫怎麼算？",
+    body: "先算每個 tag 在當期文章中的占比，再與前一期占比比較；卡片挑出占比增加最多的 tag。百分比表示相對增幅，不是增加的文章篇數。",
+  });
 }
 
 function svgElement(name, attributes = {}) {
@@ -669,7 +758,7 @@ function renderCloud(articles, stats) {
     const button = document.createElement("button"); button.type = "button"; button.className = "cloud-word"; button.dataset.tag = item.tag;
     button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, compact)}px`; button.style.visibility = "hidden";
     button.classList.toggle("selected", state.selectedTags.includes(item.tag)); button.textContent = item.tag;
-    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendText(item.trend)}`);
+    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendTextForSelection(item.trend)}`);
     button.addEventListener("click", () => toggleFocusTag(item.tag));
     button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag));
     button.addEventListener("pointermove", positionTooltip); button.addEventListener("pointerleave", clearTagHighlights);
@@ -679,6 +768,21 @@ function renderCloud(articles, stats) {
   requestAnimationFrame(() => layoutCloudWords(buttons));
   els.keywordCloud.onpointermove = updateCloudMagnet;
   els.keywordCloud.onpointerleave = () => { resetCloudDrift(); clearTagHighlights(); };
+}
+
+function renderCloudComparisonStatus() {
+  const comparisonIssue = state.issue || state.issues.at(-1);
+  const issueIndex = state.issues.indexOf(comparisonIssue);
+  const hasPrevious = issueIndex > 0;
+  els.trendFlatLabel.textContent = hasPrevious ? "持平" : "無前期資料";
+  els.cloudComparisonStatus.classList.toggle("no-baseline", !hasPrevious);
+  if (!hasPrevious) {
+    els.cloudComparisonStatus.textContent = "這是資料庫最早一期，沒有前一期可比較；灰色代表缺少比較基準，不代表趨勢持平。";
+    return;
+  }
+  const previousIssue = state.issues[issueIndex - 1];
+  const scope = state.issue ? "本期" : "全部期數模式以最新一期為準";
+  els.cloudComparisonStatus.textContent = `${scope}：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
 }
 
 function articleSearchUrl(tags) {
@@ -715,15 +819,17 @@ function renderTagDetail(stats) {
   const delta = previous ? active.rate - previous.rate : 0;
   els.detailSummary.replaceChildren();
   [
-    [state.issue ? "目前期數" : "最新一期", active ? `${active.count} 篇` : "0 篇", active ? `${active.rate.toFixed(1)}% 的當期文章` : "沒有資料"],
-    ["全部期數", `${totalCount} 篇`, `涵蓋 ${series.filter((item) => item.count > 0).length} / ${series.length} 期`],
-    ["較前一期", previous ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} 個百分點` : "無法比較", previous ? `${previous.rate.toFixed(1)}% → ${active.rate.toFixed(1)}%` : "這是資料中的最早一期"],
-  ].forEach(([label, value, note]) => {
+    [state.issue ? "目前期數" : "最新一期", active ? `${active.count} 篇` : "0 篇", active ? `${active.rate.toFixed(1)}% 的當期文章` : "沒有資料", "當期文章占比", "含有此 tag 的文章數 ÷ 當期文章總數。用占比比較，可降低每期收錄篇數不同造成的影響。"],
+    ["全部期數", `${totalCount} 篇`, `涵蓋 ${series.filter((item) => item.count > 0).length} / ${series.length} 期`, "跨期總數", "把每一期含有此 tag 的文章數加總；涵蓋期數只計算至少出現過一篇的期數。"],
+    ["較前一期", previous ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} 個百分點` : "無法比較", previous ? `${previous.rate.toFixed(1)}% → ${active.rate.toFixed(1)}%` : "這是資料中的最早一期", "百分點變化", "當期占比減去前一期占比。例如 10% 上升到 15%，是增加 5 個百分點；最早一期沒有前期可比較。"],
+  ].forEach(([label, value, note, helpTitle, helpBody]) => {
     const card = document.createElement("div");
+    const labelRow = document.createElement("span"); labelRow.className = "summary-label-row";
     const small = document.createElement("small"); small.textContent = label;
     const strong = document.createElement("strong"); strong.textContent = value;
     const span = document.createElement("span"); span.textContent = note;
-    card.append(small, strong, span); els.detailSummary.append(card);
+    labelRow.append(small, createCalculationHelp(helpTitle, helpBody));
+    card.append(labelRow, strong, span); els.detailSummary.append(card);
   });
   els.detailChart.replaceChildren();
   const maxRate = Math.max(1, ...series.map((item) => item.rate));
@@ -747,6 +853,7 @@ function renderTagDetail(stats) {
 }
 
 function renderAll() {
+  hideCalculationHelp();
   const articles = articlesInWindow();
   const periods = periodsFor(articles);
   const stats = tagStatistics(articles, periods, true);
@@ -755,6 +862,7 @@ function renderAll() {
   renderTagOverview(articles, stats);
   renderSignals(articles, periods, stats, relationships);
   renderRelationships(articles, stats, relationships);
+  renderCloudComparisonStatus();
   renderCloud(articles, stats);
   renderTagDetail(stats);
   syncUrl();
@@ -764,7 +872,8 @@ els.clearFocus.addEventListener("click", () => { state.selectedTags = []; render
 els.overviewSearch.addEventListener("input", () => { state.overviewQuery = els.overviewSearch.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
 els.overviewSort.addEventListener("change", () => { state.overviewSort = els.overviewSort.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
 els.detailTagSelect.addEventListener("change", () => { state.detailTag = els.detailTagSelect.value; renderAll(); });
-window.addEventListener("resize", () => { if (state.data) renderCloud(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
+window.addEventListener("resize", () => { hideCalculationHelp(); if (state.data) renderCloud(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
+window.addEventListener("scroll", hideCalculationHelp, { passive: true });
 
 fetch("./data/articles.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
@@ -781,6 +890,7 @@ fetch("./data/articles.json", { cache: "no-store" })
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
     els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；每個按鈕皆標示該期文章的實際刊登日期範圍`;
+    renderStaticCalculationHelp();
     renderAll();
   })
   .catch(() => { els.signalCards.innerHTML = '<div class="chart-empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>'; });

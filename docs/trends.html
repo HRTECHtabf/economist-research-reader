@@ -6,8 +6,8 @@
     <meta name="description" content="依《經濟學人》期數探索研究摘要的關鍵字趨勢、主題關聯與完整標籤索引。" />
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-8" />
-    <link rel="stylesheet" href="./trends.css?v=20260817-6" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-9" />
+    <link rel="stylesheet" href="./trends.css?v=20260817-7" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -68,7 +68,7 @@
             <div class="relationship-layout">
               <div class="relationship-network" id="relationship-network" role="img" aria-label="tag 關聯網絡圖"></div>
               <div class="relationship-ranking">
-                <div class="ranking-heading"><strong id="ranking-title">關聯排名</strong><small>強度 0–100</small></div>
+                <div class="ranking-heading"><strong id="ranking-title">關聯排名</strong><span class="ranking-metric"><small>強度 0–100</small><span id="relationship-help"></span></span></div>
                 <div class="relationship-list" id="relationship-list"></div>
               </div>
             </div>
@@ -77,18 +77,19 @@
 
           <section class="dashboard-card cloud-card" aria-labelledby="cloud-title">
             <div class="card-heading">
-              <div><p class="eyebrow red">KEYWORD CLOUD</p><h2 id="cloud-title">時間性關鍵字雲</h2></div>
+              <div><p class="eyebrow red">KEYWORD CLOUD</p><span class="heading-title-line"><h2 id="cloud-title">時間性關鍵字雲</h2><span id="cloud-help"></span></span></div>
               <p>越常出現的 tag 越靠近中心、字體越大；顏色表示相較前一期的升降。游標靠近時文字會產生磁性移動。</p>
             </div>
             <div class="cloud-legend" aria-label="關鍵字雲圖例">
-              <span><i class="trend-down-extreme"></i>急降</span><span><i class="trend-down-strong"></i>明顯降溫</span><span><i class="trend-down"></i>小幅降溫</span><span><i class="trend-flat"></i>持平</span><span><i class="trend-up"></i>小幅升溫</span><span><i class="trend-up-strong"></i>明顯升溫</span><span><i class="trend-up-extreme"></i>急升</span><small>字體大小與中心距離＝文章占比</small>
+              <span><i class="trend-down-extreme"></i>急降</span><span><i class="trend-down-strong"></i>明顯降溫</span><span><i class="trend-down"></i>小幅降溫</span><span><i class="trend-flat"></i><b id="trend-flat-label">持平</b></span><span><i class="trend-up"></i>小幅升溫</span><span><i class="trend-up-strong"></i>明顯升溫</span><span><i class="trend-up-extreme"></i>急升</span><small>字體大小與中心距離＝文章占比</small>
             </div>
+            <p class="cloud-comparison-status" id="cloud-comparison-status"></p>
             <div class="keyword-cloud" id="keyword-cloud" aria-label="互動式關鍵字雲"></div>
           </section>
 
           <section class="dashboard-card catalogue-card" id="tag-catalogue" aria-labelledby="catalogue-title">
             <div class="card-heading catalogue-heading">
-              <div><p class="eyebrow red">TAG TREND</p><h2 id="catalogue-title">單一 tag 趨勢</h2></div>
+              <div><p class="eyebrow red">TAG TREND</p><span class="heading-title-line"><h2 id="catalogue-title">單一 tag 趨勢</h2><span id="detail-help"></span></span></div>
               <p>一次只看一個 tag，按各期文章占比比較變化；選取單一期時，該期會以紅框標示。</p>
             </div>
             <div class="catalogue-tools">
@@ -104,6 +105,7 @@
 
     <footer><div class="shell footer-inner"><p>《經濟學人》中文研究摘要</p><p><a href="./index.html#articles">回到文章索引</a> · <a href="./admin/">維護狀態</a></p></div></footer>
     <div class="tag-tooltip" id="tag-tooltip" role="tooltip" hidden></div>
-    <script src="./trends.js?v=20260817-6" defer></script>
+    <div class="calculation-tooltip" id="calculation-tooltip" role="tooltip" hidden></div>
+    <script src="./trends.js?v=20260817-7" defer></script>
   </body>
 </html>

@@ -9,7 +9,7 @@
     />
     <title>《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=20260817-8" />
+    <link rel="stylesheet" href="./styles.css?v=20260817-9" />
   </head>
   <body>
     <a class="skip-link" href="#articles">跳至文章列表</a>
@@ -65,7 +65,7 @@
               <span class="quick-tags-label">標籤搜尋（可複選）</span>
               <div class="quick-tags-list" id="quick-tags-list"></div>
               <button class="manage-tags-button" id="manage-tags-button" type="button">＋ 管理我的標籤</button>
-              <a class="all-tags-link" href="./trends.html#tag-catalogue">查看全部標籤與趨勢 →</a>
+              <a class="all-tags-link" href="./trends.html#tag-catalogue" data-tour="trends">查看全部標籤與趨勢 →</a>
             </div>
             <div class="toolbar-actions">
               <label class="select-control issue-control">
@@ -252,6 +252,7 @@
         </div>
         <h2 id="tour-title"></h2>
         <p id="tour-description"></p>
+        <div class="tour-demo" id="tour-demo" hidden></div>
         <div class="tour-actions">
           <button class="tour-previous" id="tour-previous" type="button">← 上一步</button>
           <button class="tour-next" id="tour-next" type="button">下一步 →</button>
@@ -259,6 +260,6 @@
       </section>
     </div>
 
-    <script src="./app.js?v=20260817-12" defer></script>
+    <script src="./app.js?v=20260817-13" defer></script>
   </body>
 </html>
