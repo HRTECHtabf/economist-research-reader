@@ -1,13 +1,17 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PLAYBACK_DELAY = 4000;
+const PLAYBACK_DURATION = 8000;
+const PLAYBACK_PAINT_INTERVAL = 80;
 const requestedIssue = params.get("issue") || "";
 
 const state = {
   data: null,
   issue: requestedIssue,
   autoPlay: !requestedIssue,
-  playbackTimer: null,
+  playbackFrame: null,
+  playbackStartedAt: 0,
+  playbackLastPaint: 0,
+  networkFrame: null,
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -97,7 +101,7 @@ function createCalculationHelp(title, body) {
 function renderStaticCalculationHelp() {
   els.relationshipHelp.replaceChildren(createCalculationHelp(
     "關聯強度怎麼算？",
-    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依本期網絡的連結密度自動分群，只協助閱讀，不會改變分數。分數不是機率、重要性或因果關係。",
+    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依本期網絡的連結密度自動分群；3D 的遠近與視角只協助分辨節點，不會改變分數。分數不是機率、重要性或因果關係。",
   ));
   els.cloudHelp.replaceChildren(createCalculationHelp(
     "關鍵字雲怎麼算？",
@@ -105,7 +109,7 @@ function renderStaticCalculationHelp() {
   ));
   els.topTagsHelp.replaceChildren(createCalculationHelp(
     "熱門 tag 怎麼排？",
-    "先計算每個 tag 在當期出現於多少篇文章，再依篇數排序並列出前十名；同一篇文章中的重複 tag 只算一次。占比＝含有該 tag 的文章數 ÷ 當期文章總數。",
+    "先計算每個 tag 在每期出現於多少篇文章，再依篇數排序並列出前十五名；同一篇文章中的重複 tag 只算一次。播放時的長條與小數是兩期真實數值之間的視覺補間，不代表新增的文章或每日估計。",
   ));
 }
 
@@ -331,37 +335,49 @@ function toggleFocusTag(tag) {
 }
 
 function clearPlaybackTimer() {
-  if (state.playbackTimer) clearTimeout(state.playbackTimer);
-  state.playbackTimer = null;
-  els.playbackProgress.classList.remove("running");
-}
-
-function restartPlaybackProgress() {
-  els.playbackProgress.classList.remove("running");
-  void els.playbackProgress.offsetWidth;
-  els.playbackProgress.classList.add("running");
+  if (state.playbackFrame) cancelAnimationFrame(state.playbackFrame);
+  state.playbackFrame = null;
+  state.playbackStartedAt = 0;
+  state.playbackLastPaint = 0;
+  els.playbackProgress.style.width = "0%";
 }
 
 function renderPlaybackState() {
   const index = Math.max(0, state.issues.indexOf(state.issue));
+  const nextIssue = state.issues[(index + 1) % Math.max(1, state.issues.length)] || state.issue;
   els.playbackToggle.textContent = state.autoPlay ? "暫停播放" : "從頭播放";
   els.playbackToggle.setAttribute("aria-pressed", String(state.autoPlay));
   els.playbackStatus.textContent = state.autoPlay
-    ? `播放中 ${index + 1} / ${state.issues.length}`
+    ? `${issueTitle(state.issue)} → ${issueTitle(nextIssue)}`
     : `已停在 ${issueTitle(state.issue)}`;
-  if (!state.autoPlay) els.playbackProgress.classList.remove("running");
+  if (!state.autoPlay) els.playbackProgress.style.width = "0%";
 }
 
 function schedulePlayback() {
   clearPlaybackTimer();
   if (!state.autoPlay || document.hidden || state.issues.length < 2) return;
-  restartPlaybackProgress();
-  state.playbackTimer = setTimeout(() => {
-    const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
-    state.issue = state.issues[(currentIndex + 1) % state.issues.length];
-    renderAll();
-    schedulePlayback();
-  }, PLAYBACK_DELAY);
+  const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
+  const nextIssue = state.issues[(currentIndex + 1) % state.issues.length];
+  state.playbackStartedAt = performance.now();
+  const tick = (now) => {
+    if (!state.autoPlay || document.hidden) return;
+    const rawProgress = Math.min(1, (now - state.playbackStartedAt) / PLAYBACK_DURATION);
+    const progress = rawProgress * rawProgress * (3 - 2 * rawProgress);
+    els.playbackProgress.style.width = `${rawProgress * 100}%`;
+    els.playbackStatus.textContent = `${issueTitle(state.issue)} → ${issueTitle(nextIssue)} · ${Math.round(rawProgress * 100)}%`;
+    if (now - state.playbackLastPaint >= PLAYBACK_PAINT_INTERVAL || rawProgress >= 1) {
+      renderInterpolatedTopTags(state.issue, nextIssue, progress);
+      state.playbackLastPaint = now;
+    }
+    if (rawProgress >= 1) {
+      state.issue = nextIssue;
+      renderAll();
+      schedulePlayback();
+      return;
+    }
+    state.playbackFrame = requestAnimationFrame(tick);
+  };
+  state.playbackFrame = requestAnimationFrame(tick);
 }
 
 function startPlayback() {
@@ -648,10 +664,12 @@ function layoutGraph(nodes, edges) {
     node.x = center.x + Math.cos(angle) * distance;
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
+    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (node.community - 1.5) * 24;
     if (node.id === "focus") { node.x = 500; node.y = 250; }
     if (node.id === "focus-a") { node.x = 350; node.y = 145; }
     if (node.id === "focus-b") { node.x = 650; node.y = 145; }
     if (node.id === "compound") { node.x = 500; node.y = 260; }
+    if (node.fixed) node.z = 110;
     node.layoutIndex = index;
   });
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -686,9 +704,12 @@ function layoutGraph(nodes, edges) {
       node.y = Math.max(node.radius + 25, Math.min(500 - node.radius - 35, node.y + node.vy));
     });
   }
+  nodes.forEach((node) => { node.baseX = node.x; node.baseY = node.y; node.baseZ = node.z; });
 }
 
 function renderNetwork(articles, stats, relationships) {
+  if (state.networkFrame) cancelAnimationFrame(state.networkFrame);
+  state.networkFrame = null;
   els.relationshipNetwork.replaceChildren();
   const { nodes, edges } = graphData(articles, stats, relationships);
   if (!nodes.length || !edges.length) {
@@ -699,6 +720,7 @@ function renderNetwork(articles, stats, relationships) {
     return;
   }
   layoutGraph(nodes, edges);
+  els.relationshipNetwork.classList.add("network-3d");
   const svg = svgElement("svg", { viewBox: "0 0 1000 500", "aria-hidden": "true" });
   const edgeLayer = svgElement("g");
   const nodeLayer = svgElement("g");
@@ -717,23 +739,47 @@ function renderNetwork(articles, stats, relationships) {
     edgeElements.push({ edge, path, index });
   });
   const nodeElements = new Map();
-  function updatePositions() {
+  const view = { pointerX: 0, pointerY: 0, targetX: 0, targetY: 0 };
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function projectNode(node, rotationX, rotationY) {
+    const x = node.baseX - 500;
+    const y = node.baseY - 250;
+    const z = node.baseZ;
+    const cosY = Math.cos(rotationY), sinY = Math.sin(rotationY);
+    const x1 = x * cosY + z * sinY;
+    const z1 = -x * sinY + z * cosY;
+    const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
+    const y1 = y * cosX - z1 * sinX;
+    const z2 = y * sinX + z1 * cosX;
+    const scale = 760 / (760 - z2);
+    return { x: 500 + x1 * scale, y: 250 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
+  }
+  function updatePositions(time = 0) {
+    view.pointerX += (view.targetX - view.pointerX) * .08;
+    view.pointerY += (view.targetY - view.pointerY) * .08;
+    const idleRotation = reducedMotion ? 0 : Math.sin(time / 6200) * .16;
+    const rotationY = idleRotation + view.pointerX * .32;
+    const rotationX = -.08 + view.pointerY * .2;
+    const projected = new Map(nodes.map((node) => [node.id, projectNode(node, rotationX, rotationY)]));
     edgeElements.forEach(({ edge, path, index }) => {
-      const a = nodeMap.get(edge.a), b = nodeMap.get(edge.b);
+      const a = projected.get(edge.a), b = projected.get(edge.b);
       const dx = b.x - a.x, dy = b.y - a.y;
       const curve = (index % 2 ? 1 : -1) * Math.min(38, Math.hypot(dx, dy) * .13);
       const length = Math.max(1, Math.hypot(dx, dy));
       const cx = (a.x + b.x) / 2 - (dy / length) * curve;
       const cy = (a.y + b.y) / 2 + (dx / length) * curve;
       path.setAttribute("d", `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`);
+      path.style.opacity = String(Math.max(.16, Math.min(.82, .42 + ((a.z + b.z) / 900))));
     });
     nodeElements.forEach((group, id) => {
-      const node = nodeMap.get(id);
-      group.setAttribute("transform", `translate(${node.x} ${node.y})`);
+      const point = projected.get(id);
+      group.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${point.scale})`);
+      group.style.opacity = String(Math.max(.48, Math.min(1, .72 + point.z / 720)));
+      group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
   }
   nodes.forEach((node, index) => {
-    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
+    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, "data-minor": String(node.count <= 5 && !node.selected), tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
     group.style.setProperty("--node-delay", `${index * 32}ms`);
     const title = svgElement("title"); title.textContent = `${node.tag}｜${node.count} 篇文章`;
     const circle = svgElement("circle", { r: node.radius });
@@ -757,10 +803,20 @@ function renderNetwork(articles, stats, relationships) {
     nodeLayer.append(group);
     nodeElements.set(node.id, group);
   });
-  updatePositions();
+  els.relationshipNetwork.onpointermove = (event) => {
+    const rect = els.relationshipNetwork.getBoundingClientRect();
+    view.targetX = ((event.clientX - rect.left) / Math.max(1, rect.width) - .5) * 2;
+    view.targetY = ((event.clientY - rect.top) / Math.max(1, rect.height) - .5) * 2;
+  };
+  els.relationshipNetwork.onpointerleave = () => { view.targetX = 0; view.targetY = 0; };
+  const animateScene = (time) => {
+    updatePositions(time);
+    state.networkFrame = requestAnimationFrame(animateScene);
+  };
+  state.networkFrame = requestAnimationFrame(animateScene);
   const key = document.createElement("div");
   key.className = "network-key";
-  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><small>顏色＝本期內互連較密集的社群；大小＝文章篇數</small>';
+  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>3D 視角 · 移動游標探索深度</b><small>顏色＝本期內互連較密集的社群；大小＝文章篇數；遠近＝視覺分層</small>';
   els.relationshipNetwork.append(svg, key);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
@@ -901,30 +957,31 @@ function renderCloudComparisonStatus() {
   els.cloudComparisonStatus.textContent = `${scope}：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
 }
 
-function renderTopTags(articles, stats) {
-  const items = stats
-    .filter((item) => item.count > 0)
+function paintTopTags(items, totalArticles, label, live = false) {
+  const visible = items
+    .filter((item) => item.count > .05)
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-Hant"))
-    .slice(0, 10);
-  const maxCount = Math.max(1, items[0]?.count || 1);
-  els.topTagsIssue.textContent = `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}｜共 ${articles.length} 篇`;
+    .slice(0, 15);
+  els.topTagsIssue.textContent = label;
   els.topTagsRanking.replaceChildren();
-  items.forEach((item, index) => {
+  els.topTagsRanking.classList.toggle("is-racing", live);
+  visible.forEach((item, index) => {
+    const rateValue = item.rate ?? ((item.count / Math.max(1, totalArticles)) * 100);
     const row = document.createElement("li");
     row.className = "top-tag-row";
     row.style.setProperty("--rank-delay", `${index * 45}ms`);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "top-tag-button";
-    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，${item.count} 篇，占當期 ${((item.count / Math.max(1, articles.length)) * 100).toFixed(1)}%`);
+    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，約 ${item.count.toFixed(live ? 1 : 0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
     const rank = document.createElement("b"); rank.className = "top-tag-rank"; rank.textContent = String(index + 1).padStart(2, "0");
     const label = document.createElement("strong"); label.className = "top-tag-label"; label.textContent = item.tag;
     const barTrack = document.createElement("span"); barTrack.className = "top-tag-track";
-    const bar = document.createElement("i"); bar.style.setProperty("--bar-width", `${(item.count / maxCount) * 100}%`); barTrack.append(bar);
+    const bar = document.createElement("i"); bar.style.setProperty("--bar-width", `${Math.min(100, (rateValue / 45) * 100)}%`); barTrack.append(bar);
     const metrics = document.createElement("span"); metrics.className = "top-tag-metrics";
-    const count = document.createElement("b"); count.textContent = `${item.count} 篇`;
-    const rate = document.createElement("span"); rate.textContent = `${((item.count / Math.max(1, articles.length)) * 100).toFixed(1)}%`;
-    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = trendTextForSelection(item.trend);
+    const count = document.createElement("b"); count.textContent = `${item.count.toFixed(live ? 1 : 0)} 篇`;
+    const rate = document.createElement("span"); rate.textContent = `${rateValue.toFixed(1)}%`;
+    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = live ? trendText(item.trend) : trendTextForSelection(item.trend);
     metrics.append(count, rate, trend);
     button.append(rank, label, barTrack, metrics);
     button.addEventListener("click", () => {
@@ -935,6 +992,38 @@ function renderTopTags(articles, stats) {
     row.append(button);
     els.topTagsRanking.append(row);
   });
+}
+
+function renderTopTags(articles, stats) {
+  paintTopTags(
+    stats.map((item) => ({ ...item, rate: (item.count / Math.max(1, articles.length)) * 100 })),
+    articles.length,
+    `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}｜共 ${articles.length} 篇`,
+  );
+}
+
+function issueTagSnapshot(issue) {
+  const articles = state.data.articles.filter((article) => issueDate(article) === issue);
+  const counts = new Map(state.allTags.map((tag) => [tag, 0]));
+  articles.forEach((article) => {
+    new Set(article.keywordsZh || []).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1));
+  });
+  return { total: articles.length, counts };
+}
+
+function renderInterpolatedTopTags(fromIssue, toIssue, progress) {
+  const from = issueTagSnapshot(fromIssue);
+  const to = issueTagSnapshot(toIssue);
+  const total = from.total + (to.total - from.total) * progress;
+  const items = state.allTags.map((tag) => {
+    const fromCount = from.counts.get(tag) || 0;
+    const toCount = to.counts.get(tag) || 0;
+    const count = fromCount + (toCount - fromCount) * progress;
+    const fromRate = from.total ? (fromCount / from.total) * 100 : 0;
+    const toRate = to.total ? (toCount / to.total) * 100 : 0;
+    return { tag, count, rate: fromRate + (toRate - fromRate) * progress, trend: trendFor([fromRate, toRate]) };
+  });
+  paintTopTags(items, total, `${issueTitle(fromIssue)} → ${issueTitle(toIssue)}｜連續變化中`, true);
 }
 
 function renderAll() {
@@ -986,7 +1075,7 @@ fetch("./data/articles.json", { cache: "no-store" })
     if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
-    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；預設每 4 秒切換，點選期數即可暫停`;
+    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；長條會連續呈現相鄰兩期的增減，點選期數即可暫停`;
     renderStaticCalculationHelp();
     renderAll();
     schedulePlayback();
