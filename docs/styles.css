@@ -275,8 +275,11 @@ footer { padding: 26px 0; background: var(--ink); color: #aaa69f; }
   .header-inner { min-height: 66px; }
   .brand strong { font-size: 13px; }
   .brand small { display: none; }
+  .brand > span:last-child { display: none; }
   .site-header nav { gap: 7px; }
   .site-header nav a { display: none; }
+  .site-header nav a.trends-nav-link { display: inline-flex; align-items: center; min-height: 32px; border: 1px solid var(--red); padding: 0 8px; color: var(--red); font-size: 10px; font-weight: 800; white-space: nowrap; }
+  .site-header nav a.trends-nav-link.active { background: var(--red); color: white; }
   .tour-launch { padding: 6px 9px; }
   .hero { padding: 44px 0; }
   h1 { font-size: clamp(33px, 9.4vw, 48px); white-space: normal; }

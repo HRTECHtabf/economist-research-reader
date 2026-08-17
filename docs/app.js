@@ -47,7 +47,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="trends"]',
     title: "前往趨勢儀表板",
-    description: "趨勢儀表板可用全部資料、每月或每期查看 tag 關聯與熱門 tag 雲；下方熱門排行也能逐期比較。關聯空間圖可拖曳旋轉。",
+    description: "趨勢儀表板可用全部資料、每月或每期查看 tag 關聯與熱門 tag 雲；熱門排行也能逐期或逐月比較。關聯空間圖可拖曳旋轉，手機可用雙指縮放。",
   },
   {
     selector: '[data-tour="filters"]',
