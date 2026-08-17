@@ -1,6 +1,10 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
+import {
+  GENERAL_KEYWORD_POLICY,
+  GENERAL_KEYWORD_TAXONOMY,
+} from "./general-keyword-taxonomy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.json");
@@ -12,8 +16,8 @@ const humanizerGuidePath = resolve(
   projectRoot,
   ".agents/skills/economist-humanizer-zh-tw/references/economist-research-summary.md",
 );
-const SUMMARY_VERSION = "research-brief-v3";
-const HUMANIZER_VERSION = "economist-humanizer-v3";
+const SUMMARY_VERSION = "research-brief-v4";
+const HUMANIZER_VERSION = "economist-humanizer-v4";
 
 function readEnv(path) {
   const values = {};
@@ -175,7 +179,7 @@ const schema = {
       type: "array",
       minItems: 3,
       maxItems: 5,
-      items: { type: "string" },
+      items: { type: "string", enum: GENERAL_KEYWORD_TAXONOMY },
     },
     highlightTermsZh: {
       type: "array",
@@ -191,6 +195,9 @@ function endsAsCompleteSentence(value) {
 }
 
 function isCompleteBrief(value) {
+  const keywordsAreGeneral =
+    Array.isArray(value?.keywordsZh) &&
+    value.keywordsZh.every((keyword) => GENERAL_KEYWORD_TAXONOMY.includes(keyword));
   const highlightTermsAreValid =
     value?.highlightTermsZh === undefined ||
     (Array.isArray(value.highlightTermsZh) &&
@@ -217,6 +224,7 @@ function isCompleteBrief(value) {
     ) &&
     Array.isArray(value.keywordsZh) &&
     value.keywordsZh.length >= 3 &&
+    keywordsAreGeneral &&
     highlightTermsAreValid
   );
 }
@@ -250,6 +258,8 @@ function briefValidationFailures(value) {
   }
   if (!Array.isArray(value.keywordsZh) || value.keywordsZh.length < 3 || value.keywordsZh.length > 5) {
     failures.push(`關鍵字數量 ${value.keywordsZh?.length ?? 0}`);
+  } else if (value.keywordsZh.some((keyword) => !GENERAL_KEYWORD_TAXONOMY.includes(keyword))) {
+    failures.push("關鍵字不在廣義標籤詞彙表");
   }
   if (!Array.isArray(value.highlightTermsZh) || value.highlightTermsZh.length > 3) {
     failures.push(`標示數量 ${value.highlightTermsZh?.length ?? 0}`);
@@ -394,6 +404,7 @@ function summarize(article) {
       "不得補造原文沒有的事實、數字、來源或因果關係。",
       "summaryZh 限 150–230 個中文字；keyPointsZh 依內容使用三至五點，每點嚴格控制在 35–65 個中文字並以完整標點收尾；researchLensZh 限 60–120 個中文字。",
       "highlightTermsZh 通常選 1–3 個在 summaryZh 中逐字出現的短語，只能選關鍵結論、因果機制或重要證據；不要只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。",
+      GENERAL_KEYWORD_POLICY,
       naturalStyleRules,
       "輸出 JSON，不要使用 Markdown。",
     ].join("\n"),
@@ -415,6 +426,7 @@ function humanize(article, draft) {
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
       "必須鎖定英文原文的事實、數字、因果關係與不確定程度，不得新增內容。",
       naturalStyleRules,
+      GENERAL_KEYWORD_POLICY,
       "保留 JSON 欄位；keyPointsZh 可依內容調整為三至五點。highlightTermsZh 必須重新檢查，只保留 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；不得只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。輸出 JSON，不要使用 Markdown。",
       humanizerGuide,
     ].join("\n\n"),
@@ -568,6 +580,7 @@ const currentIssueArticles = source.articles.map((article) => {
     keyPointsZh: summary?.keyPointsZh || [],
     researchLensZh: summary?.researchLensZh || null,
     keywordsZh: summary?.keywordsZh || [],
+    keywordPolicyVersion: "general-keywords-v1",
     highlightTermsZh: summary?.highlightTermsZh || [],
     highlightTermsVersion: "important-content-v1",
     humanizerVersion: HUMANIZER_VERSION,
@@ -601,6 +614,7 @@ const output = {
   totalArticleCount: articles.length,
   issueCount: new Set(articles.map((article) => article.issueKey)).size,
   highlightPolicyVersion: "important-content-v1",
+  keywordPolicyVersion: "general-keywords-v1",
   articles,
 };
 

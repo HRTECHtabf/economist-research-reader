@@ -7,16 +7,20 @@ import {
 } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
+import {
+  GENERAL_KEYWORD_POLICY,
+  GENERAL_KEYWORD_TAXONOMY,
+} from "./general-keyword-taxonomy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, process.argv[2] || "docs/data/articles.json");
-const checkpointPath = resolve(projectRoot, ".cache/rehumanize-all-v3.checkpoint.json");
-const reportPath = resolve(projectRoot, ".cache/rehumanize-all-v3.report.json");
+const checkpointPath = resolve(projectRoot, ".cache/rehumanize-all-v4.checkpoint.json");
+const reportPath = resolve(projectRoot, ".cache/rehumanize-all-v4.report.json");
 const guidePath = resolve(
   projectRoot,
   ".agents/skills/economist-humanizer-zh-tw/references/economist-research-summary.md",
 );
-const HUMANIZER_VERSION = "economist-humanizer-v3";
+const HUMANIZER_VERSION = "economist-humanizer-v4";
 const DEFAULT_WORKERS = 2;
 
 function readEnv(path) {
@@ -91,7 +95,7 @@ const schema = {
       type: "array",
       minItems: 3,
       maxItems: 5,
-      items: { type: "string", maxLength: 40 },
+      items: { type: "string", enum: GENERAL_KEYWORD_TAXONOMY },
     },
     highlightTermsZh: {
       type: "array",
@@ -155,6 +159,8 @@ function validationFailures(value) {
 
   if (!Array.isArray(value.keywordsZh) || value.keywordsZh.length < 3 || value.keywordsZh.length > 5) {
     failures.push(`關鍵字數量 ${value.keywordsZh?.length ?? 0}，應為 3–5`);
+  } else if (value.keywordsZh.some((keyword) => !GENERAL_KEYWORD_TAXONOMY.includes(keyword))) {
+    failures.push("關鍵字不在廣義標籤詞彙表");
   }
   if (!Array.isArray(value.highlightTermsZh) || value.highlightTermsZh.length > 3) {
     failures.push(`標示數量 ${value.highlightTermsZh?.length ?? 0}，應為 0–3`);
@@ -282,7 +288,7 @@ function buildInstructions(article, feedback = "") {
       ? "這是新聞彙整欄目，優先使用 4–5 點；挑選最重要且彼此不同的事件，不要為了涵蓋全部新聞而把多件事塞進同一點。"
       : "重點數量依實際論點決定，不要為了固定格式硬湊三點或五點。",
     "researchLensZh 用 60–120 個中文字，直接指出可檢查的資料、假設、傳導機制或政策取捨。不要寫『值得深入閱讀』『可供參考』，也不要固定以『回到原文可檢查』開場。",
-    "keywordsZh 提供 3–5 個文章實際涉及且可檢索的政策、機構、變數或市場名詞。",
+    GENERAL_KEYWORD_POLICY,
     "highlightTermsZh 只保留 0–3 個在 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；沒有適合短語就回傳空陣列。",
     "採台灣研究員寫給同事的自然語氣。避免宣傳形容、職場黑話、三段排比、否定對仗、戲劇化金句、教科書過場與昇華式結尾。避免『文章同時指出』『原因與風險』『其他變化』等依賴前文的起句。",
     "使用台灣常用譯名、用語與數字寫法，例如川普、輝達、日圓、資訊、軟體、線上；把 1.5 million 寫成 150萬，不要寫成 1.5百萬。",

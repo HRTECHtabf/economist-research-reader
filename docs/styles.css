@@ -128,7 +128,7 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .pending-block p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
 .tags button { padding: 4px 8px; border: 0; background: #eeeae3; color: #68645f; cursor: pointer; font-size: 11px; }
-.tags button:hover, .tags button:focus-visible { background: var(--soft-red); color: var(--red); outline: 1px solid var(--red); }
+.tags button:hover, .tags button:focus-visible, .tags button.active { background: var(--soft-red); color: var(--red); outline: 1px solid var(--red); }
 .source-link { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; width: fit-content; margin-top: 18px; padding: 8px 11px; border: 1px solid var(--line); background: #fff; color: var(--red); font-size: 12px; font-weight: 800; text-decoration: none; }
 .source-link:hover { border-color: var(--red); background: var(--soft-red); color: var(--red); }
 .sidebar-label { color: var(--red); font-size: 10px; font-weight: 850; letter-spacing: .13em; }

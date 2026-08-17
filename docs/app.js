@@ -31,11 +31,14 @@ const SECTION_CATEGORIES = {
 const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";
 const NOTES_STORAGE_KEY = "economist-research-reader:notes:v1";
 const SAVED_TAGS_STORAGE_KEY = "economist-research-reader:saved-search-tags:v1";
-const COMMON_SEARCH_TAGS = ["AI", "通膨", "利率", "能源", "中國", "航運"];
+const COMMON_SEARCH_TAGS = ["人工智慧", "金融市場", "貨幣政策", "能源市場", "中國", "國際貿易"];
 const ARTICLES_PER_PAGE = 5;
 const urlParams = new URLSearchParams(location.search);
 const initialPage = Number(urlParams.get("page"));
 const allowedSorts = new Set(["newest", "oldest"]);
+const initialSelectedTags = new Set(
+  urlParams.getAll("tag").map((tag) => tag.trim()).filter(Boolean),
+);
 
 function isFullTextNote(note) {
   return /^(?:en|zh):p\d+$/.test(note?.contextId || "");
@@ -85,6 +88,7 @@ function loadSavedTags() {
 const state = {
   data: null,
   query: urlParams.get("q") || "",
+  selectedTags: initialSelectedTags,
   category: urlParams.get("category") || "全部",
   issue: urlParams.get("issue") || "全部",
   sort: allowedSorts.has(urlParams.get("sort")) ? urlParams.get("sort") : "newest",
@@ -183,26 +187,33 @@ function saveSavedTags() {
   }
 }
 
-function applySearchTag(query) {
-  state.query = query;
+function toggleSearchTag(query) {
+  if (state.selectedTags.has(query)) state.selectedTags.delete(query);
+  else state.selectedTags.add(query);
   state.page = 1;
-  els.searchInput.value = query;
   render();
 }
 
 function renderQuickTags() {
   els.quickTagsList.replaceChildren();
+  const tagsByQuery = new Map();
   for (const tag of [
+    ...[...state.selectedTags].map((query) => ({ id: `selected:${query}`, label: query, query, custom: false })),
     ...COMMON_SEARCH_TAGS.map((query) => ({ id: `common:${query}`, label: query, query, custom: false })),
     ...state.savedTags.map((tag) => ({ ...tag, custom: true })),
   ]) {
+    if (!tagsByQuery.has(tag.query)) tagsByQuery.set(tag.query, tag);
+  }
+  for (const tag of tagsByQuery.values()) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `quick-tag${tag.custom ? " custom" : ""}`;
-    button.classList.toggle("active", state.query === tag.query);
+    const isActive = state.selectedTags.has(tag.query);
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
     button.textContent = tag.label;
-    button.title = `搜尋「${tag.query}」`;
-    button.addEventListener("click", () => applySearchTag(tag.query));
+    button.title = isActive ? `移除標籤「${tag.query}」` : `加入標籤「${tag.query}」`;
+    button.addEventListener("click", () => toggleSearchTag(tag.query));
     els.quickTagsList.append(button);
   }
 }
@@ -713,6 +724,14 @@ function matchesSearch(article, query) {
   return searchTerms(query).every((term) => fields.some((field) => termMatchesText(field.text, term)));
 }
 
+function matchingSelectedTags(article) {
+  return [...state.selectedTags].filter((tag) => matchesSearch(article, tag));
+}
+
+function selectedTagMatchCount(article) {
+  return matchingSelectedTags(article).length;
+}
+
 function searchMatchLabels(article) {
   const terms = searchTerms(state.query);
   return searchableFields(article)
@@ -810,8 +829,14 @@ function renderCard(article) {
   rubric.hidden = !article.rubricEn;
 
   const matchReasons = fragment.querySelector(".search-match-reasons");
-  if (state.query) {
-    matchReasons.textContent = `命中：${searchMatchLabels(article).join("、")}`;
+  if (state.query || state.selectedTags.size) {
+    const reasons = [];
+    if (state.query) reasons.push(searchMatchLabels(article).join("、"));
+    const matchedTags = matchingSelectedTags(article);
+    if (matchedTags.length) {
+      reasons.push(`標籤 ${matchedTags.length}/${state.selectedTags.size}（${matchedTags.join("、")}）`);
+    }
+    matchReasons.textContent = `命中：${reasons.join("；")}`;
     matchReasons.hidden = false;
   }
 
@@ -841,12 +866,12 @@ function renderCard(article) {
     const tag = document.createElement("button");
     tag.type = "button";
     tag.textContent = keyword;
-    tag.title = `搜尋「${keyword}」`;
+    const isActive = state.selectedTags.has(keyword);
+    tag.classList.toggle("active", isActive);
+    tag.setAttribute("aria-pressed", String(isActive));
+    tag.title = isActive ? `移除標籤「${keyword}」` : `加入標籤「${keyword}」`;
     tag.addEventListener("click", () => {
-      state.query = keyword;
-      state.page = 1;
-      els.searchInput.value = keyword;
-      render();
+      toggleSearchTag(keyword);
       els.toolbar.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     tags.append(tag);
@@ -946,6 +971,10 @@ function renderCard(article) {
 
 function sortedArticles(articles) {
   return [...articles].sort((a, b) => {
+    if (state.selectedTags.size) {
+      const tagScoreDiff = selectedTagMatchCount(b) - selectedTagMatchCount(a);
+      if (tagScoreDiff) return tagScoreDiff;
+    }
     const dateDiff = articleTimestamp(b) - articleTimestamp(a);
     return state.sort === "oldest" ? -dateDiff : dateDiff;
   });
@@ -954,6 +983,7 @@ function sortedArticles(articles) {
 function syncUrl() {
   const params = new URLSearchParams();
   if (state.query) params.set("q", state.query);
+  for (const tag of state.selectedTags) params.append("tag", tag);
   if (state.category !== "全部") params.set("category", state.category);
   if (state.issue !== "全部") params.set("issue", state.issue);
   if (state.sort !== "newest") params.set("sort", state.sort);
@@ -1006,6 +1036,7 @@ function render() {
     if (state.issue !== "全部" && issueFor(article) !== state.issue) return false;
     if (state.favoritesOnly && !state.favorites.has(articleKey(article))) return false;
     if (normalizedQuery && !matchesSearch(article, normalizedQuery)) return false;
+    if (state.selectedTags.size && !selectedTagMatchCount(article)) return false;
     return true;
   }));
 
@@ -1017,10 +1048,11 @@ function render() {
   els.articleList.replaceChildren(...visibleArticles.map(renderCard));
   const rangeStart = filtered.length ? pageStart + 1 : 0;
   const rangeEnd = pageStart + visibleArticles.length;
-  els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）`;
+  const tagStatus = state.selectedTags.size ? `；已選 ${state.selectedTags.size} 個標籤` : "";
+  els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）${tagStatus}`;
   renderPagination(pageCount);
   els.clearSearch.hidden = !state.query;
-  els.clearFilters.hidden = !state.query && state.category === "全部" && state.issue === "全部" && !state.favoritesOnly;
+  els.clearFilters.hidden = !state.query && !state.selectedTags.size && state.category === "全部" && state.issue === "全部" && !state.favoritesOnly;
   els.emptyState.hidden = filtered.length > 0;
   const emptyTitle = els.emptyState.querySelector("strong");
   const emptyHint = els.emptyState.querySelector("p");
@@ -1089,6 +1121,7 @@ window.addEventListener("resize", scheduleBackToFiltersUpdate);
 updateBackToFiltersVisibility();
 els.clearFilters.addEventListener("click", () => {
   state.query = "";
+  state.selectedTags.clear();
   state.category = "全部";
   state.issue = "全部";
   state.favoritesOnly = false;
