@@ -1,9 +1,13 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
+const PLAYBACK_DELAY = 4000;
+const requestedIssue = params.get("issue") || "";
 
 const state = {
   data: null,
-  issue: params.get("issue") || "",
+  issue: requestedIssue,
+  autoPlay: !requestedIssue,
+  playbackTimer: null,
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -11,13 +15,15 @@ const state = {
   allTags: [],
   overviewQuery: "",
   overviewSort: "count",
-  detailTag: params.get("detail") || "",
   cloudFrame: null,
 };
 
 const els = {
   issuePicker: document.querySelector("#issue-picker"),
   dataRangeLabel: document.querySelector("#data-range-label"),
+  playbackToggle: document.querySelector("#playback-toggle"),
+  playbackStatus: document.querySelector("#playback-status"),
+  playbackProgress: document.querySelector("#playback-progress"),
   selectedTagList: document.querySelector("#selected-tag-list"),
   clearFocus: document.querySelector("#clear-focus"),
   overviewSearch: document.querySelector("#tag-overview-search"),
@@ -36,11 +42,9 @@ const els = {
   cloudHelp: document.querySelector("#cloud-help"),
   trendFlatLabel: document.querySelector("#trend-flat-label"),
   cloudComparisonStatus: document.querySelector("#cloud-comparison-status"),
-  detailTagSelect: document.querySelector("#detail-tag-select"),
-  detailArticleLink: document.querySelector("#detail-article-link"),
-  detailSummary: document.querySelector("#tag-detail-summary"),
-  detailChart: document.querySelector("#tag-detail-chart"),
-  detailHelp: document.querySelector("#detail-help"),
+  topTagsHelp: document.querySelector("#top-tags-help"),
+  topTagsIssue: document.querySelector("#top-tags-issue"),
+  topTagsRanking: document.querySelector("#top-tags-ranking"),
   tooltip: document.querySelector("#tag-tooltip"),
   calculationTooltip: document.querySelector("#calculation-tooltip"),
 };
@@ -93,15 +97,15 @@ function createCalculationHelp(title, body) {
 function renderStaticCalculationHelp() {
   els.relationshipHelp.replaceChildren(createCalculationHelp(
     "關聯強度怎麼算？",
-    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。雙 tag 模式會先把兩個 tag 的交集視為一個主題，再與第三個 tag 比較。分數不是機率、重要性或因果關係。",
+    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依本期網絡的連結密度自動分群，只協助閱讀，不會改變分數。分數不是機率、重要性或因果關係。",
   ));
   els.cloudHelp.replaceChildren(createCalculationHelp(
     "關鍵字雲怎麼算？",
     "字體大小依 tag 文章數做平方根縮放，出現愈多就愈靠近中心。顏色比較 tag 在當期文章中的占比與前一期占比；最早一期沒有比較基準，因此灰色代表無前期資料。",
   ));
-  els.detailHelp.replaceChildren(createCalculationHelp(
-    "單一 tag 趨勢怎麼算？",
-    "各期占比＝含有此 tag 的文章數 ÷ 該期文章總數。較前一期的變化＝當期占比減前一期占比，單位是百分點；用占比可避免各期收錄篇數不同造成誤判。",
+  els.topTagsHelp.replaceChildren(createCalculationHelp(
+    "熱門 tag 怎麼排？",
+    "先計算每個 tag 在當期出現於多少篇文章，再依篇數排序並列出前十名；同一篇文章中的重複 tag 只算一次。占比＝含有該 tag 的文章數 ÷ 當期文章總數。",
   ));
 }
 
@@ -312,9 +316,8 @@ function relationshipsFor(articles) {
 
 function syncUrl() {
   const next = new URLSearchParams();
-  if (state.issue) next.set("issue", state.issue);
+  if (!state.autoPlay && state.issue) next.set("issue", state.issue);
   for (const tag of state.selectedTags) next.append("tag", tag);
-  if (state.detailTag && state.detailTag !== state.selectedTags[0]) next.set("detail", state.detailTag);
   const query = next.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
 }
@@ -322,43 +325,81 @@ function syncUrl() {
 function toggleFocusTag(tag) {
   if (!state.allTags.includes(tag)) return;
   if (state.selectedTags.includes(tag)) state.selectedTags = state.selectedTags.filter((item) => item !== tag);
-  else if (state.selectedTags.length < 2) { state.selectedTags = [...state.selectedTags, tag]; state.detailTag = tag; }
-  else { state.selectedTags = [tag]; state.detailTag = tag; }
+  else if (state.selectedTags.length < 2) state.selectedTags = [...state.selectedTags, tag];
+  else state.selectedTags = [tag];
+  renderAll();
+}
+
+function clearPlaybackTimer() {
+  if (state.playbackTimer) clearTimeout(state.playbackTimer);
+  state.playbackTimer = null;
+  els.playbackProgress.classList.remove("running");
+}
+
+function restartPlaybackProgress() {
+  els.playbackProgress.classList.remove("running");
+  void els.playbackProgress.offsetWidth;
+  els.playbackProgress.classList.add("running");
+}
+
+function renderPlaybackState() {
+  const index = Math.max(0, state.issues.indexOf(state.issue));
+  els.playbackToggle.textContent = state.autoPlay ? "暫停播放" : "從頭播放";
+  els.playbackToggle.setAttribute("aria-pressed", String(state.autoPlay));
+  els.playbackStatus.textContent = state.autoPlay
+    ? `播放中 ${index + 1} / ${state.issues.length}`
+    : `已停在 ${issueTitle(state.issue)}`;
+  if (!state.autoPlay) els.playbackProgress.classList.remove("running");
+}
+
+function schedulePlayback() {
+  clearPlaybackTimer();
+  if (!state.autoPlay || document.hidden || state.issues.length < 2) return;
+  restartPlaybackProgress();
+  state.playbackTimer = setTimeout(() => {
+    const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
+    state.issue = state.issues[(currentIndex + 1) % state.issues.length];
+    renderAll();
+    schedulePlayback();
+  }, PLAYBACK_DELAY);
+}
+
+function startPlayback() {
+  state.autoPlay = true;
+  state.issue = state.issues[0];
+  renderAll();
+  schedulePlayback();
+}
+
+function pauseAtIssue(issue) {
+  state.autoPlay = false;
+  state.issue = issue;
+  clearPlaybackTimer();
   renderAll();
 }
 
 function renderIssuePicker() {
   els.issuePicker.replaceChildren();
   const counts = new Map(state.issues.map((issue) => [issue, state.data.articles.filter((article) => issueDate(article) === issue).length]));
-  const choices = ["", ...state.issues];
-  choices.forEach((issue) => {
+  state.issues.forEach((issue) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "issue-choice";
     button.classList.toggle("selected", state.issue === issue);
+    button.classList.toggle("auto-frame", state.autoPlay && state.issue === issue);
     button.setAttribute("aria-pressed", String(state.issue === issue));
     const title = document.createElement("strong");
     const meta = document.createElement("small");
-    if (issue) {
-      title.textContent = issueTitle(issue);
-      meta.textContent = `${issueRange(issue)}｜${counts.get(issue)} 篇`;
-    } else {
-      title.textContent = "全部期數";
-      const first = issueCoverage(state.issues[0]);
-      const latest = issueCoverage(state.issues.at(-1));
-      meta.textContent = `${shortDate(first.start)}–${shortDate(latest.end)}｜${state.issues.length} 期`;
-    }
+    title.textContent = issueTitle(issue);
+    meta.textContent = `${issueRange(issue)}｜${counts.get(issue)} 篇`;
     button.append(title, meta);
-    button.addEventListener("click", () => { state.issue = issue; renderAll(); });
+    button.addEventListener("click", () => pauseAtIssue(issue));
     els.issuePicker.append(button);
   });
   requestAnimationFrame(() => {
-    if (state.issues.length <= 4) return;
     const activeButton = els.issuePicker.querySelector(".issue-choice.selected");
-    if (state.issue && activeButton) {
+    if (activeButton) {
       els.issuePicker.scrollLeft = Math.max(0, activeButton.offsetLeft - (els.issuePicker.clientWidth - activeButton.offsetWidth) / 2);
-    } else {
-      els.issuePicker.scrollLeft = els.issuePicker.scrollWidth;
     }
   });
 }
@@ -368,7 +409,7 @@ function renderSelectedTags() {
   els.clearFocus.hidden = !state.selectedTags.length;
   if (!state.selectedTags.length) {
     const empty = document.createElement("span");
-    empty.textContent = "尚未選擇，顯示全站最強關聯";
+    empty.textContent = "尚未選擇，顯示目前播放期數的最強關聯";
     els.selectedTagList.append(empty);
     return;
   }
@@ -531,63 +572,118 @@ function svgElement(name, attributes = {}) {
 
 function graphData(articles, stats, relationships) {
   const counts = new Map(stats.map((item) => [item.tag, item.count]));
-  const limited = relationships.slice(0, state.selectedTags.length ? 8 : 6);
-  const nodes = [];
+  const limited = relationships.slice(0, state.selectedTags.length ? 10 : 22);
+  const nodeMap = new Map();
   const edges = [];
+  const ensureNode = (id, tag, options = {}) => {
+    if (!nodeMap.has(id)) nodeMap.set(id, { id, tag, count: counts.get(tag) || 0, ...options });
+    else Object.assign(nodeMap.get(id), options);
+    return nodeMap.get(id);
+  };
   if (!state.selectedTags.length) {
-    limited.forEach((item, index) => {
-      const left = { id: `pair-${index}-a`, tag: item.tags[0], count: counts.get(item.tags[0]) || 0 };
-      const right = { id: `pair-${index}-b`, tag: item.tags[1], count: counts.get(item.tags[1]) || 0 };
-      nodes.push(left, right);
+    limited.forEach((item) => {
+      const left = ensureNode(item.tags[0], item.tags[0]);
+      const right = ensureNode(item.tags[1], item.tags[1]);
       edges.push({ a: left.id, b: right.id, score: item.score, support: item.support });
     });
   } else if (state.selectedTags.length === 1) {
-    const focus = { id: "focus", tag: state.selectedTags[0], count: counts.get(state.selectedTags[0]) || 0, selected: true };
-    nodes.push(focus);
-    limited.forEach((item, index) => {
-      const target = { id: `target-${index}`, tag: item.target, count: counts.get(item.target) || 0 };
-      nodes.push(target);
+    const focus = ensureNode("focus", state.selectedTags[0], { selected: true, fixed: true });
+    limited.forEach((item) => {
+      const target = ensureNode(`target:${item.target}`, item.target);
       edges.push({ a: focus.id, b: target.id, score: item.score, support: item.support });
     });
   } else {
     const pairSupport = countContaining(articles, state.selectedTags);
-    const first = { id: "focus-a", tag: state.selectedTags[0], count: counts.get(state.selectedTags[0]) || 0, selected: true };
-    const second = { id: "focus-b", tag: state.selectedTags[1], count: counts.get(state.selectedTags[1]) || 0, selected: true };
-    const compound = { id: "compound", tag: "共同文章", count: pairSupport, compound: true };
-    nodes.push(first, second, compound);
+    const first = ensureNode("focus-a", state.selectedTags[0], { selected: true, fixed: true });
+    const second = ensureNode("focus-b", state.selectedTags[1], { selected: true, fixed: true });
+    const compound = ensureNode("compound", "共同文章", { count: pairSupport, compound: true, fixed: true });
     edges.push({ a: first.id, b: compound.id, score: 0, support: pairSupport, structural: true });
     edges.push({ a: second.id, b: compound.id, score: 0, support: pairSupport, structural: true });
-    limited.slice(0, 6).forEach((item, index) => {
-      const target = { id: `target-${index}`, tag: item.target, count: counts.get(item.target) || 0 };
-      nodes.push(target);
+    limited.slice(0, 8).forEach((item) => {
+      const target = ensureNode(`target:${item.target}`, item.target);
       edges.push({ a: compound.id, b: target.id, score: item.score, support: item.support });
     });
   }
-  return { nodes, edges };
+  return { nodes: [...nodeMap.values()], edges };
 }
 
-function layoutGraph(nodes) {
-  if (!state.selectedTags.length) {
-    nodes.forEach((node, index) => {
-      const row = Math.floor(index / 2);
-      node.x = index % 2 ? 745 : 255;
-      node.y = 48 + row * 80;
+function stableHash(value) {
+  return [...value].reduce((hash, character) => ((hash * 31) + character.codePointAt(0)) >>> 0, 2166136261);
+}
+
+function assignGraphCommunities(nodes, edges) {
+  const neighbors = new Map(nodes.map((node) => [node.id, []]));
+  edges.forEach((edge) => {
+    neighbors.get(edge.a)?.push({ id: edge.b, weight: Math.max(1, edge.score) });
+    neighbors.get(edge.b)?.push({ id: edge.a, weight: Math.max(1, edge.score) });
+  });
+  const labels = new Map(nodes.map((node, index) => [node.id, index]));
+  for (let pass = 0; pass < 8; pass += 1) {
+    [...nodes].sort((a, b) => stableHash(`${a.id}:${pass}`) - stableHash(`${b.id}:${pass}`)).forEach((node) => {
+      const scores = new Map();
+      neighbors.get(node.id).forEach((neighbor) => {
+        const label = labels.get(neighbor.id);
+        scores.set(label, (scores.get(label) || 0) + neighbor.weight);
+      });
+      const best = [...scores.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+      if (best) labels.set(node.id, best[0]);
     });
-  } else if (state.selectedTags.length === 1) {
-    const focus = nodes.find((node) => node.id === "focus");
-    focus.x = 245; focus.y = 250;
-    const targets = nodes.filter((node) => node.id !== "focus");
-    targets.forEach((node, index) => { node.x = 735; node.y = 38 + index * (424 / Math.max(1, targets.length - 1)); });
-  } else {
-    nodes.find((node) => node.id === "focus-a").x = 285;
-    nodes.find((node) => node.id === "focus-a").y = 62;
-    nodes.find((node) => node.id === "focus-b").x = 715;
-    nodes.find((node) => node.id === "focus-b").y = 62;
-    nodes.find((node) => node.id === "compound").x = 500;
-    nodes.find((node) => node.id === "compound").y = 165;
-    nodes.filter((node) => node.id.startsWith("target-")).forEach((node, index) => {
-      node.x = [220, 500, 780][index % 3];
-      node.y = 300 + Math.floor(index / 3) * 125;
+  }
+  const sizes = new Map();
+  labels.forEach((label) => sizes.set(label, (sizes.get(label) || 0) + 1));
+  const ordered = [...sizes].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([label]) => label);
+  const normalized = new Map(ordered.map((label, index) => [label, index % 4]));
+  nodes.forEach((node) => { node.community = node.compound ? 4 : node.selected ? 3 : normalized.get(labels.get(node.id)) || 0; });
+}
+
+function layoutGraph(nodes, edges) {
+  assignGraphCommunities(nodes, edges);
+  const maxCount = Math.max(1, ...nodes.map((node) => node.count));
+  const centers = [{ x: 315, y: 190 }, { x: 690, y: 180 }, { x: 350, y: 370 }, { x: 690, y: 360 }, { x: 500, y: 250 }];
+  nodes.forEach((node, index) => {
+    node.radius = node.compound ? 38 : node.selected ? 42 : 19 + Math.sqrt(node.count / maxCount) * 19;
+    const center = centers[node.community] || centers[0];
+    const angle = (stableHash(node.id) % 628) / 100;
+    const distance = 45 + (stableHash(`${node.id}:distance`) % 90);
+    node.x = center.x + Math.cos(angle) * distance;
+    node.y = center.y + Math.sin(angle) * distance;
+    node.vx = 0; node.vy = 0;
+    if (node.id === "focus") { node.x = 500; node.y = 250; }
+    if (node.id === "focus-a") { node.x = 350; node.y = 145; }
+    if (node.id === "focus-b") { node.x = 650; node.y = 145; }
+    if (node.id === "compound") { node.x = 500; node.y = 260; }
+    node.layoutIndex = index;
+  });
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  for (let iteration = 0; iteration < 130; iteration += 1) {
+    for (let first = 0; first < nodes.length; first += 1) {
+      for (let second = first + 1; second < nodes.length; second += 1) {
+        const a = nodes[first], b = nodes[second];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let distance = Math.max(1, Math.hypot(dx, dy));
+        const minimum = a.radius + b.radius + 34;
+        const force = distance < minimum ? (minimum - distance) * .055 : 1150 / (distance * distance);
+        dx /= distance; dy /= distance;
+        if (!a.fixed) { a.vx -= dx * force; a.vy -= dy * force; }
+        if (!b.fixed) { b.vx += dx * force; b.vy += dy * force; }
+      }
+    }
+    edges.forEach((edge) => {
+      const a = nodeMap.get(edge.a), b = nodeMap.get(edge.b);
+      const dx = b.x - a.x, dy = b.y - a.y, distance = Math.max(1, Math.hypot(dx, dy));
+      const target = edge.structural ? 125 : 145 - Math.min(35, edge.score * .35);
+      const force = (distance - target) * .014;
+      if (!a.fixed) { a.vx += (dx / distance) * force; a.vy += (dy / distance) * force; }
+      if (!b.fixed) { b.vx -= (dx / distance) * force; b.vy -= (dy / distance) * force; }
+    });
+    nodes.forEach((node) => {
+      if (node.fixed) return;
+      const center = state.selectedTags.length ? centers[4] : (centers[node.community] || centers[0]);
+      node.vx += (center.x - node.x) * .004;
+      node.vy += (center.y - node.y) * .004;
+      node.vx *= .82; node.vy *= .82;
+      node.x = Math.max(node.radius + 28, Math.min(1000 - node.radius - 28, node.x + node.vx));
+      node.y = Math.max(node.radius + 25, Math.min(500 - node.radius - 35, node.y + node.vy));
     });
   }
 }
@@ -602,49 +698,57 @@ function renderNetwork(articles, stats, relationships) {
     els.relationshipNetwork.append(empty);
     return;
   }
-  layoutGraph(nodes);
+  layoutGraph(nodes, edges);
   const svg = svgElement("svg", { viewBox: "0 0 1000 500", "aria-hidden": "true" });
   const edgeLayer = svgElement("g");
   const nodeLayer = svgElement("g");
   svg.append(edgeLayer, nodeLayer);
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const edgeElements = [];
-  edges.forEach((edge) => {
-    const line = svgElement("line", { class: `network-edge${edge.score >= 60 ? " strong" : ""}${edge.structural ? " structural" : ""}`, "stroke-width": edge.structural ? 2 : 1.2 + edge.score / 24 });
-    const title = svgElement("title");
+  edges.forEach((edge, index) => {
     const a = nodeMap.get(edge.a), b = nodeMap.get(edge.b);
+    const community = a.community === b.community ? a.community : "mixed";
+    const path = svgElement("path", { class: `network-edge${edge.score >= 60 ? " strong" : ""}${edge.structural ? " structural" : ""}`, "data-community": community, "stroke-width": edge.structural ? 2 : 1 + edge.score / 28 });
+    path.style.setProperty("--edge-delay", `${index * 24}ms`);
+    const title = svgElement("title");
     title.textContent = edge.structural ? `${a.tag}匯入共同文章｜${edge.support} 篇` : `${a.tag} × ${b.tag}｜強度 ${edge.score}｜共同 ${edge.support} 篇`;
-    line.append(title);
-    edgeLayer.append(line);
-    edgeElements.push({ edge, line });
+    path.append(title);
+    edgeLayer.append(path);
+    edgeElements.push({ edge, path, index });
   });
   const nodeElements = new Map();
   function updatePositions() {
-    edgeElements.forEach(({ edge, line }) => {
+    edgeElements.forEach(({ edge, path, index }) => {
       const a = nodeMap.get(edge.a), b = nodeMap.get(edge.b);
-      line.setAttribute("x1", a.x); line.setAttribute("y1", a.y); line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const curve = (index % 2 ? 1 : -1) * Math.min(38, Math.hypot(dx, dy) * .13);
+      const length = Math.max(1, Math.hypot(dx, dy));
+      const cx = (a.x + b.x) / 2 - (dy / length) * curve;
+      const cy = (a.y + b.y) / 2 + (dx / length) * curve;
+      path.setAttribute("d", `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`);
     });
     nodeElements.forEach((group, id) => {
       const node = nodeMap.get(id);
       group.setAttribute("transform", `translate(${node.x} ${node.y})`);
     });
   }
-  nodes.forEach((node) => {
-    const nodeWidth = Math.max(135, Math.min(230, 54 + [...node.tag].length * 15));
-    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
-    const rect = svgElement("rect", { x: -nodeWidth / 2, y: -27, width: nodeWidth, height: 54, rx: 14 });
-    const label = svgElement("text", { y: "-3" }); label.textContent = node.tag;
-    const count = svgElement("text", { y: "15", class: "node-count" }); count.textContent = `${node.count} 篇`;
-    group.append(rect, label, count);
+  nodes.forEach((node, index) => {
+    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
+    group.style.setProperty("--node-delay", `${index * 32}ms`);
+    const title = svgElement("title"); title.textContent = `${node.tag}｜${node.count} 篇文章`;
+    const circle = svgElement("circle", { r: node.radius });
+    const count = svgElement("text", { y: "4", class: "node-count" }); count.textContent = node.count;
+    const label = svgElement("text", { y: node.radius + 17, class: "network-label" }); label.textContent = [...node.tag].length > 9 ? `${[...node.tag].slice(0, 8).join("")}…` : node.tag;
+    group.append(title, circle, count, label);
     group.addEventListener("pointerenter", () => {
       const neighbors = new Set([node.id]);
       edges.forEach((edge) => { if (edge.a === node.id) neighbors.add(edge.b); if (edge.b === node.id) neighbors.add(edge.a); });
       nodeElements.forEach((element, id) => { element.classList.toggle("hovered", id === node.id); element.classList.toggle("related", neighbors.has(id) && id !== node.id); element.classList.toggle("dimmed", !neighbors.has(id)); });
-      edgeElements.forEach(({ edge, line }) => line.classList.toggle("dimmed", edge.a !== node.id && edge.b !== node.id));
+      edgeElements.forEach(({ edge, path }) => path.classList.toggle("dimmed", edge.a !== node.id && edge.b !== node.id));
     });
     group.addEventListener("pointerleave", () => {
       nodeElements.forEach((element) => element.classList.remove("hovered", "related", "dimmed"));
-      edgeElements.forEach(({ line }) => line.classList.remove("dimmed"));
+      edgeElements.forEach(({ path }) => path.classList.remove("dimmed"));
     });
     group.addEventListener("click", () => { if (!node.compound) toggleFocusTag(node.tag); });
     group.addEventListener("keydown", (event) => {
@@ -654,7 +758,10 @@ function renderNetwork(articles, stats, relationships) {
     nodeElements.set(node.id, group);
   });
   updatePositions();
-  els.relationshipNetwork.append(svg);
+  const key = document.createElement("div");
+  key.className = "network-key";
+  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><small>顏色＝本期內互連較密集的社群；大小＝文章篇數</small>';
+  els.relationshipNetwork.append(svg, key);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
 }
@@ -687,8 +794,8 @@ function renderRelationshipRanking(relationships) {
 
 function renderRelationships(articles, stats, relationships) {
   if (!state.selectedTags.length) {
-    els.relationshipTitle.textContent = "全站最強關聯"; els.analysisMode.textContent = "全局模式"; els.rankingTitle.textContent = "最強 tag 組合";
-    els.relationshipDescription.textContent = "未選 tag 時，直接呈現所選期間關聯性最強的組合；熱門但沒有特殊共現的 tag 不會自動排前。";
+    els.relationshipTitle.textContent = "本期最強關聯"; els.analysisMode.textContent = "本期總覽"; els.rankingTitle.textContent = "最強 tag 組合";
+    els.relationshipDescription.textContent = "未選 tag 時，直接呈現目前播放期數中關聯性最強的組合；熱門但沒有特殊共現的 tag 不會自動排前。";
   } else if (state.selectedTags.length === 1) {
     els.relationshipTitle.textContent = `${state.selectedTags[0]}的關聯圈`; els.analysisMode.textContent = "單 tag 模式"; els.rankingTitle.textContent = "相關 tag 排名";
     els.relationshipDescription.textContent = `查看「${state.selectedTags[0]}」與其他 tag 的標準化關聯強度。點選另一個 tag 可進入雙 tag 分析。`;
@@ -790,83 +897,44 @@ function renderCloudComparisonStatus() {
     return;
   }
   const previousIssue = state.issues[issueIndex - 1];
-  const scope = state.issue ? "本期" : "全部期數模式以最新一期為準";
+  const scope = state.autoPlay ? "自動播放" : "本期";
   els.cloudComparisonStatus.textContent = `${scope}：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
 }
 
-function articleSearchUrl(tags) {
-  const query = new URLSearchParams();
-  for (const tag of tags) query.append("tag", tag);
-  return `./index.html?${query.toString()}#articles`;
-}
-
-function detailSeries(tag) {
-  return state.issues.map((issue) => {
-    const articles = state.data.articles.filter((article) => issueDate(article) === issue);
-    const count = countContaining(articles, [tag]);
-    return { issue, count, total: articles.length, rate: articles.length ? (count / articles.length) * 100 : 0 };
+function renderTopTags(articles, stats) {
+  const items = stats
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-Hant"))
+    .slice(0, 10);
+  const maxCount = Math.max(1, items[0]?.count || 1);
+  els.topTagsIssue.textContent = `${issueTitle(state.issue)}｜${issueRange(state.issue, true)}｜共 ${articles.length} 篇`;
+  els.topTagsRanking.replaceChildren();
+  items.forEach((item, index) => {
+    const row = document.createElement("li");
+    row.className = "top-tag-row";
+    row.style.setProperty("--rank-delay", `${index * 45}ms`);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "top-tag-button";
+    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，${item.count} 篇，占當期 ${((item.count / Math.max(1, articles.length)) * 100).toFixed(1)}%`);
+    const rank = document.createElement("b"); rank.className = "top-tag-rank"; rank.textContent = String(index + 1).padStart(2, "0");
+    const label = document.createElement("strong"); label.className = "top-tag-label"; label.textContent = item.tag;
+    const barTrack = document.createElement("span"); barTrack.className = "top-tag-track";
+    const bar = document.createElement("i"); bar.style.setProperty("--bar-width", `${(item.count / maxCount) * 100}%`); barTrack.append(bar);
+    const metrics = document.createElement("span"); metrics.className = "top-tag-metrics";
+    const count = document.createElement("b"); count.textContent = `${item.count} 篇`;
+    const rate = document.createElement("span"); rate.textContent = `${((item.count / Math.max(1, articles.length)) * 100).toFixed(1)}%`;
+    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = trendTextForSelection(item.trend);
+    metrics.append(count, rate, trend);
+    button.append(rank, label, barTrack, metrics);
+    button.addEventListener("click", () => {
+      state.selectedTags = [item.tag];
+      renderAll();
+      document.querySelector("#relationship-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    row.append(button);
+    els.topTagsRanking.append(row);
   });
-}
-
-function renderTagDetail(stats) {
-  const ordered = sortStats(stats, "count");
-  if (!state.detailTag || !state.allTags.includes(state.detailTag)) state.detailTag = state.selectedTags[0] || ordered[0]?.tag || state.allTags[0];
-  els.detailTagSelect.replaceChildren();
-  ordered.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item.tag;
-    option.textContent = `${item.tag}（目前 ${item.count} 篇）`;
-    option.selected = item.tag === state.detailTag;
-    els.detailTagSelect.append(option);
-  });
-  els.detailArticleLink.href = articleSearchUrl([state.detailTag]);
-  const series = detailSeries(state.detailTag);
-  const totalCount = series.reduce((sum, item) => sum + item.count, 0);
-  const activeIndex = state.issue ? state.issues.indexOf(state.issue) : series.length - 1;
-  const active = series[Math.max(0, activeIndex)];
-  const previous = activeIndex > 0 ? series[activeIndex - 1] : null;
-  const delta = previous ? active.rate - previous.rate : 0;
-  els.detailSummary.replaceChildren();
-  [
-    [state.issue ? "目前期數" : "最新一期", active ? `${active.count} 篇` : "0 篇", active ? `${active.rate.toFixed(1)}% 的當期文章` : "沒有資料", "當期文章占比", "含有此 tag 的文章數 ÷ 當期文章總數。用占比比較，可降低每期收錄篇數不同造成的影響。"],
-    ["全部期數", `${totalCount} 篇`, `涵蓋 ${series.filter((item) => item.count > 0).length} / ${series.length} 期`, "跨期總數", "把每一期含有此 tag 的文章數加總；涵蓋期數只計算至少出現過一篇的期數。"],
-    ["較前一期", previous ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} 個百分點` : "無法比較", previous ? `${previous.rate.toFixed(1)}% → ${active.rate.toFixed(1)}%` : "這是資料中的最早一期", "百分點變化", "當期占比減去前一期占比。例如 10% 上升到 15%，是增加 5 個百分點；最早一期沒有前期可比較。"],
-  ].forEach(([label, value, note, helpTitle, helpBody]) => {
-    const card = document.createElement("div");
-    const labelRow = document.createElement("span"); labelRow.className = "summary-label-row";
-    const small = document.createElement("small"); small.textContent = label;
-    const strong = document.createElement("strong"); strong.textContent = value;
-    const span = document.createElement("span"); span.textContent = note;
-    labelRow.append(small, createCalculationHelp(helpTitle, helpBody));
-    card.append(labelRow, strong, span); els.detailSummary.append(card);
-  });
-  els.detailChart.replaceChildren();
-  els.detailChart.style.setProperty("--period-count", Math.max(1, Math.min(4, series.length)));
-  els.detailChart.classList.toggle("many-periods", series.length > 4);
-  const maxRate = Math.max(1, ...series.map((item) => item.rate));
-  series.forEach((item) => {
-    const column = document.createElement("button");
-    column.type = "button";
-    column.className = "tag-period-column";
-    column.classList.toggle("selected", state.issue === item.issue);
-    column.setAttribute("aria-label", `${issueTitle(item.issue)}，${state.detailTag} ${item.count} 篇，占 ${item.rate.toFixed(1)}%；點選以分析這一期`);
-    const value = document.createElement("strong"); value.textContent = `${item.rate.toFixed(1)}%`;
-    const track = document.createElement("span"); track.className = "tag-period-track";
-    const bar = document.createElement("i"); bar.style.height = `${Math.max(item.rate ? 8 : 2, (item.rate / maxRate) * 100)}%`; track.append(bar);
-    const count = document.createElement("span"); count.className = "tag-period-count"; count.textContent = `${item.count} 篇`;
-    const label = document.createElement("span"); label.className = "tag-period-label"; label.textContent = issueRange(item.issue);
-    const issueLabel = document.createElement("small"); issueLabel.textContent = issueTitle(item.issue).replace(/^\d{4} 年 /, "");
-    column.append(value, track, count, label, issueLabel);
-    column.addEventListener("click", () => { state.issue = item.issue; renderAll(); });
-    els.detailChart.append(column);
-  });
-  requestAnimationFrame(() => {
-    if (series.length <= 4) return;
-    const activeColumn = state.issue ? els.detailChart.querySelector(".tag-period-column.selected") : els.detailChart.lastElementChild;
-    if (!activeColumn) return;
-    els.detailChart.scrollLeft = Math.max(0, activeColumn.offsetLeft - (els.detailChart.clientWidth - activeColumn.offsetWidth) / 2);
-  });
-  els.detailChart.setAttribute("aria-label", `${state.detailTag}各期文章占比趨勢；${series.map((item) => `${issueRange(item.issue)} ${item.rate.toFixed(1)}%`).join("，")}`);
 }
 
 function renderAll() {
@@ -876,21 +944,32 @@ function renderAll() {
   const stats = tagStatistics(articles, periods, true);
   const relationships = relationshipsFor(articles);
   renderIssuePicker();
+  renderPlaybackState();
   renderTagOverview(articles, stats);
   renderSignals(articles, periods, stats, relationships);
   renderRelationships(articles, stats, relationships);
   renderCloudComparisonStatus();
   renderCloud(articles, stats);
-  renderTagDetail(stats);
+  renderTopTags(articles, stats);
   syncUrl();
 }
 
 els.clearFocus.addEventListener("click", () => { state.selectedTags = []; renderAll(); });
 els.overviewSearch.addEventListener("input", () => { state.overviewQuery = els.overviewSearch.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
 els.overviewSort.addEventListener("change", () => { state.overviewSort = els.overviewSort.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
-els.detailTagSelect.addEventListener("change", () => { state.detailTag = els.detailTagSelect.value; renderAll(); });
+els.playbackToggle.addEventListener("click", () => {
+  if (state.autoPlay) {
+    state.autoPlay = false;
+    clearPlaybackTimer();
+    renderAll();
+  } else startPlayback();
+});
 window.addEventListener("resize", () => { hideCalculationHelp(); if (state.data) renderCloud(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
 window.addEventListener("scroll", hideCalculationHelp, { passive: true });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clearPlaybackTimer();
+  else if (state.autoPlay) schedulePlayback();
+});
 
 fetch("./data/articles.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
@@ -902,12 +981,14 @@ fetch("./data/articles.json", { cache: "no-store" })
       const from = state.legacyFrom || state.issues[0].replaceAll(".", "-");
       const to = state.legacyTo || state.issues.at(-1).replaceAll(".", "-");
       const matched = state.issues.filter((issue) => { const date = issue.replaceAll(".", "-"); return date >= from && date <= to; });
-      if (matched.length === 1) state.issue = matched[0];
+      if (matched.length === 1) { state.issue = matched[0]; state.autoPlay = false; }
     }
+    if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
-    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；依最早到最新排列，期數較多時可左右滑動`;
+    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；預設每 4 秒切換，點選期數即可暫停`;
     renderStaticCalculationHelp();
     renderAll();
+    schedulePlayback();
   })
   .catch(() => { els.signalCards.innerHTML = '<div class="chart-empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>'; });
