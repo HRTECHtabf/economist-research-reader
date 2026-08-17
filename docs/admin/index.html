@@ -7,7 +7,7 @@
     <title>維護狀態｜Economist Research Reader</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles.css?v=20260817-4" />
-    <link rel="stylesheet" href="./admin.css?v=20260817-2" />
+    <link rel="stylesheet" href="./admin.css?v=20260818-1" />
   </head>
   <body>
     <header class="site-header">
@@ -30,11 +30,13 @@
           <article class="status-card"><span>中文全文</span><strong id="translation-count">—</strong><small id="translation-detail">載入中</small></article>
           <article class="status-card"><span>最新一期</span><strong id="latest-issue">—</strong><small id="latest-issue-count">載入中</small></article>
           <article class="status-card"><span>最近更新</span><strong id="generated-at">—</strong><small>中文全文稽核時間</small></article>
+          <article class="status-card" id="source-sync-card"><span>來源同步</span><strong id="source-sync">檢查中</strong><small id="source-sync-detail">比對上游與 GitHub 資料</small></article>
+          <article class="status-card" id="site-sync-card"><span>網站發布</span><strong id="site-sync">檢查中</strong><small id="site-sync-detail">比對 GitHub 資料與公開網站</small></article>
         </section>
         <div class="admin-columns">
           <section class="admin-panel">
             <div class="panel-heading"><div><p class="eyebrow red">AUTOMATION</p><h2>每週更新紀錄</h2></div><span id="workflow-overall" class="status-pill">讀取中</span></div>
-            <p class="schedule-copy">Asia/Taipei 週五 13:17–週六 01:17 每兩小時偵測；週六 11:17 補查。只有新期數才會呼叫模型。</p>
+            <p class="schedule-copy">原流程於週五至週六偵測新期；獨立防呆每天 12:47 再比對上游、GitHub 資料、全文覆蓋率與公開網站。若有落差，防呆工作會明確失敗並顯示在這裡，既有網站資料不受影響。</p>
             <div class="run-list" id="run-list"><p>正在讀取 GitHub Actions…</p></div>
           </section>
           <section class="admin-panel">
@@ -49,6 +51,6 @@
         </div>
       </div>
     </main>
-    <script src="./admin.js?v=20260817-2" defer></script>
+    <script src="./admin.js?v=20260818-1" defer></script>
   </body>
 </html>

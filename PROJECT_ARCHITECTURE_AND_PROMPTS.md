@@ -43,7 +43,9 @@ flowchart TD
 | 路徑 | 責任 |
 | --- | --- |
 | `.github/workflows/weekly-update.yml` | 每週排程、Azure 連線測試、檢查點還原、產製、失敗阻擋與發布 |
+| `.github/workflows/update-watchdog.yml` | 每日以唯讀權限獨立比對上游、GitHub 資料、全文覆蓋率與公開網站；異常時讓工作明確失敗 |
 | `scripts/update-latest.mjs` | 比對來源最新期數與資料夾 SHA；下載 EPUB；協調解析與導讀產製 |
+| `scripts/check-update-health.mjs` | 核對最新期數、來源 SHA、全文覆蓋率，以及 GitHub 與公開網站是否一致 |
 | `scripts/parse-economist-epub.mjs` | 從 EPUB 解析欄目、標題、副標、原站網址、日期與英文全文 |
 | `scripts/generate-site-data.mjs` | 產生導讀初稿、去 AI 化定稿、分類、標籤與網站主資料 |
 | `scripts/translate-fulltext-zh.mjs` | 逐段完整翻譯、第二階段中文定稿、檢查點與按篇輸出 |
@@ -83,6 +85,19 @@ flowchart TD
 - GitHub Actions 的產製步驟失敗時不進入提交，公開網站維持原版本。
 - 只有 `docs/data/articles.json` 或 `docs/data/fulltext/` 真的變動，才提交並推送網站資料。
 - 工作流程使用互斥群組，同一時間不會有兩個更新工作互相覆蓋。
+
+### 4.4 獨立防呆監測
+
+`Economist update watchdog` 與每週更新是兩支獨立的 GitHub Actions。看門狗每天台北時間 12:47 執行，因此即使原更新排程完全沒有啟動，仍能自行發現異常。
+
+1. 比對上游最新 `te_YYYY.MM.DD`、資料夾 SHA 與 GitHub 主資料。
+2. 同時確認繁中全文 manifest 的文章數與主資料庫一致；避免只有索引更新、全文未完成卻被判定成功。
+3. 核對 GitHub 主資料與公開網站的來源 SHA、產製時間、文章數及全文 manifest。
+4. 任一環節不同步時，看門狗工作會失敗，GitHub Actions 留下紅色失敗紀錄與處理指引；維護狀態頁也會顯示異常。
+5. 看門狗只使用 `contents: read`，不具備補跑 Actions、重建 Pages、建立 issue 或改寫網站的權限，避免監測工具自行擴張發布範圍。
+6. 維護者收到異常後，可手動執行 `Weekly Economist update`；若 GitHub 資料已正確但網站仍舊，再重新執行 Pages build。
+
+維護狀態頁也會直接比較上游、GitHub raw 資料與目前公開網站，分別顯示「來源同步」及「網站發布」狀態。看門狗與維護頁都不會因為偵測異常而覆寫既有公開資料。
 
 ## 5. 資料結構
 
@@ -422,6 +437,12 @@ node scripts/audit-humanized-content.mjs
 
 # 稽核全庫繁中全文並更新 manifest
 node scripts/audit-fulltext-zh.mjs
+
+# 手動執行與看門狗相同的來源／全文覆蓋率檢查
+node scripts/check-update-health.mjs
+
+# 再核對目前公開網站是否與 GitHub 資料一致
+node scripts/check-update-health.mjs --site-url=https://hrtechtabf.github.io/economist-research-reader/data/articles.json
 
 # 只重整全庫廣義標籤，不改摘要與全文
 node scripts/retag-general-keywords.mjs

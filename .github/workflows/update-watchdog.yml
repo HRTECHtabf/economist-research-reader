@@ -1,0 +1,53 @@
+name: Economist update watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Asia/Taipei 每天 12:47 獨立檢查上游、GitHub 資料與公開網站。
+    # 週六執行時間晚於原更新流程的 11:17 補查。
+    - cron: "47 4 * * *"
+
+concurrency:
+  group: economist-update-watchdog
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      SITE_DATA_URL: https://hrtechtabf.github.io/economist-research-reader/data/articles.json
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Compare upstream, repository data and public site
+        id: health
+        run: node scripts/check-update-health.mjs --site-url="$SITE_DATA_URL"
+
+      - name: Record healthy status
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          echo "## Economist 更新防呆：正常" >> "$GITHUB_STEP_SUMMARY"
+          echo "上游最新一期、GitHub 主資料、繁中全文覆蓋率與公開網站一致。" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record maintenance guidance
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          echo "## Economist 更新防呆：需要處理" >> "$GITHUB_STEP_SUMMARY"
+          echo "看門狗發現上游、GitHub 資料、繁中全文覆蓋率或公開網站不同步。" >> "$GITHUB_STEP_SUMMARY"
+          echo "請手動執行 Weekly Economist update；若 GitHub 資料已正確但網站仍舊，請重新執行 Pages build。" >> "$GITHUB_STEP_SUMMARY"

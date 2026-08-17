@@ -41,7 +41,8 @@ const server = createServer((request, response) => {
     return;
   }
 
-  const relativePath = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
+  const requestedPath = url.pathname.endsWith("/") ? `${url.pathname}index.html` : url.pathname;
+  const relativePath = decodeURIComponent(requestedPath);
   const filePath = resolve(publicRoot, `.${relativePath}`);
   if (filePath !== publicRoot && !filePath.startsWith(`${publicRoot}${sep}`)) {
     send(response, 403, "Forbidden\n");

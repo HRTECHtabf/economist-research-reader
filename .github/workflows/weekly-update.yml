@@ -70,6 +70,12 @@ jobs:
         continue-on-error: true
         run: node scripts/translate-fulltext-zh.mjs --workers=5
 
+      - name: Audit full-text coverage and rebuild the manifest
+        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && steps.translate.outcome == 'success' }}
+        id: audit_fulltext
+        continue-on-error: true
+        run: node scripts/audit-fulltext-zh.mjs
+
       - name: Save partial summary checkpoints
         if: ${{ !inputs.test_azure && always() && hashFiles('.cache/*.checkpoint.json') != '' }}
         uses: actions/cache/save@v4
@@ -80,8 +86,8 @@ jobs:
             .cache/fulltext-zh-v2.checkpoint.json
           key: economist-checkpoints-${{ runner.os }}-${{ github.run_id }}
 
-      - name: Stop when issue processing or translation failed
-        if: ${{ !inputs.test_azure && (steps.process.outcome == 'failure' || steps.translate.outcome == 'failure') }}
+      - name: Stop when issue processing, translation or audit failed
+        if: ${{ !inputs.test_azure && (steps.process.outcome == 'failure' || steps.translate.outcome == 'failure' || steps.audit_fulltext.outcome == 'failure') }}
         run: exit 1
 
       - name: Publish updated site data
