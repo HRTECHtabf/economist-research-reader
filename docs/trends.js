@@ -1,17 +1,17 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PLAYBACK_DURATION = 8000;
-const PLAYBACK_PAINT_INTERVAL = 80;
+const PLAYBACK_DELAY = 6500;
 const requestedIssue = params.get("issue") || "";
+const requestedRelationshipIssue = params.get("network") || "";
 
 const state = {
   data: null,
   issue: requestedIssue,
   autoPlay: !requestedIssue,
-  playbackFrame: null,
-  playbackStartedAt: 0,
-  playbackLastPaint: 0,
+  playbackTimer: null,
   networkFrame: null,
+  relationshipIssue: requestedRelationshipIssue,
+  relationshipRenderKey: "",
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -28,6 +28,8 @@ const els = {
   playbackToggle: document.querySelector("#playback-toggle"),
   playbackStatus: document.querySelector("#playback-status"),
   playbackProgress: document.querySelector("#playback-progress"),
+  currentPeriodTitle: document.querySelector("#current-period-title"),
+  currentPeriodRange: document.querySelector("#current-period-range"),
   selectedTagList: document.querySelector("#selected-tag-list"),
   clearFocus: document.querySelector("#clear-focus"),
   overviewSearch: document.querySelector("#tag-overview-search"),
@@ -42,6 +44,7 @@ const els = {
   relationshipNetwork: document.querySelector("#relationship-network"),
   relationshipList: document.querySelector("#relationship-list"),
   relationshipHelp: document.querySelector("#relationship-help"),
+  relationshipIssue: document.querySelector("#relationship-issue"),
   keywordCloud: document.querySelector("#keyword-cloud"),
   cloudHelp: document.querySelector("#cloud-help"),
   trendFlatLabel: document.querySelector("#trend-flat-label"),
@@ -101,7 +104,7 @@ function createCalculationHelp(title, body) {
 function renderStaticCalculationHelp() {
   els.relationshipHelp.replaceChildren(createCalculationHelp(
     "關聯強度怎麼算？",
-    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依本期網絡的連結密度自動分群；3D 的遠近與視角只協助分辨節點，不會改變分數。分數不是機率、重要性或因果關係。",
+    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依固定分析期數的連結密度自動分群；空間遠近與視角只協助分辨節點，不會改變分數。分數不是機率、重要性或因果關係。",
   ));
   els.cloudHelp.replaceChildren(createCalculationHelp(
     "關鍵字雲怎麼算？",
@@ -109,7 +112,7 @@ function renderStaticCalculationHelp() {
   ));
   els.topTagsHelp.replaceChildren(createCalculationHelp(
     "熱門 tag 怎麼排？",
-    "先計算每個 tag 在每期出現於多少篇文章，再依篇數排序並列出前十五名；同一篇文章中的重複 tag 只算一次。播放時的長條與小數是兩期真實數值之間的視覺補間，不代表新增的文章或每日估計。",
+    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。這裡不使用移動平均，也不估計兩期之間的數值。",
   ));
 }
 
@@ -321,6 +324,7 @@ function relationshipsFor(articles) {
 function syncUrl() {
   const next = new URLSearchParams();
   if (!state.autoPlay && state.issue) next.set("issue", state.issue);
+  if (state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
   for (const tag of state.selectedTags) next.append("tag", tag);
   const query = next.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
@@ -335,11 +339,15 @@ function toggleFocusTag(tag) {
 }
 
 function clearPlaybackTimer() {
-  if (state.playbackFrame) cancelAnimationFrame(state.playbackFrame);
-  state.playbackFrame = null;
-  state.playbackStartedAt = 0;
-  state.playbackLastPaint = 0;
-  els.playbackProgress.style.width = "0%";
+  if (state.playbackTimer) clearTimeout(state.playbackTimer);
+  state.playbackTimer = null;
+  els.playbackProgress.classList.remove("running");
+}
+
+function restartPlaybackProgress() {
+  els.playbackProgress.classList.remove("running");
+  void els.playbackProgress.offsetWidth;
+  els.playbackProgress.classList.add("running");
 }
 
 function renderPlaybackState() {
@@ -348,36 +356,23 @@ function renderPlaybackState() {
   els.playbackToggle.textContent = state.autoPlay ? "暫停播放" : "從頭播放";
   els.playbackToggle.setAttribute("aria-pressed", String(state.autoPlay));
   els.playbackStatus.textContent = state.autoPlay
-    ? `${issueTitle(state.issue)} → ${issueTitle(nextIssue)}`
+    ? `停留中 · 下一期 ${issueTitle(nextIssue)}`
     : `已停在 ${issueTitle(state.issue)}`;
-  if (!state.autoPlay) els.playbackProgress.style.width = "0%";
+  els.currentPeriodTitle.textContent = `第 ${index + 1} / ${state.issues.length} 期 · ${issueTitle(state.issue)}`;
+  els.currentPeriodRange.textContent = `本期文章日期 ${issueRange(state.issue, true)}`;
+  if (!state.autoPlay) els.playbackProgress.classList.remove("running");
 }
 
 function schedulePlayback() {
   clearPlaybackTimer();
   if (!state.autoPlay || document.hidden || state.issues.length < 2) return;
-  const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
-  const nextIssue = state.issues[(currentIndex + 1) % state.issues.length];
-  state.playbackStartedAt = performance.now();
-  const tick = (now) => {
-    if (!state.autoPlay || document.hidden) return;
-    const rawProgress = Math.min(1, (now - state.playbackStartedAt) / PLAYBACK_DURATION);
-    const progress = rawProgress * rawProgress * (3 - 2 * rawProgress);
-    els.playbackProgress.style.width = `${rawProgress * 100}%`;
-    els.playbackStatus.textContent = `${issueTitle(state.issue)} → ${issueTitle(nextIssue)} · ${Math.round(rawProgress * 100)}%`;
-    if (now - state.playbackLastPaint >= PLAYBACK_PAINT_INTERVAL || rawProgress >= 1) {
-      renderInterpolatedTopTags(state.issue, nextIssue, progress);
-      state.playbackLastPaint = now;
-    }
-    if (rawProgress >= 1) {
-      state.issue = nextIssue;
-      renderAll();
-      schedulePlayback();
-      return;
-    }
-    state.playbackFrame = requestAnimationFrame(tick);
-  };
-  state.playbackFrame = requestAnimationFrame(tick);
+  restartPlaybackProgress();
+  state.playbackTimer = setTimeout(() => {
+    const currentIndex = Math.max(0, state.issues.indexOf(state.issue));
+    state.issue = state.issues[(currentIndex + 1) % state.issues.length];
+    renderAll();
+    schedulePlayback();
+  }, PLAYBACK_DELAY);
 }
 
 function startPlayback() {
@@ -420,12 +415,33 @@ function renderIssuePicker() {
   });
 }
 
+function renderRelationshipIssueControl() {
+  const selected = state.relationshipIssue;
+  els.relationshipIssue.replaceChildren();
+  [...state.issues].reverse().forEach((issue) => {
+    const option = document.createElement("option");
+    option.value = issue;
+    option.textContent = `${issueTitle(issue)}｜${issueRange(issue, true)}`;
+    option.selected = issue === selected;
+    els.relationshipIssue.append(option);
+  });
+}
+
+function renderRelationshipPanel() {
+  const renderKey = `${state.relationshipIssue}|${state.selectedTags.join("|")}`;
+  if (state.relationshipRenderKey === renderKey && els.relationshipNetwork.childElementCount) return;
+  state.relationshipRenderKey = renderKey;
+  const articles = state.data.articles.filter((article) => issueDate(article) === state.relationshipIssue);
+  const stats = tagStatistics(articles, [state.relationshipIssue], true);
+  renderRelationships(articles, stats, relationshipsFor(articles));
+}
+
 function renderSelectedTags() {
   els.selectedTagList.replaceChildren();
   els.clearFocus.hidden = !state.selectedTags.length;
   if (!state.selectedTags.length) {
     const empty = document.createElement("span");
-    empty.textContent = "尚未選擇，顯示目前播放期數的最強關聯";
+    empty.textContent = "尚未選擇，顯示固定分析期數的最強關聯";
     els.selectedTagList.append(empty);
     return;
   }
@@ -740,7 +756,6 @@ function renderNetwork(articles, stats, relationships) {
   });
   const nodeElements = new Map();
   const view = { pointerX: 0, pointerY: 0, targetX: 0, targetY: 0 };
-  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function projectNode(node, rotationX, rotationY) {
     const x = node.baseX - 500;
     const y = node.baseY - 250;
@@ -754,12 +769,9 @@ function renderNetwork(articles, stats, relationships) {
     const scale = 760 / (760 - z2);
     return { x: 500 + x1 * scale, y: 250 + y1 * scale, z: z2, scale: Math.max(.68, Math.min(1.38, scale)) };
   }
-  function updatePositions(time = 0) {
-    view.pointerX += (view.targetX - view.pointerX) * .08;
-    view.pointerY += (view.targetY - view.pointerY) * .08;
-    const idleRotation = reducedMotion ? 0 : Math.sin(time / 6200) * .16;
-    const rotationY = idleRotation + view.pointerX * .32;
-    const rotationX = -.08 + view.pointerY * .2;
+  function updatePositions() {
+    const rotationY = -.2 + view.pointerX * .36;
+    const rotationX = -.16 + view.pointerY * .24;
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, rotationX, rotationY)]));
     edgeElements.forEach(({ edge, path, index }) => {
       const a = projected.get(edge.a), b = projected.get(edge.b);
@@ -807,17 +819,22 @@ function renderNetwork(articles, stats, relationships) {
     const rect = els.relationshipNetwork.getBoundingClientRect();
     view.targetX = ((event.clientX - rect.left) / Math.max(1, rect.width) - .5) * 2;
     view.targetY = ((event.clientY - rect.top) / Math.max(1, rect.height) - .5) * 2;
+    view.pointerX = view.targetX;
+    view.pointerY = view.targetY;
+    updatePositions();
   };
-  els.relationshipNetwork.onpointerleave = () => { view.targetX = 0; view.targetY = 0; };
-  const animateScene = (time) => {
-    updatePositions(time);
-    state.networkFrame = requestAnimationFrame(animateScene);
+  els.relationshipNetwork.onpointerleave = () => {
+    view.targetX = 0; view.targetY = 0; view.pointerX = 0; view.pointerY = 0;
+    updatePositions();
   };
-  state.networkFrame = requestAnimationFrame(animateScene);
+  updatePositions();
+  const guide = document.createElement("div");
+  guide.className = "network-guide";
+  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>移動游標改變視角 · 點節點查看關聯</span>";
   const key = document.createElement("div");
   key.className = "network-key";
-  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>3D 視角 · 移動游標探索深度</b><small>顏色＝本期內互連較密集的社群；大小＝文章篇數；遠近＝視覺分層</small>';
-  els.relationshipNetwork.append(svg, key);
+  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>圖面保持靜止 · 移動游標才調整角度</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表額外指標</small>';
+  els.relationshipNetwork.append(svg, guide, key);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
 }
@@ -849,23 +866,25 @@ function renderRelationshipRanking(relationships) {
 }
 
 function renderRelationships(articles, stats, relationships) {
+  const fixedIssue = issueTitle(state.relationshipIssue);
   if (!state.selectedTags.length) {
-    els.relationshipTitle.textContent = "本期最強關聯"; els.analysisMode.textContent = "本期總覽"; els.rankingTitle.textContent = "最強 tag 組合";
-    els.relationshipDescription.textContent = "未選 tag 時，直接呈現目前播放期數中關聯性最強的組合；熱門但沒有特殊共現的 tag 不會自動排前。";
+    els.relationshipTitle.textContent = "固定單期關聯"; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "最強 tag 組合";
+    els.relationshipDescription.textContent = `目前固定分析 ${fixedIssue}，不會跟著上方時間播放切換。未選 tag 時，顯示該期關聯性最強的組合。`;
   } else if (state.selectedTags.length === 1) {
-    els.relationshipTitle.textContent = `${state.selectedTags[0]}的關聯圈`; els.analysisMode.textContent = "單 tag 模式"; els.rankingTitle.textContent = "相關 tag 排名";
-    els.relationshipDescription.textContent = `查看「${state.selectedTags[0]}」與其他 tag 的標準化關聯強度。點選另一個 tag 可進入雙 tag 分析。`;
+    els.relationshipTitle.textContent = `${state.selectedTags[0]}的關聯圈`; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "相關 tag 排名";
+    els.relationshipDescription.textContent = `固定以 ${fixedIssue} 查看「${state.selectedTags[0]}」與其他 tag 的標準化關聯強度。點選另一個 tag 可進入雙 tag 分析。`;
   } else {
-    els.relationshipTitle.textContent = "雙 tag 共同延伸"; els.analysisMode.textContent = "雙 tag 模式"; els.rankingTitle.textContent = "第三層關聯排名";
-    els.relationshipDescription.textContent = `先找同時包含「${state.selectedTags.join("」與「")}」的文章，再分析這個交集與第三個 tag 的關聯。`;
+    els.relationshipTitle.textContent = "雙 tag 共同延伸"; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "第三層關聯排名";
+    els.relationshipDescription.textContent = `固定以 ${fixedIssue}，先找同時包含「${state.selectedTags.join("」與「")}」的文章，再分析這個交集與第三個 tag 的關聯。`;
   }
   renderNetwork(articles, stats, relationships);
   renderRelationshipRanking(relationships);
 }
 
-function cloudFontSize(item, minCount, maxCount, compact) {
+function cloudFontSize(item, minCount, maxCount, cloudWidth) {
   const ratio = maxCount === minCount ? .5 : (Math.sqrt(item.count) - Math.sqrt(minCount)) / (Math.sqrt(maxCount) - Math.sqrt(minCount));
-  return (compact ? 11 : 14) + ratio * (compact ? 22 : 38);
+  const scale = Math.max(.48, Math.min(1, cloudWidth / 980));
+  return Math.max(8, (13 + ratio * 39) * scale);
 }
 
 function layoutCloudWords(buttons) {
@@ -873,16 +892,17 @@ function layoutCloudWords(buttons) {
   const width = els.keywordCloud.clientWidth || 900;
   const height = els.keywordCloud.clientHeight || 540;
   const boxes = [];
-  const padding = width < 480 ? 3 : 6;
+  const padding = width < 600 ? 3 : 6;
+  const spiralY = Math.min(.82, height / Math.max(1, width));
   buttons.forEach((button, index) => {
     const wordWidth = button.offsetWidth + padding * 2;
     const wordHeight = button.offsetHeight + padding * 2;
     let placed = null;
     for (let step = 0; step < 2400; step += 1) {
       const angle = step * .31;
-      const radius = index === 0 ? 0 : step * (width < 480 ? .19 : .29);
+      const radius = index === 0 ? 0 : step * (width < 600 ? .17 : .29);
       const x = width / 2 + Math.cos(angle) * radius;
-      const y = height / 2 + Math.sin(angle) * radius * (width < 480 ? 1.28 : .62);
+      const y = height / 2 + Math.sin(angle) * radius * spiralY;
       const candidate = { left: x - wordWidth / 2, right: x + wordWidth / 2, top: y - wordHeight / 2, bottom: y + wordHeight / 2, x, y };
       if (candidate.left < 10 || candidate.right > width - 10 || candidate.top < 10 || candidate.bottom > height - 10) continue;
       const collision = boxes.some((box) => candidate.left < box.right && candidate.right > box.left && candidate.top < box.bottom && candidate.bottom > box.top);
@@ -922,13 +942,14 @@ function updateCloudMagnet(event) {
 
 function renderCloud(articles, stats) {
   els.keywordCloud.replaceChildren();
-  const items = stats.filter((item) => item.count > 0).sort((a, b) => b.count - a.count).slice(0, 52);
+  const cloudWidth = els.keywordCloud.clientWidth || innerWidth;
+  const itemLimit = cloudWidth < 480 ? 34 : cloudWidth < 760 ? 42 : 52;
+  const items = stats.filter((item) => item.count > 0).sort((a, b) => b.count - a.count).slice(0, itemLimit);
   if (!items.length) return;
   const statsByTag = statsMapFor(stats), counts = items.map((item) => item.count), min = Math.min(...counts), max = Math.max(...counts);
-  const compact = innerWidth < 480;
   const buttons = items.map((item) => {
     const button = document.createElement("button"); button.type = "button"; button.className = "cloud-word"; button.dataset.tag = item.tag;
-    button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, compact)}px`; button.style.visibility = "hidden";
+    button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, cloudWidth)}px`; button.style.visibility = "hidden";
     button.classList.toggle("selected", state.selectedTags.includes(item.tag)); button.textContent = item.tag;
     button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendTextForSelection(item.trend)}`);
     button.addEventListener("click", () => toggleFocusTag(item.tag));
@@ -957,14 +978,14 @@ function renderCloudComparisonStatus() {
   els.cloudComparisonStatus.textContent = `${scope}：顏色比較 ${issueTitle(previousIssue)} 與 ${issueTitle(comparisonIssue)} 的文章占比。相對增減未達 10% 時標為持平。`;
 }
 
-function paintTopTags(items, totalArticles, label, live = false) {
+function paintTopTags(items, totalArticles, label) {
   const visible = items
     .filter((item) => item.count > .05)
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-Hant"))
     .slice(0, 15);
   els.topTagsIssue.textContent = label;
   els.topTagsRanking.replaceChildren();
-  els.topTagsRanking.classList.toggle("is-racing", live);
+  els.topTagsRanking.classList.remove("is-racing");
   visible.forEach((item, index) => {
     const rateValue = item.rate ?? ((item.count / Math.max(1, totalArticles)) * 100);
     const row = document.createElement("li");
@@ -973,15 +994,15 @@ function paintTopTags(items, totalArticles, label, live = false) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "top-tag-button";
-    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，約 ${item.count.toFixed(live ? 1 : 0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
+    button.setAttribute("aria-label", `第 ${index + 1} 名，${item.tag}，${item.count.toFixed(0)} 篇，占當期 ${rateValue.toFixed(1)}%`);
     const rank = document.createElement("b"); rank.className = "top-tag-rank"; rank.textContent = String(index + 1).padStart(2, "0");
     const label = document.createElement("strong"); label.className = "top-tag-label"; label.textContent = item.tag;
     const barTrack = document.createElement("span"); barTrack.className = "top-tag-track";
     const bar = document.createElement("i"); bar.style.setProperty("--bar-width", `${Math.min(100, (rateValue / 45) * 100)}%`); barTrack.append(bar);
     const metrics = document.createElement("span"); metrics.className = "top-tag-metrics";
-    const count = document.createElement("b"); count.textContent = `${item.count.toFixed(live ? 1 : 0)} 篇`;
+    const count = document.createElement("b"); count.textContent = `${item.count.toFixed(0)} 篇`;
     const rate = document.createElement("span"); rate.textContent = `${rateValue.toFixed(1)}%`;
-    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = live ? trendText(item.trend) : trendTextForSelection(item.trend);
+    const trend = document.createElement("span"); trend.className = `top-tag-trend ${directionFor(item.trend)}`; trend.textContent = trendTextForSelection(item.trend);
     metrics.append(count, rate, trend);
     button.append(rank, label, barTrack, metrics);
     button.addEventListener("click", () => {
@@ -1002,30 +1023,6 @@ function renderTopTags(articles, stats) {
   );
 }
 
-function issueTagSnapshot(issue) {
-  const articles = state.data.articles.filter((article) => issueDate(article) === issue);
-  const counts = new Map(state.allTags.map((tag) => [tag, 0]));
-  articles.forEach((article) => {
-    new Set(article.keywordsZh || []).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1));
-  });
-  return { total: articles.length, counts };
-}
-
-function renderInterpolatedTopTags(fromIssue, toIssue, progress) {
-  const from = issueTagSnapshot(fromIssue);
-  const to = issueTagSnapshot(toIssue);
-  const total = from.total + (to.total - from.total) * progress;
-  const items = state.allTags.map((tag) => {
-    const fromCount = from.counts.get(tag) || 0;
-    const toCount = to.counts.get(tag) || 0;
-    const count = fromCount + (toCount - fromCount) * progress;
-    const fromRate = from.total ? (fromCount / from.total) * 100 : 0;
-    const toRate = to.total ? (toCount / to.total) * 100 : 0;
-    return { tag, count, rate: fromRate + (toRate - fromRate) * progress, trend: trendFor([fromRate, toRate]) };
-  });
-  paintTopTags(items, total, `${issueTitle(fromIssue)} → ${issueTitle(toIssue)}｜連續變化中`, true);
-}
-
 function renderAll() {
   hideCalculationHelp();
   const articles = articlesInWindow();
@@ -1034,9 +1031,10 @@ function renderAll() {
   const relationships = relationshipsFor(articles);
   renderIssuePicker();
   renderPlaybackState();
+  renderRelationshipIssueControl();
   renderTagOverview(articles, stats);
   renderSignals(articles, periods, stats, relationships);
-  renderRelationships(articles, stats, relationships);
+  renderRelationshipPanel();
   renderCloudComparisonStatus();
   renderCloud(articles, stats);
   renderTopTags(articles, stats);
@@ -1046,6 +1044,7 @@ function renderAll() {
 els.clearFocus.addEventListener("click", () => { state.selectedTags = []; renderAll(); });
 els.overviewSearch.addEventListener("input", () => { state.overviewQuery = els.overviewSearch.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
 els.overviewSort.addEventListener("change", () => { state.overviewSort = els.overviewSort.value; renderTagOverview(articlesInWindow(), tagStatistics(articlesInWindow(), periodsFor(articlesInWindow()), true)); });
+els.relationshipIssue.addEventListener("change", () => { state.relationshipIssue = els.relationshipIssue.value; renderRelationshipPanel(); syncUrl(); });
 els.playbackToggle.addEventListener("click", () => {
   if (state.autoPlay) {
     state.autoPlay = false;
@@ -1073,9 +1072,10 @@ fetch("./data/articles.json", { cache: "no-store" })
       if (matched.length === 1) { state.issue = matched[0]; state.autoPlay = false; }
     }
     if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
+    if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
-    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；長條會連續呈現相鄰兩期的增減，點選期數即可暫停`;
+    els.dataRangeLabel.textContent = `共 ${state.issues.length} 期；每期停留 6.5 秒，資料只在換期時更新一次`;
     renderStaticCalculationHelp();
     renderAll();
     schedulePlayback();
