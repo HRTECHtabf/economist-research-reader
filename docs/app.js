@@ -47,7 +47,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="trends"]',
     title: "前往趨勢儀表板",
-    description: "趨勢儀表板會把文章與 tag 分開呈現。可切換期數、查看完整 tag、關聯分數、關鍵字雲與單一 tag 的跨期變化；計算方式可從畫面上的問號查看。",
+    description: "趨勢儀表板會依期數自動播放社群關聯圖、關鍵字雲與熱門 tag 排名，也可停在指定期數。計算方式可從畫面上的問號查看。",
   },
   {
     selector: '[data-tour="filters"]',
