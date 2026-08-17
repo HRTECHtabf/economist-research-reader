@@ -191,16 +191,16 @@ function toggleSearchTag(query) {
   if (state.selectedTags.has(query)) state.selectedTags.delete(query);
   else state.selectedTags.add(query);
   state.page = 1;
-  render();
+  renderPreservingViewport({ x: window.scrollX, y: window.scrollY });
 }
 
 function renderQuickTags() {
   els.quickTagsList.replaceChildren();
   const tagsByQuery = new Map();
   for (const tag of [
-    ...[...state.selectedTags].map((query) => ({ id: `selected:${query}`, label: query, query, custom: false })),
     ...COMMON_SEARCH_TAGS.map((query) => ({ id: `common:${query}`, label: query, query, custom: false })),
     ...state.savedTags.map((tag) => ({ ...tag, custom: true })),
+    ...[...state.selectedTags].map((query) => ({ id: `selected:${query}`, label: query, query, custom: false })),
   ]) {
     if (!tagsByQuery.has(tag.query)) tagsByQuery.set(tag.query, tag);
   }
@@ -715,7 +715,8 @@ function searchableFields(article) {
     { label: "中文摘要", text: article.summaryZh || "" },
     { label: "論述重點", text: (article.keyPointsZh || []).join(" ") },
     { label: "研究角度", text: article.researchLensZh || "" },
-    { label: "關鍵字", text: [...(article.keywordsZh || []), ...(article.highlightTermsZh || [])].join(" ") },
+    { label: "文章標籤", text: (article.keywordsZh || []).join(" ") },
+    { label: "摘要重點詞", text: (article.highlightTermsZh || []).join(" ") },
   ];
 }
 
@@ -730,6 +731,12 @@ function matchingSelectedTags(article) {
 
 function selectedTagMatchCount(article) {
   return matchingSelectedTags(article).length;
+}
+
+function queryTagMatchCount(article) {
+  return searchTerms(state.query).filter(
+    (term) => (article.keywordsZh || []).some((keyword) => termMatchesText(keyword, term)),
+  ).length;
 }
 
 function searchMatchLabels(article) {
@@ -867,12 +874,13 @@ function renderCard(article) {
     tag.type = "button";
     tag.textContent = keyword;
     const isActive = state.selectedTags.has(keyword);
+    const matchesQuery = searchTerms(state.query).some((term) => termMatchesText(keyword, term));
     tag.classList.toggle("active", isActive);
+    tag.classList.toggle("search-match", matchesQuery);
     tag.setAttribute("aria-pressed", String(isActive));
     tag.title = isActive ? `移除標籤「${keyword}」` : `加入標籤「${keyword}」`;
     tag.addEventListener("click", () => {
       toggleSearchTag(keyword);
-      els.toolbar.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     tags.append(tag);
   }
@@ -974,6 +982,10 @@ function sortedArticles(articles) {
     if (state.selectedTags.size) {
       const tagScoreDiff = selectedTagMatchCount(b) - selectedTagMatchCount(a);
       if (tagScoreDiff) return tagScoreDiff;
+    }
+    if (state.query) {
+      const queryTagScoreDiff = queryTagMatchCount(b) - queryTagMatchCount(a);
+      if (queryTagScoreDiff) return queryTagScoreDiff;
     }
     const dateDiff = articleTimestamp(b) - articleTimestamp(a);
     return state.sort === "oldest" ? -dateDiff : dateDiff;
