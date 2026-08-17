@@ -5,6 +5,7 @@ const GRAPH_WIDTH = 1000;
 const GRAPH_HEIGHT = 640;
 const requestedIssue = params.get("issue") || "";
 const requestedRelationshipIssue = params.get("network") || "";
+const requestedRelationshipScope = params.get("networkView") || "issue";
 const requestedOverviewIssue = params.get("overview") || "";
 const requestedCloudIssue = params.get("cloud") || "";
 const requestedCloudScope = params.get("cloudView") || "issue";
@@ -16,11 +17,12 @@ const state = {
   playbackTimer: null,
   networkFrame: null,
   relationshipIssue: requestedRelationshipIssue,
+  relationshipScope: ["all", "month", "issue"].includes(requestedRelationshipScope) ? requestedRelationshipScope : "issue",
   relationshipRenderKey: "",
   overviewIssue: requestedOverviewIssue,
   cloudIssue: requestedCloudIssue,
   cloudScope: ["all", "month", "issue"].includes(requestedCloudScope) ? requestedCloudScope : "issue",
-  cloudMonths: [],
+  months: [],
   legacyFrom: params.get("from") || "",
   legacyTo: params.get("to") || "",
   selectedTags: [...new Set(params.getAll("tag").map((tag) => tag.trim()).filter(Boolean))].slice(0, 2),
@@ -55,6 +57,8 @@ const els = {
   relationshipNetwork: document.querySelector("#relationship-network"),
   relationshipList: document.querySelector("#relationship-list"),
   relationshipHelp: document.querySelector("#relationship-help"),
+  relationshipScope: document.querySelector("#relationship-scope"),
+  relationshipPeriodLabel: document.querySelector("#relationship-period-label"),
   relationshipIssue: document.querySelector("#relationship-issue"),
   keywordCloud: document.querySelector("#keyword-cloud"),
   cloudHelp: document.querySelector("#cloud-help"),
@@ -118,15 +122,15 @@ function createCalculationHelp(title, body) {
 function renderStaticCalculationHelp() {
   els.relationshipHelp.replaceChildren(createCalculationHelp(
     "關聯強度怎麼算？",
-    "先用 NPMI 比較實際共同出現是否高於隨機預期，再依共同文章數折減小樣本，最後轉成 0–100。節點顏色依固定分析期數的連結密度自動分群；空間遠近與視角只協助分辨節點，不會改變分數。分數不是機率、重要性或因果關係。",
+    "先用 NPMI 比較兩個 tag 實際共同出現的比例，是否高於各自出現頻率所推算的隨機預期；再依共同文章數折減小樣本，最後轉成 0–100。黑色節點代表同時含有兩個已選 tag 的共同文章。分數不是機率、重要性或因果關係。",
   ));
   els.cloudHelp.replaceChildren(createCalculationHelp(
     "關鍵字雲怎麼算？",
-    "字體大小依所選範圍內的 tag 文章數做平方根縮放，出現愈多就愈靠近中心。每月模式會比較前一個有資料的月份，每期模式比較前一期；全部資料沒有單一前期，因此不計升降。",
+    "每篇文章的同一個 tag 只算一次。字體大小依涵蓋該 tag 的文章數做平方根縮放，出現愈多就愈靠近中心；顏色比較文章占比，不直接比較篇數，因此不同資料量的期數仍可公平比較。全部資料沒有單一前期，因此不計升降。",
   ));
   els.topTagsHelp.replaceChildren(createCalculationHelp(
     "熱門 tag 怎麼排？",
-    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。換期時保留相同 tag 的列，依新名次上下移動；新進榜者才從底部進場。",
+    "每一期分開計算：先統計每個 tag 出現於多少篇文章，再依篇數列出前十五名；同一篇文章中的重複 tag 只算一次。百分比是含有該 tag 的文章占當期全部文章的比例。",
   ));
 }
 
@@ -338,7 +342,9 @@ function relationshipsFor(articles) {
 function syncUrl() {
   const next = new URLSearchParams();
   if (!state.autoPlay && state.issue) next.set("issue", state.issue);
-  if (state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
+  if (state.relationshipScope !== "issue") next.set("networkView", state.relationshipScope);
+  if (state.relationshipScope === "month" && state.relationshipIssue) next.set("network", state.relationshipIssue);
+  if (state.relationshipScope === "issue" && state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
   if (state.overviewIssue && state.overviewIssue !== state.issues.at(-1)) next.set("overview", state.overviewIssue);
   if (state.cloudScope !== "issue") next.set("cloudView", state.cloudScope);
   if (state.cloudScope === "month" && state.cloudIssue) next.set("cloud", state.cloudIssue);
@@ -456,25 +462,31 @@ function monthTitle(value) {
   return `${year} 年 ${month} 月`;
 }
 
-function cloudArticlesForScope(scope = state.cloudScope, key = state.cloudIssue) {
+function articlesForScope(scope, key) {
   if (scope === "all") return state.data.articles;
   if (scope === "month") return state.data.articles.filter((article) => issueDate(article).startsWith(`${key}.`));
   return articlesInWindow(key);
 }
 
+function scopeTitle(scope, key) {
+  if (scope === "all") return `全部 ${state.issues.length} 期`;
+  if (scope === "month") return monthTitle(key);
+  return issueTitle(key);
+}
+
 function previousCloudScopeKey() {
   if (state.cloudScope === "all") return "";
-  const keys = state.cloudScope === "month" ? state.cloudMonths : state.issues;
+  const keys = state.cloudScope === "month" ? state.months : state.issues;
   const index = keys.indexOf(state.cloudIssue);
   return index > 0 ? keys[index - 1] : "";
 }
 
 function cloudStatistics() {
-  const articles = cloudArticlesForScope();
+  const articles = articlesForScope(state.cloudScope, state.cloudIssue);
   const periods = periodsFor(articles);
   const stats = tagStatistics(articles, periods, true, "");
   const previousKey = previousCloudScopeKey();
-  const previousArticles = previousKey ? cloudArticlesForScope(state.cloudScope, previousKey) : [];
+  const previousArticles = previousKey ? articlesForScope(state.cloudScope, previousKey) : [];
   stats.forEach((item) => {
     const currentRate = articles.length ? (item.count / articles.length) * 100 : 0;
     const previousRate = previousArticles.length ? (countContaining(previousArticles, [item.tag]) / previousArticles.length) * 100 : 0;
@@ -483,48 +495,58 @@ function cloudStatistics() {
   return { articles, stats, previousKey };
 }
 
-function renderCloudControls() {
-  els.cloudScope.value = state.cloudScope;
-  els.cloudIssue.replaceChildren();
-  if (state.cloudScope === "all") {
-    els.cloudPeriodLabel.textContent = "範圍";
+function renderRangeControls(scopeSelect, periodSelect, periodLabel, scope, selected) {
+  scopeSelect.value = scope;
+  periodSelect.replaceChildren();
+  if (scope === "all") {
+    periodLabel.textContent = "範圍";
     const option = document.createElement("option");
     option.value = "all";
     option.textContent = `全部 ${state.issues.length} 期｜共 ${state.data.articles.length} 篇`;
-    els.cloudIssue.append(option);
-    els.cloudIssue.disabled = true;
+    periodSelect.append(option);
+    periodSelect.disabled = true;
     return;
   }
-  els.cloudIssue.disabled = false;
-  if (state.cloudScope === "month") {
-    els.cloudPeriodLabel.textContent = "月份";
-    [...state.cloudMonths].reverse().forEach((month) => {
+  periodSelect.disabled = false;
+  if (scope === "month") {
+    periodLabel.textContent = "月份";
+    [...state.months].reverse().forEach((month) => {
       const issueCount = state.issues.filter((issue) => issue.startsWith(`${month}.`)).length;
-      const articleCount = cloudArticlesForScope("month", month).length;
+      const articleCount = articlesForScope("month", month).length;
       const option = document.createElement("option");
       option.value = month;
       option.textContent = `${monthTitle(month)}｜${issueCount} 期・${articleCount} 篇`;
-      option.selected = month === state.cloudIssue;
-      els.cloudIssue.append(option);
+      option.selected = month === selected;
+      periodSelect.append(option);
     });
     return;
   }
-  els.cloudPeriodLabel.textContent = "期數";
-  fillIssueSelect(els.cloudIssue, state.cloudIssue);
+  periodLabel.textContent = "期數";
+  fillIssueSelect(periodSelect, selected);
+}
+
+function renderCloudControls() {
+  renderRangeControls(els.cloudScope, els.cloudIssue, els.cloudPeriodLabel, state.cloudScope, state.cloudIssue);
+}
+
+function renderRelationshipControls() {
+  renderRangeControls(els.relationshipScope, els.relationshipIssue, els.relationshipPeriodLabel, state.relationshipScope, state.relationshipIssue);
 }
 
 function renderIndependentIssueControls() {
   fillIssueSelect(els.overviewIssue, state.overviewIssue);
-  fillIssueSelect(els.relationshipIssue, state.relationshipIssue);
+  renderRelationshipControls();
   renderCloudControls();
 }
 
 function renderRelationshipPanel() {
-  const renderKey = `${state.relationshipIssue}|${state.selectedTags.join("|")}`;
+  renderRelationshipControls();
+  const renderKey = `${state.relationshipScope}|${state.relationshipIssue}|${state.selectedTags.join("|")}`;
   if (state.relationshipRenderKey === renderKey && els.relationshipNetwork.childElementCount) return;
   state.relationshipRenderKey = renderKey;
-  const articles = state.data.articles.filter((article) => issueDate(article) === state.relationshipIssue);
-  const stats = tagStatistics(articles, [state.relationshipIssue], true, state.relationshipIssue);
+  const articles = articlesForScope(state.relationshipScope, state.relationshipIssue);
+  const periods = periodsFor(articles);
+  const stats = tagStatistics(articles, periods, true, "");
   renderRelationships(articles, stats, relationshipsFor(articles));
 }
 
@@ -533,7 +555,7 @@ function renderSelectedTags() {
   els.clearFocus.hidden = !state.selectedTags.length;
   if (!state.selectedTags.length) {
     const empty = document.createElement("span");
-    empty.textContent = "尚未選擇，顯示固定分析期數的最強關聯";
+    empty.textContent = "尚未選擇，顯示目前資料範圍的最強關聯";
     els.selectedTagList.append(empty);
     return;
   }
@@ -977,7 +999,9 @@ function renderNetwork(articles, stats, relationships) {
   guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>按住拖曳旋轉 · 雙擊重設視角</span>";
   const key = document.createElement("div");
   key.className = "network-key";
-  key.innerHTML = '<span><i class="community-0"></i>連結群組</span><span><i class="community-1"></i>連結群組</span><span><i class="community-2"></i>連結群組</span><b>左右可旋轉一整圈 · 上下角度有限制</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表額外指標</small>';
+  const selectedKey = state.selectedTags.length ? '<span><i class="selected-node"></i>已選 tag</span>' : "";
+  const compoundKey = state.selectedTags.length === 2 ? '<span><i class="community-4"></i>共同文章</span>' : "";
+  key.innerHTML = `${selectedKey}<span><i class="community-0"></i>關聯社群 A</span><span><i class="community-1"></i>關聯社群 B</span><span><i class="community-2"></i>關聯社群 C</span><span><i class="community-3"></i>關聯社群 D</span>${compoundKey}<b>拖曳旋轉 · 雙擊重設</b><small>顏色＝互連較密集的社群；大小＝文章篇數；遠近只用來分開重疊節點，不代表強度</small>`;
   els.relationshipNetwork.append(svg, guide, key);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
@@ -1010,16 +1034,16 @@ function renderRelationshipRanking(relationships) {
 }
 
 function renderRelationships(articles, stats, relationships) {
-  const fixedIssue = issueTitle(state.relationshipIssue);
+  const range = scopeTitle(state.relationshipScope, state.relationshipIssue);
   if (!state.selectedTags.length) {
-    els.relationshipTitle.textContent = "固定單期關聯"; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "最強 tag 組合";
-    els.relationshipDescription.textContent = `目前固定分析 ${fixedIssue}，不會跟著熱門 tag 輪播切換。未選 tag 時，顯示該期關聯性最強的組合。`;
+    els.relationshipTitle.textContent = "tag 關聯網絡"; els.analysisMode.textContent = range; els.rankingTitle.textContent = "最強關聯組合";
+    els.relationshipDescription.textContent = `${range}中，顯示比隨機預期更常一起出現在同篇文章的 tag。`;
   } else if (state.selectedTags.length === 1) {
-    els.relationshipTitle.textContent = `${state.selectedTags[0]}的關聯圈`; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "相關 tag 排名";
-    els.relationshipDescription.textContent = `固定以 ${fixedIssue} 查看「${state.selectedTags[0]}」與其他 tag 的標準化關聯強度。點選另一個 tag 可進入雙 tag 分析。`;
+    els.relationshipTitle.textContent = `「${state.selectedTags[0]}」的相關主題`; els.analysisMode.textContent = range; els.rankingTitle.textContent = "相關 tag";
+    els.relationshipDescription.textContent = `${range}中，查看「${state.selectedTags[0]}」與其他 tag 的關聯強度。點選另一個 tag 可查看兩者的共同文章。`;
   } else {
-    els.relationshipTitle.textContent = "雙 tag 共同延伸"; els.analysisMode.textContent = fixedIssue; els.rankingTitle.textContent = "第三層關聯排名";
-    els.relationshipDescription.textContent = `固定以 ${fixedIssue}，先找同時包含「${state.selectedTags.join("」與「")}」的文章，再分析這個交集與第三個 tag 的關聯。`;
+    els.relationshipTitle.textContent = `「${state.selectedTags.join("」與「")}」的共同文章`; els.analysisMode.textContent = range; els.rankingTitle.textContent = "共同文章的相關 tag";
+    els.relationshipDescription.textContent = `${range}中，黑色節點代表同時包含「${state.selectedTags.join("」與「")}」的文章；外圍節點顯示這些文章還常和哪些 tag 一起出現。`;
   }
   renderNetwork(articles, stats, relationships);
   renderRelationshipRanking(relationships);
@@ -1288,10 +1312,17 @@ els.clearFocus.addEventListener("click", () => { state.selectedTags = []; render
 els.overviewSearch.addEventListener("input", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewQuery = els.overviewSearch.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
 els.overviewSort.addEventListener("change", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewSort = els.overviewSort.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
 els.overviewIssue.addEventListener("change", () => { state.overviewIssue = els.overviewIssue.value; renderOverviewModule(); });
+els.relationshipScope.addEventListener("change", () => {
+  state.relationshipScope = els.relationshipScope.value;
+  state.relationshipIssue = state.relationshipScope === "all" ? "all" : state.relationshipScope === "month" ? state.months.at(-1) : state.issues.at(-1);
+  state.relationshipRenderKey = "";
+  renderRelationshipPanel();
+  syncUrl();
+});
 els.relationshipIssue.addEventListener("change", () => { state.relationshipIssue = els.relationshipIssue.value; renderRelationshipPanel(); syncUrl(); });
 els.cloudScope.addEventListener("change", () => {
   state.cloudScope = els.cloudScope.value;
-  state.cloudIssue = state.cloudScope === "all" ? "all" : state.cloudScope === "month" ? state.cloudMonths.at(-1) : state.issues.at(-1);
+  state.cloudIssue = state.cloudScope === "all" ? "all" : state.cloudScope === "month" ? state.months.at(-1) : state.issues.at(-1);
   renderCloudModule();
 });
 els.cloudIssue.addEventListener("change", () => { state.cloudIssue = els.cloudIssue.value; renderCloudModule(); });
@@ -1316,7 +1347,7 @@ fetch("./data/articles.json", { cache: "no-store" })
   .then((data) => {
     state.data = data;
     state.issues = [...new Set(data.articles.map(issueDate).filter(Boolean))].sort();
-    state.cloudMonths = [...new Set(state.issues.map((issue) => issue.slice(0, 7)))].sort();
+    state.months = [...new Set(state.issues.map((issue) => issue.slice(0, 7)))].sort();
     if (!state.issues.includes(state.issue)) state.issue = "";
     if (!state.issue && (state.legacyFrom || state.legacyTo)) {
       const from = state.legacyFrom || state.issues[0].replaceAll(".", "-");
@@ -1325,11 +1356,14 @@ fetch("./data/articles.json", { cache: "no-store" })
       if (matched.length === 1) { state.issue = matched[0]; state.autoPlay = false; }
     }
     if (!state.issue) { state.issue = state.issues[0] || ""; state.autoPlay = true; }
-    if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
+    if (state.relationshipScope === "all") state.relationshipIssue = "all";
+    else if (state.relationshipScope === "month") {
+      if (!state.months.includes(state.relationshipIssue)) state.relationshipIssue = state.months.at(-1) || "";
+    } else if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
     if (!state.issues.includes(state.overviewIssue)) state.overviewIssue = state.issues.at(-1) || state.issue;
     if (state.cloudScope === "all") state.cloudIssue = "all";
     else if (state.cloudScope === "month") {
-      if (!state.cloudMonths.includes(state.cloudIssue)) state.cloudIssue = state.cloudMonths.at(-1) || "";
+      if (!state.months.includes(state.cloudIssue)) state.cloudIssue = state.months.at(-1) || "";
     } else if (!state.issues.includes(state.cloudIssue)) state.cloudIssue = state.issues.at(-1) || state.issue;
     state.allTags = [...new Set(data.articles.flatMap((article) => article.keywordsZh || []))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
     state.selectedTags = state.selectedTags.filter((tag) => state.allTags.includes(tag)).slice(0, 2);
