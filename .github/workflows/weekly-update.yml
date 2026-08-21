@@ -42,6 +42,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Test self-healing retry logic
+        run: node --test tests/retry-failed-articles.test.mjs
+
       - name: Test Azure OpenAI connection
         if: ${{ inputs.test_azure == true }}
         run: node scripts/test-azure-openai.mjs
