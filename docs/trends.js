@@ -999,6 +999,7 @@ function communitySummaries(nodes) {
 function renderNetwork(articles, stats, relationships) {
   if (state.networkFrame) cancelAnimationFrame(state.networkFrame);
   state.networkFrame = null;
+  els.relationshipNetwork.classList.remove("dragging", "is-moving");
   els.relationshipNetwork.replaceChildren();
   const { nodes, edges } = graphData(articles, stats, relationships);
   if (!nodes.length || !edges.length) {
@@ -1017,7 +1018,7 @@ function renderNetwork(articles, stats, relationships) {
   const tooltipMeta = document.createElement("span");
   nodeTooltip.append(tooltipTitle, tooltipMeta);
   function positionNodeTooltip(event) {
-    if (!event || nodeTooltip.hidden) return;
+    if (!event || nodeTooltip.hidden || orbit.dragging || orbit.pinching) return;
     const rect = els.relationshipNetwork.getBoundingClientRect();
     const width = nodeTooltip.offsetWidth || 180;
     const height = nodeTooltip.offsetHeight || 50;
@@ -1079,13 +1080,23 @@ function renderNetwork(articles, stats, relationships) {
     pinchStartPanX: 0,
     pinchStartPanY: 0,
   };
-  function clientPointToGraph(clientX, clientY) {
+  let clientToGraphMatrix = null;
+  let matrixUpdatedAt = 0;
+  let zoomLevel = null;
+  let zoomOutButton = null;
+  let zoomInButton = null;
+  function clientPointToGraph(clientX, clientY, refreshMatrix = false) {
     const point = svg.createSVGPoint();
     point.x = clientX;
     point.y = clientY;
-    const matrix = svg.getScreenCTM();
-    if (!matrix) return { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
-    const graphPoint = point.matrixTransform(matrix.inverse());
+    const now = performance.now();
+    if (refreshMatrix || !clientToGraphMatrix || now - matrixUpdatedAt > 250) {
+      const screenMatrix = svg.getScreenCTM();
+      clientToGraphMatrix = screenMatrix ? screenMatrix.inverse() : null;
+      matrixUpdatedAt = now;
+    }
+    if (!clientToGraphMatrix) return { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
+    const graphPoint = point.matrixTransform(clientToGraphMatrix);
     return { x: graphPoint.x, y: graphPoint.y };
   }
   function constrainNetworkPan(panX, panY, zoom) {
@@ -1122,7 +1133,7 @@ function renderNetwork(articles, stats, relationships) {
     const scale = perspectiveScale * orbit.zoom;
     return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.48, Math.min(2.35, scale)) };
   }
-  function updatePositions() {
+  function updatePositions(lightweight = false) {
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
     edgeElements.forEach(({ edge, path, index }) => {
       const a = projected.get(edge.a), b = projected.get(edge.b);
@@ -1138,28 +1149,46 @@ function renderNetwork(articles, stats, relationships) {
       const point = projected.get(id);
       group.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${point.scale})`);
       group.style.opacity = String(Math.max(.48, Math.min(1, .72 + point.z / 720)));
-      group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
+      if (!lightweight) group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
-    [...nodes]
-      .sort((a, b) => projected.get(a.id).z - projected.get(b.id).z)
-      .forEach((node) => nodeLayer.append(nodeElements.get(node.id)));
-    const activeNode = nodeLayer.querySelector(".network-node.hovered, .network-node:focus");
-    if (activeNode) nodeLayer.append(activeNode);
+    if (!lightweight) {
+      [...nodes]
+        .sort((a, b) => projected.get(a.id).z - projected.get(b.id).z)
+        .forEach((node) => nodeLayer.append(nodeElements.get(node.id)));
+      const activeNode = nodeLayer.querySelector(".network-node.hovered, .network-node:focus");
+      if (activeNode) nodeLayer.append(activeNode);
+    }
+  }
+  function orbitIsMoving() {
+    return Math.abs(orbit.targetYaw - orbit.yaw) > .0005
+      || Math.abs(orbit.targetPitch - orbit.pitch) > .0005
+      || Math.abs(orbit.targetZoom - orbit.zoom) > .0005
+      || Math.abs(orbit.targetPanX - orbit.panX) > .01
+      || Math.abs(orbit.targetPanY - orbit.panY) > .01;
   }
   function animateOrbit() {
-    orbit.yaw += (orbit.targetYaw - orbit.yaw) * .24;
-    orbit.pitch += (orbit.targetPitch - orbit.pitch) * .24;
-    orbit.zoom += (orbit.targetZoom - orbit.zoom) * .24;
-    orbit.panX += (orbit.targetPanX - orbit.panX) * .24;
-    orbit.panY += (orbit.targetPanY - orbit.panY) * .24;
-    updatePositions();
-    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005 || Math.abs(orbit.targetZoom - orbit.zoom) > .0005 || Math.abs(orbit.targetPanX - orbit.panX) > .01 || Math.abs(orbit.targetPanY - orbit.panY) > .01) {
+    const response = orbit.dragging || orbit.pinching ? .42 : .3;
+    orbit.yaw += (orbit.targetYaw - orbit.yaw) * response;
+    orbit.pitch += (orbit.targetPitch - orbit.pitch) * response;
+    orbit.zoom += (orbit.targetZoom - orbit.zoom) * response;
+    orbit.panX += (orbit.targetPanX - orbit.panX) * response;
+    orbit.panY += (orbit.targetPanY - orbit.panY) * response;
+    if (orbitIsMoving()) {
+      updatePositions(true);
       state.networkFrame = requestAnimationFrame(animateOrbit);
     } else {
+      orbit.yaw = orbit.targetYaw;
+      orbit.pitch = orbit.targetPitch;
+      orbit.zoom = orbit.targetZoom;
+      orbit.panX = orbit.targetPanX;
+      orbit.panY = orbit.targetPanY;
+      updatePositions();
+      els.relationshipNetwork.classList.remove("is-moving");
       state.networkFrame = null;
     }
   }
   function requestOrbitFrame() {
+    els.relationshipNetwork.classList.add("is-moving");
     if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
   }
   function setNetworkZoom(nextZoom, focus = { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, zoomOrigin = null) {
@@ -1167,12 +1196,9 @@ function renderNetwork(articles, stats, relationships) {
     const origin = zoomOrigin || { zoom: orbit.targetZoom, panX: orbit.targetPanX, panY: orbit.targetPanY };
     zoomPanAtPoint(boundedZoom, focus, origin.zoom, origin.panX, origin.panY);
     orbit.targetZoom = boundedZoom;
-    const zoomLevel = els.relationshipNetwork.querySelector(".network-zoom-level");
     if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round(orbit.targetZoom * 100)}%`;
-    const zoomOut = els.relationshipNetwork.querySelector('[data-network-zoom="out"]');
-    const zoomIn = els.relationshipNetwork.querySelector('[data-network-zoom="in"]');
-    if (zoomOut) zoomOut.disabled = orbit.targetZoom <= .581;
-    if (zoomIn) zoomIn.disabled = orbit.targetZoom >= 2.149;
+    if (zoomOutButton) zoomOutButton.disabled = orbit.targetZoom <= .581;
+    if (zoomInButton) zoomInButton.disabled = orbit.targetZoom >= 2.149;
     requestOrbitFrame();
   }
   function resetNetworkView() {
@@ -1220,14 +1246,15 @@ function renderNetwork(articles, stats, relationships) {
     if (event.target.closest?.(".network-zoom-controls")) return;
     if (event.button !== 0) return;
     orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    els.relationshipNetwork.setPointerCapture?.(event.pointerId);
+    hideNodeTooltip();
     if (orbit.pointers.size >= 2) {
+      orbit.pointers.forEach((_, pointerId) => els.relationshipNetwork.setPointerCapture?.(pointerId));
       const [first, second] = [...orbit.pointers.values()];
       orbit.pinching = true;
       orbit.dragging = false;
       orbit.pinchStartDistance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
       orbit.pinchStartZoom = orbit.targetZoom;
-      orbit.pinchStartCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2);
+      orbit.pinchStartCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2, true);
       orbit.pinchStartPanX = orbit.targetPanX;
       orbit.pinchStartPanY = orbit.targetPanY;
       orbit.moved = true;
@@ -1240,7 +1267,6 @@ function renderNetwork(articles, stats, relationships) {
     orbit.lastY = event.clientY;
     orbit.moved = false;
     els.relationshipNetwork.classList.add("dragging");
-    requestOrbitFrame();
   };
   els.relationshipNetwork.onpointermove = (event) => {
     if (!orbit.pointers.has(event.pointerId)) return;
@@ -1274,7 +1300,10 @@ function renderNetwork(articles, stats, relationships) {
     const dy = event.clientY - orbit.lastY;
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
-    if (Math.hypot(dx, dy) > 1) orbit.moved = true;
+    if (Math.hypot(dx, dy) > 1) {
+      orbit.moved = true;
+      if (!els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.setPointerCapture?.(event.pointerId);
+    }
     orbit.targetYaw += dx * .012;
     orbit.targetPitch = Math.max(-1.05, Math.min(1.05, orbit.targetPitch - dy * .009));
     requestOrbitFrame();
@@ -1299,8 +1328,10 @@ function renderNetwork(articles, stats, relationships) {
       orbit.moved = false;
       els.relationshipNetwork.classList.remove("dragging");
     }
-    if (moved) orbit.suppressClickUntil = performance.now() + 300;
-    requestOrbitFrame();
+    if (moved) {
+      orbit.suppressClickUntil = performance.now() + 300;
+      requestOrbitFrame();
+    }
   }
   els.relationshipNetwork.onpointerup = finishOrbitDrag;
   els.relationshipNetwork.onpointercancel = finishOrbitDrag;
@@ -1319,7 +1350,7 @@ function renderNetwork(articles, stats, relationships) {
   guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>拖曳旋轉 · 滾輪／雙指／按鈕縮放 · 雙擊重設</span>";
   const zoomControls = document.createElement("div");
   zoomControls.className = "network-zoom-controls";
-  const zoomOutButton = document.createElement("button");
+  zoomOutButton = document.createElement("button");
   zoomOutButton.type = "button";
   zoomOutButton.dataset.networkZoom = "out";
   zoomOutButton.setAttribute("aria-label", "縮小關聯圖");
@@ -1329,7 +1360,7 @@ function renderNetwork(articles, stats, relationships) {
   zoomResetButton.dataset.networkZoom = "reset";
   zoomResetButton.setAttribute("aria-label", "重設關聯圖視角與縮放");
   zoomResetButton.textContent = "↺";
-  const zoomInButton = document.createElement("button");
+  zoomInButton = document.createElement("button");
   zoomInButton.type = "button";
   zoomInButton.dataset.networkZoom = "in";
   zoomInButton.setAttribute("aria-label", "放大關聯圖");
@@ -1339,7 +1370,7 @@ function renderNetwork(articles, stats, relationships) {
   zoomResetButton.addEventListener("click", resetNetworkView);
   zoomInButton.addEventListener("click", () => setNetworkZoom(orbit.targetZoom * 1.22));
   zoomControls.append(zoomOutButton, zoomResetButton, zoomInButton);
-  const zoomLevel = document.createElement("span");
+  zoomLevel = document.createElement("span");
   zoomLevel.className = "network-zoom-level";
   zoomLevel.setAttribute("aria-live", "polite");
   zoomLevel.textContent = "縮放 100%";
