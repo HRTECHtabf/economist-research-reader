@@ -18,6 +18,7 @@ const humanizerGuidePath = resolve(
 );
 const SUMMARY_VERSION = "research-brief-v4";
 const HUMANIZER_VERSION = "economist-humanizer-v4";
+const MAX_BRIEF_ATTEMPTS = 4;
 
 function readEnv(path) {
   const values = {};
@@ -395,7 +396,18 @@ async function callWithFallback(request) {
   }
 }
 
-function summarize(article) {
+function retryFeedback({ attempt = 1, previousResult, validationFailures = [] } = {}) {
+  if (attempt <= 1 || !previousResult || validationFailures.length === 0) return "";
+
+  return [
+    `這是第 ${attempt} 次嘗試。請修訂上一版，不要從頭產生一份無關的新版本。`,
+    `上一版未通過項目：${validationFailures.join("、")}。`,
+    "只針對上述項目做必要修正，並重新核對英文原文；保留正確的人物、數字、因果關係與不確定程度。",
+    `上一版 JSON：\n${JSON.stringify(previousResult)}`,
+  ].join("\n");
+}
+
+function summarize(article, retryContext) {
   return callWithFallback({
     schemaName: "research_brief",
     instructions: [
@@ -413,13 +425,14 @@ function summarize(article) {
       `標題：${article.titleEn}`,
       article.rubricEn ? `副標：${article.rubricEn}` : "",
       `文章內容：\n${article.textEn}`,
+      retryFeedback(retryContext),
     ]
       .filter(Boolean)
       .join("\n\n"),
   });
 }
 
-function humanize(article, draft) {
+function humanize(article, draft, retryContext) {
   return callWithFallback({
     schemaName: "humanized_research_brief",
     instructions: [
@@ -436,6 +449,7 @@ function humanize(article, draft) {
       article.rubricEn ? `英文副標：${article.rubricEn}` : "",
       `英文原文核對資料：\n${article.textEn}`,
       `第一版中文摘要：\n${JSON.stringify(draft)}`,
+      retryFeedback(retryContext),
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -473,9 +487,15 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
         continue;
       }
       console.log(`[${label} ${index + 1}/${items.length}] 正在處理：${article.titleEn}`);
-      for (let attempt = 1; attempt <= 3; attempt += 1) {
+      let previousResult = null;
+      let validationFailures = [];
+      for (let attempt = 1; attempt <= MAX_BRIEF_ATTEMPTS; attempt += 1) {
         try {
-          const result = normalizeGeneratedBrief(await processItem(article));
+          const result = normalizeGeneratedBrief(await processItem(article, {
+            attempt,
+            previousResult,
+            validationFailures,
+          }));
           if (isCompleteBrief(result)) {
             values[article.id] = {
               ...result,
@@ -484,15 +504,17 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
             };
             break;
           }
-          if (attempt === 3) {
-            failures.push(`${article.titleEn}：輸出未通過完整性與長度檢查`);
+          previousResult = result;
+          validationFailures = briefValidationFailures(result);
+          if (attempt === MAX_BRIEF_ATTEMPTS) {
+            failures.push(`${article.titleEn}：${validationFailures.join("、")}`);
           } else {
             console.log(
-              `[${label}] ${briefValidationFailures(result).join("、")}，第 ${attempt + 1} 次嘗試。`,
+              `[${label}] ${validationFailures.join("、")}，第 ${attempt + 1} 次嘗試。`,
             );
           }
         } catch (error) {
-          if (attempt === 3) {
+          if (attempt === MAX_BRIEF_ATTEMPTS) {
             failures.push(`${article.titleEn}：${error.message}`);
           } else {
             console.log(`[${label}] 單篇處理失敗，第 ${attempt + 1} 次嘗試：${article.titleEn}`);
@@ -555,7 +577,7 @@ await processWithWorkers({
   items: articlesToProcess,
   values: humanizedSummaries,
   label: "自然化",
-  processItem: (article) => humanize(article, summaries[article.id]),
+  processItem: (article, retryContext) => humanize(article, summaries[article.id], retryContext),
   checkpointPath: humanizedCheckpointPath,
   processingVersion: HUMANIZER_VERSION,
 });
