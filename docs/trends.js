@@ -1061,6 +1061,10 @@ function renderNetwork(articles, stats, relationships) {
     targetPitch: -.16,
     zoom: 1,
     targetZoom: 1,
+    panX: 0,
+    panY: 0,
+    targetPanX: 0,
+    targetPanY: 0,
     dragging: false,
     pointerId: null,
     lastX: 0,
@@ -1071,7 +1075,39 @@ function renderNetwork(articles, stats, relationships) {
     pinching: false,
     pinchStartDistance: 0,
     pinchStartZoom: 1,
+    pinchStartCenter: null,
+    pinchStartPanX: 0,
+    pinchStartPanY: 0,
   };
+  function clientPointToGraph(clientX, clientY) {
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
+    const graphPoint = point.matrixTransform(matrix.inverse());
+    return { x: graphPoint.x, y: graphPoint.y };
+  }
+  function constrainNetworkPan(panX, panY, zoom) {
+    const maxPanX = GRAPH_WIDTH * Math.max(0, zoom - .58) * .5;
+    const maxPanY = GRAPH_HEIGHT * Math.max(0, zoom - .58) * .5;
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, panY)),
+    };
+  }
+  function zoomPanAtPoint(nextZoom, focus, startZoom = orbit.targetZoom, startPanX = orbit.targetPanX, startPanY = orbit.targetPanY) {
+    const zoomRatio = nextZoom / Math.max(.001, startZoom);
+    const centerX = GRAPH_WIDTH / 2;
+    const centerY = GRAPH_HEIGHT / 2;
+    const nextPan = constrainNetworkPan(
+      focus.x - centerX - (focus.x - centerX - startPanX) * zoomRatio,
+      focus.y - centerY - (focus.y - centerY - startPanY) * zoomRatio,
+      nextZoom,
+    );
+    orbit.targetPanX = nextPan.x;
+    orbit.targetPanY = nextPan.y;
+  }
   function projectNode(node, rotationX, rotationY) {
     const x = node.baseX - GRAPH_WIDTH / 2;
     const y = node.baseY - GRAPH_HEIGHT / 2;
@@ -1084,7 +1120,7 @@ function renderNetwork(articles, stats, relationships) {
     const z2 = y * sinX + z1 * cosX;
     const perspectiveScale = 820 / (820 - z2);
     const scale = perspectiveScale * orbit.zoom;
-    return { x: GRAPH_WIDTH / 2 + x1 * scale, y: GRAPH_HEIGHT / 2 + y1 * scale, z: z2, scale: Math.max(.48, Math.min(2.35, scale)) };
+    return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.48, Math.min(2.35, scale)) };
   }
   function updatePositions() {
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
@@ -1114,8 +1150,10 @@ function renderNetwork(articles, stats, relationships) {
     orbit.yaw += (orbit.targetYaw - orbit.yaw) * .24;
     orbit.pitch += (orbit.targetPitch - orbit.pitch) * .24;
     orbit.zoom += (orbit.targetZoom - orbit.zoom) * .24;
+    orbit.panX += (orbit.targetPanX - orbit.panX) * .24;
+    orbit.panY += (orbit.targetPanY - orbit.panY) * .24;
     updatePositions();
-    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005 || Math.abs(orbit.targetZoom - orbit.zoom) > .0005) {
+    if (orbit.dragging || Math.abs(orbit.targetYaw - orbit.yaw) > .0005 || Math.abs(orbit.targetPitch - orbit.pitch) > .0005 || Math.abs(orbit.targetZoom - orbit.zoom) > .0005 || Math.abs(orbit.targetPanX - orbit.panX) > .01 || Math.abs(orbit.targetPanY - orbit.panY) > .01) {
       state.networkFrame = requestAnimationFrame(animateOrbit);
     } else {
       state.networkFrame = null;
@@ -1124,8 +1162,11 @@ function renderNetwork(articles, stats, relationships) {
   function requestOrbitFrame() {
     if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
   }
-  function setNetworkZoom(nextZoom) {
-    orbit.targetZoom = Math.max(.58, Math.min(2.15, nextZoom));
+  function setNetworkZoom(nextZoom, focus = { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, zoomOrigin = null) {
+    const boundedZoom = Math.max(.58, Math.min(2.15, nextZoom));
+    const origin = zoomOrigin || { zoom: orbit.targetZoom, panX: orbit.targetPanX, panY: orbit.targetPanY };
+    zoomPanAtPoint(boundedZoom, focus, origin.zoom, origin.panX, origin.panY);
+    orbit.targetZoom = boundedZoom;
     const zoomLevel = els.relationshipNetwork.querySelector(".network-zoom-level");
     if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round(orbit.targetZoom * 100)}%`;
     const zoomOut = els.relationshipNetwork.querySelector('[data-network-zoom="out"]');
@@ -1137,6 +1178,8 @@ function renderNetwork(articles, stats, relationships) {
   function resetNetworkView() {
     orbit.targetYaw = -.2;
     orbit.targetPitch = -.16;
+    orbit.targetPanX = 0;
+    orbit.targetPanY = 0;
     setNetworkZoom(1);
   }
   nodes.forEach((node, index) => {
@@ -1184,6 +1227,9 @@ function renderNetwork(articles, stats, relationships) {
       orbit.dragging = false;
       orbit.pinchStartDistance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
       orbit.pinchStartZoom = orbit.targetZoom;
+      orbit.pinchStartCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2);
+      orbit.pinchStartPanX = orbit.targetPanX;
+      orbit.pinchStartPanY = orbit.targetPanY;
       orbit.moved = true;
       els.relationshipNetwork.classList.add("dragging");
       return;
@@ -1204,7 +1250,21 @@ function renderNetwork(articles, stats, relationships) {
       const [first, second] = [...orbit.pointers.values()];
       const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
       const pinchRatio = distance / orbit.pinchStartDistance;
-      setNetworkZoom(orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY));
+      const pinchCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2);
+      const boundedZoom = Math.max(.58, Math.min(2.15, orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY)));
+      const startCenter = orbit.pinchStartCenter || { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
+      const zoomRatio = boundedZoom / Math.max(.001, orbit.pinchStartZoom);
+      const centerX = GRAPH_WIDTH / 2;
+      const centerY = GRAPH_HEIGHT / 2;
+      const nextPan = constrainNetworkPan(
+        pinchCenter.x - centerX - (startCenter.x - centerX - orbit.pinchStartPanX) * zoomRatio,
+        pinchCenter.y - centerY - (startCenter.y - centerY - orbit.pinchStartPanY) * zoomRatio,
+        boundedZoom,
+      );
+      orbit.targetPanX = nextPan.x;
+      orbit.targetPanY = nextPan.y;
+      orbit.targetZoom = boundedZoom;
+      setNetworkZoom(boundedZoom, pinchCenter, { zoom: boundedZoom, panX: nextPan.x, panY: nextPan.y });
       orbit.moved = true;
       orbit.suppressClickUntil = performance.now() + 300;
       return;
@@ -1247,7 +1307,7 @@ function renderNetwork(articles, stats, relationships) {
   els.relationshipNetwork.onwheel = (event) => {
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * .0015);
-    setNetworkZoom(orbit.targetZoom * factor);
+    setNetworkZoom(orbit.targetZoom * factor, clientPointToGraph(event.clientX, event.clientY));
   };
   els.relationshipNetwork.ondblclick = (event) => {
     event.preventDefault();
