@@ -1,6 +1,7 @@
 const params = new URLSearchParams(location.search);
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLAYBACK_DELAY = 2000;
+const PINCH_ZOOM_SENSITIVITY = 1.8;
 const GRAPH_WIDTH = 1000;
 const GRAPH_HEIGHT = 760;
 const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -1202,7 +1203,8 @@ function renderNetwork(articles, stats, relationships) {
       event.preventDefault();
       const [first, second] = [...orbit.pointers.values()];
       const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
-      setNetworkZoom(orbit.pinchStartZoom * (distance / orbit.pinchStartDistance));
+      const pinchRatio = distance / orbit.pinchStartDistance;
+      setNetworkZoom(orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY));
       orbit.moved = true;
       orbit.suppressClickUntil = performance.now() + 300;
       return;
