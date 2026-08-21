@@ -70,14 +70,18 @@ const naturalStyleRules = [
 const aiStylePattern = /綜上所述|總體而言|一言以蔽之|未來可期|值得深入閱讀|可供參考|值得注意的是|由此可見|賦能|助力|底層邏輯|深遠影響|重要里程碑|不只是.{0,35}而是|不僅.{0,35}更/u;
 const contextlessPointOpening = /^(?:文章|本文|文中)(?:同時|另|也|還|進一步)|^(?:原因與風險|其他變化|也有|另一個|此外|另一方面|至於|這些|此舉|上述)/u;
 
+function standaloneKeyPointFailures(point) {
+  if (typeof point !== "string") return ["不是文字"];
+  const failures = [];
+  if (contextlessPointOpening.test(point)) failures.push("以依賴前文的語句開頭");
+  if (/^[^，。！？；]{2,18}：/u.test(point)) failures.push("以短標題加冒號開頭");
+  if ((point.match(/；/g) || []).length > 1) failures.push("使用超過一個分號");
+  if (aiStylePattern.test(point)) failures.push("含公式化 AI 句型");
+  return failures;
+}
+
 function isStandaloneKeyPoint(point) {
-  return (
-    typeof point === "string" &&
-    !contextlessPointOpening.test(point) &&
-    !/^[^，。！？；]{2,18}：/u.test(point) &&
-    (point.match(/；/g) || []).length <= 1 &&
-    !aiStylePattern.test(point)
-  );
+  return standaloneKeyPointFailures(point).length === 0;
 }
 
 for (const name of ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT"]) {
@@ -254,7 +258,9 @@ function briefValidationFailures(value) {
       if (typeof point !== "string" || point.length < 25 || point.length > 85) {
         failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
       }
-      if (!isStandaloneKeyPoint(point)) failures.push(`重點 ${index + 1} 無法獨立閱讀或含公式化句型`);
+      for (const failure of standaloneKeyPointFailures(point)) {
+        failures.push(`重點 ${index + 1} ${failure}：${JSON.stringify(point)}`);
+      }
     });
   }
   if (!Array.isArray(value.keywordsZh) || value.keywordsZh.length < 3 || value.keywordsZh.length > 5) {
@@ -402,7 +408,8 @@ function retryFeedback({ attempt = 1, previousResult, validationFailures = [] } 
   return [
     `這是第 ${attempt} 次嘗試。請修訂上一版，不要從頭產生一份無關的新版本。`,
     `上一版未通過項目：${validationFailures.join("、")}。`,
-    "只針對上述項目做必要修正，並重新核對英文原文；保留正確的人物、數字、因果關係與不確定程度。",
+    "只針對上述項目做必要修正，並重新核對英文原文；重點必須改由具體主詞、政策、市場或事件開頭，不得原句照抄。",
+    "保留正確的人物、數字、因果關係與不確定程度，不得為了通過格式檢查而新增事實。",
     `上一版 JSON：\n${JSON.stringify(previousResult)}`,
   ].join("\n");
 }
