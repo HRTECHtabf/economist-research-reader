@@ -33,6 +33,7 @@ button, input, select { font: inherit; }
 .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; background: var(--red); color: white; font-size: 18px; font-weight: 800; }
 .brand strong { display: block; font-size: 15px; letter-spacing: .06em; }
 .brand small { display: block; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.mobile-back-label { display: none; }
 .site-header nav { display: flex; align-items: center; gap: 24px; }
 .site-header nav a { color: #383633; font-size: 14px; text-decoration: none; }
 .site-header nav a:hover { color: var(--red); }
@@ -275,7 +276,9 @@ footer { padding: 26px 0; background: var(--ink); color: #aaa69f; }
   .header-inner { min-height: 66px; }
   .brand strong { font-size: 13px; }
   .brand small { display: none; }
-  .brand > span:last-child { display: none; }
+  .brand-copy { display: none; }
+  .back-to-articles .brand-mark { display: none; }
+  .brand.back-to-articles > .mobile-back-label { display: inline-flex; align-items: center; min-height: 32px; color: var(--ink); font-size: 11px; font-weight: 850; white-space: nowrap; }
   .site-header nav { gap: 7px; }
   .site-header nav a { display: none; }
   .site-header nav a.trends-nav-link { display: inline-flex; align-items: center; min-height: 32px; border: 1px solid var(--red); padding: 0 8px; color: var(--red); font-size: 10px; font-weight: 800; white-space: nowrap; }
