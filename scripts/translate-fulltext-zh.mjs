@@ -7,6 +7,10 @@ import {
 } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
+import {
+  resolveRetryRounds,
+  retryFailedArticles,
+} from "./lib/retry-failed-articles.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -16,6 +20,7 @@ const reportPath = resolve(projectRoot, ".cache/fulltext-zh-v2.report.json");
 const TRANSLATION_VERSION = "fulltext-zh-tw-v2";
 const DEFAULT_WORKERS = 3;
 const DEFAULT_CHUNK_CHARACTERS = 6200;
+const DEFAULT_ARTICLE_RETRY_ROUNDS = 2;
 
 function readEnv(path) {
   const values = {};
@@ -155,7 +160,12 @@ function validateChunk(chunk, translations) {
     }
     if (simplifiedOrMainlandPattern.test(textZh)) failures.push(`第 ${source.index + 1} 段含非台灣慣用詞`);
     if (metaLanguagePattern.test(textZh)) failures.push(`第 ${source.index + 1} 段出現翻譯說明`);
-    if (/\d/u.test(source.textEn) && !/\d/u.test(textZh)) failures.push(`第 ${source.index + 1} 段遺失阿拉伯數字`);
+    if (/\d/u.test(source.textEn) && !/\d/u.test(textZh)) {
+      const sourceNumbers = [...new Set(source.textEn.match(/\d[\d,.:%/–—-]*/gu) || [])]
+        .slice(0, 8)
+        .join("、");
+      failures.push(`第 ${source.index + 1} 段遺失阿拉伯數字（原文含：${sourceNumbers}）`);
+    }
     if (/\b(?:I cannot|I can't|as an AI)\b/i.test(textZh)) failures.push(`第 ${source.index + 1} 段不是譯文`);
   }
   if (byIndex.size !== translations.length) failures.push("段落索引重複");
@@ -394,6 +404,8 @@ const auditOnly = process.argv.includes("--audit-only");
 const selectedArticle = option("article");
 const limit = Math.max(0, Number(option("limit")) || 0);
 const workerCount = Math.max(1, Number(option("workers", env.TRANSLATION_WORKERS)) || DEFAULT_WORKERS);
+const articleRetryRoundsValue = option("article-retries", env.FULLTEXT_ARTICLE_RETRIES || "");
+const articleRetryRounds = resolveRetryRounds(articleRetryRoundsValue, DEFAULT_ARTICLE_RETRY_ROUNDS);
 
 function existingOutputValid(article) {
   const value = readJson(outputPath(article), null);
@@ -488,6 +500,34 @@ if (auditOnly) {
     }
   }
   await Promise.all(Array.from({ length: Math.min(workerCount, candidates.length) }, worker));
+  if (report.failed.length && articleRetryRounds > 0) {
+    const articleByKey = new Map(candidates.map((article) => [articleKey(article), article]));
+    report.retryRounds = [];
+    report.failed = await retryFailedArticles({
+      initialFailures: report.failed,
+      maxRounds: articleRetryRounds,
+      findArticle: (key) => articleByKey.get(key),
+      retryArticle: translateArticle,
+      onRoundStart: ({ round, maxRounds, pending }) => {
+        console.warn(`[自動補跑 ${round}/${maxRounds}] 重新處理 ${pending.length} 篇失敗文章。`);
+      },
+      onSuccess: ({ round, result }) => {
+        report.completed.push(result);
+        console.log(`[自動補跑 ${round}] 完成 ${result.key}（${result.paragraphs} 段）`);
+      },
+      onFailure: ({ round, failure }) => {
+        console.error(`[自動補跑 ${round}] 仍失敗 ${failure.key}：${failure.message}`);
+      },
+      onRoundComplete: ({ round, pending }) => {
+        report.retryRounds.push({
+          round,
+          remainingFailures: pending.map(({ key, message }) => ({ key, message })),
+        });
+        report.failed = pending;
+        writeJsonAtomic(reportPath, { ...report, updatedAt: new Date().toISOString() });
+      },
+    });
+  }
   report.finishedAt = new Date().toISOString();
   writeJsonAtomic(reportPath, report);
   if (report.failed.length) {

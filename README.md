@@ -56,4 +56,4 @@ EPUB 的日期欄位可能把同一期文章全部標成同一天。網站改以
 
 文章預設標籤必須從 `scripts/general-keyword-taxonomy.mjs` 的固定廣義詞彙表選取，避免把人物、機構全名或單一事件當成預設標籤。如需依目前詞彙表重整全庫標籤，可執行 `node scripts/retag-general-keywords.mjs`；工具會保留摘要與全文，只更新 `keywordsZh`，並以檢查點避免中斷後重跑已完成文章。
 
-如需補做缺少或原文已異動的中文全文，可執行 `node scripts/translate-fulltext-zh.mjs --workers=5`；流程會先完整翻譯，再對照英文做繁中定稿。完成後以 `node scripts/audit-fulltext-zh.mjs` 檢查 302 篇的版本、原文指紋、段落對應、數字、台灣用語與異常語句，並更新公開的全文覆蓋率清單。
+如需補做缺少或原文已異動的中文全文，可執行 `node scripts/translate-fulltext-zh.mjs --workers=5`；流程會先完整翻譯，再對照英文做繁中定稿。單篇文章若在主批次未通過，會於同次工作中自動補跑兩輪，每輪只處理仍失敗的文章；仍未通過時才安全中止，且不發布半成品。完成後以 `node scripts/audit-fulltext-zh.mjs` 檢查全文版本、原文指紋、段落對應、數字、台灣用語與異常語句，並更新公開的全文覆蓋率清單。
