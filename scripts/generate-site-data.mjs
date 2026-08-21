@@ -69,12 +69,13 @@ const naturalStyleRules = [
 ].join("\n");
 const aiStylePattern = /綜上所述|總體而言|一言以蔽之|未來可期|值得深入閱讀|可供參考|值得注意的是|由此可見|賦能|助力|底層邏輯|深遠影響|重要里程碑|不只是.{0,35}而是|不僅.{0,35}更/u;
 const contextlessPointOpening = /^(?:文章|本文|文中)(?:同時|另|也|還|進一步)|^(?:原因與風險|其他變化|也有|另一個|此外|另一方面|至於|這些|此舉|上述)/u;
+const labelStylePointOpening = /^(?:[^，。！？；：]{0,12}(?:背景|原因|風險|影響|展望|機制|變化|挑戰|意義|啟示|重點|面向|因素|條件|問題))：/u;
 
 function standaloneKeyPointFailures(point) {
   if (typeof point !== "string") return ["不是文字"];
   const failures = [];
   if (contextlessPointOpening.test(point)) failures.push("以依賴前文的語句開頭");
-  if (/^[^，。！？；]{2,18}：/u.test(point)) failures.push("以短標題加冒號開頭");
+  if (labelStylePointOpening.test(point)) failures.push("以名詞式短標題加冒號開頭");
   if ((point.match(/；/g) || []).length > 1) failures.push("使用超過一個分號");
   if (aiStylePattern.test(point)) failures.push("含公式化 AI 句型");
   return failures;
