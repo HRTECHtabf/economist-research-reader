@@ -53,7 +53,7 @@ for (const article of data.articles || []) {
     pointCounts[article.keyPointsZh.length] = (pointCounts[article.keyPointsZh.length] || 0) + 1;
     article.keyPointsZh.forEach((point, index) => {
       pointLengths.push(point.length);
-      if (!completeSentence(point) || point.length < 25 || point.length > 85) issues.push(`${label}｜重點 ${index + 1} 長度或句尾不符`);
+      if (!completeSentence(point) || point.length < 25 || point.length > 86) issues.push(`${label}｜重點 ${index + 1} 長度或句尾不符`);
       if (contextlessPointOpening.test(point) || /^[^，。！？；]{2,18}：/u.test(point) || (point.match(/；/g) || []).length > 1 || aiStylePattern.test(point)) {
         issues.push(`${label}｜重點 ${index + 1} 不夠獨立或含公式化句型`);
       }

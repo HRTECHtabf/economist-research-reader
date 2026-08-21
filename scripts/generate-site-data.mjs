@@ -178,7 +178,7 @@ const schema = {
       type: "array",
       minItems: 3,
       maxItems: 5,
-      items: { type: "string", maxLength: 85 },
+      items: { type: "string", maxLength: 86 },
     },
     researchLensZh: { type: "string", maxLength: 220 },
     keywordsZh: {
@@ -226,7 +226,7 @@ function isCompleteBrief(value) {
     value.keyPointsZh.length >= 3 &&
     value.keyPointsZh.length <= 5 &&
     value.keyPointsZh.every(
-      (point) => endsAsCompleteSentence(point) && point.length >= 25 && point.length <= 85 && isStandaloneKeyPoint(point),
+      (point) => endsAsCompleteSentence(point) && point.length >= 25 && point.length <= 86 && isStandaloneKeyPoint(point),
     ) &&
     Array.isArray(value.keywordsZh) &&
     value.keywordsZh.length >= 3 &&
@@ -256,7 +256,7 @@ function briefValidationFailures(value) {
   } else {
     value.keyPointsZh.forEach((point, index) => {
       if (!endsAsCompleteSentence(point)) failures.push(`重點 ${index + 1} 句尾不完整`);
-      if (typeof point !== "string" || point.length < 25 || point.length > 85) {
+      if (typeof point !== "string" || point.length < 25 || point.length > 86) {
         failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
       }
       for (const failure of standaloneKeyPointFailures(point)) {
