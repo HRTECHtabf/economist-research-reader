@@ -284,7 +284,14 @@ function normalizeGeneratedBrief(value) {
       .replace(/(\d+(?:\.\d+)?)百萬/gu, (_, number) => `${Number(number) * 100}萬`)
       .replace(/(\d+(?:\.\d+)?)十億/gu, (_, number) => `${Number(number) * 10}億`)
     : text;
-  const summaryZh = normalizeText(value.summaryZh);
+  const normalizeSentence = (text) => {
+    const normalized = normalizeText(text);
+    if (typeof normalized !== "string" || !normalized || endsAsCompleteSentence(normalized)) {
+      return normalized;
+    }
+    return `${normalized.replace(/[，、；：,;:.]+$/u, "")}。`;
+  };
+  const summaryZh = normalizeSentence(value.summaryZh);
   const highlightTermsZh = Array.isArray(value.highlightTermsZh)
     ? [...new Set(value.highlightTermsZh.map(normalizeText))]
       .filter((term) => typeof term === "string" && summaryZh?.includes(term))
@@ -294,9 +301,9 @@ function normalizeGeneratedBrief(value) {
     ...value,
     summaryZh,
     keyPointsZh: Array.isArray(value.keyPointsZh)
-      ? value.keyPointsZh.map(normalizeText)
+      ? value.keyPointsZh.map(normalizeSentence)
       : value.keyPointsZh,
-    researchLensZh: normalizeText(value.researchLensZh),
+    researchLensZh: normalizeSentence(value.researchLensZh),
     keywordsZh: Array.isArray(value.keywordsZh)
       ? value.keywordsZh.map(normalizeText)
       : value.keywordsZh,
