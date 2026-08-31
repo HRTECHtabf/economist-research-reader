@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260821-12" />
-    <link rel="stylesheet" href="./trends.css?v=20260821-20" />
+    <link rel="stylesheet" href="./trends.css?v=20260831-1" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -30,7 +30,7 @@
       <section class="trend-hero">
         <div class="shell trend-hero-grid">
           <div><p class="eyebrow">RESEARCH SIGNALS · 趨勢觀測</p><h1>關鍵字趨勢儀表板</h1></div>
-          <p>各分析區塊可獨立選擇期數或月份；熱門 tag 會快速輪播，也可隨時停下來逐期或逐月查看。</p>
+          <p>各分析區塊可獨立選擇期數或月份；選擇兩個 tag 後，關聯分析下方會直接列出共同文章。</p>
         </div>
       </section>
 
@@ -68,6 +68,14 @@
               </div>
             </div>
             <p class="relationship-method">關聯分數以 NPMI 衡量共同出現是否高於隨機預期，再依共同文章數收縮；「低樣本」結果請搭配原文判讀。</p>
+            <section class="related-articles" id="related-articles" aria-labelledby="related-articles-title" data-tour="related-articles">
+              <div class="related-articles-heading">
+                <div><p class="eyebrow red">MATCHING ARTICLES</p><h3 id="related-articles-title">共同文章</h3></div>
+                <p id="related-articles-description">選擇兩個 tag 後，這裡會列出同時包含兩者的文章。</p>
+              </div>
+              <div class="related-articles-list" id="related-articles-list" aria-live="polite"></div>
+              <div class="related-articles-actions" id="related-articles-actions"></div>
+            </section>
           </section>
 
           <section class="dashboard-card cloud-card" aria-labelledby="cloud-title" data-tour="cloud">
@@ -135,6 +143,6 @@
         </div>
       </section>
     </div>
-    <script src="./trends.js?v=20260821-22" defer></script>
+    <script src="./trends.js?v=20260831-1" defer></script>
   </body>
 </html>

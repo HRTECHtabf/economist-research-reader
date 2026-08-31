@@ -4,6 +4,7 @@ const PLAYBACK_DELAY = 2000;
 const PINCH_ZOOM_SENSITIVITY = 1.8;
 const GRAPH_WIDTH = 1000;
 const GRAPH_HEIGHT = 760;
+const RELATED_ARTICLES_PREVIEW_LIMIT = 8;
 const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const TOUR_STEPS = [
   {
@@ -25,6 +26,11 @@ const TOUR_STEPS = [
     selector: '[data-tour="relationship-ranking"]',
     title: "用分數比較共同出現強度",
     description: "右側分數衡量兩個 tag 是否比隨機預期更常出現在同一篇文章，並對少量樣本保守降權。分數不是因果關係，也不等於文章重要性。",
+  },
+  {
+    selector: '[data-tour="related-articles"]',
+    title: "直接查看共同文章",
+    description: "選滿兩個 tag 後，這裡會列出同時包含兩者的文章、摘要與期數。文章較多時可直接在原頁展開全部結果。",
   },
   {
     selector: '[data-tour="cloud"]',
@@ -100,6 +106,10 @@ const els = {
   relationshipScope: document.querySelector("#relationship-scope"),
   relationshipPeriodLabel: document.querySelector("#relationship-period-label"),
   relationshipIssue: document.querySelector("#relationship-issue"),
+  relatedArticlesTitle: document.querySelector("#related-articles-title"),
+  relatedArticlesDescription: document.querySelector("#related-articles-description"),
+  relatedArticlesList: document.querySelector("#related-articles-list"),
+  relatedArticlesActions: document.querySelector("#related-articles-actions"),
   keywordCloud: document.querySelector("#keyword-cloud"),
   cloudHelp: document.querySelector("#cloud-help"),
   trendFlatLabel: document.querySelector("#trend-flat-label"),
@@ -1443,6 +1453,114 @@ function renderRelationships(articles, stats, relationships) {
   }
   renderNetwork(articles, stats, relationships);
   renderRelationshipRanking(relationships);
+  renderRelatedArticles(articles);
+}
+
+function articleIndexUrl(tags, title = "") {
+  const query = new URLSearchParams();
+  tags.forEach((tag) => query.append("tag", tag));
+  if (title) query.set("q", title);
+  return `./index.html?${query.toString()}#articles`;
+}
+
+function createRelatedArticleCard(article) {
+  const item = document.createElement("article");
+  item.className = "related-article-card";
+
+  const meta = document.createElement("p");
+  meta.className = "related-article-meta";
+  meta.textContent = [issueTitle(issueDate(article)), article.categoryZh || article.section].filter(Boolean).join("｜");
+
+  const title = document.createElement("h4");
+  title.textContent = article.titleEn || "Untitled";
+
+  const rubric = document.createElement("p");
+  rubric.className = "related-article-rubric";
+  rubric.textContent = article.rubricEn || "";
+  rubric.hidden = !article.rubricEn;
+
+  const summary = document.createElement("p");
+  summary.className = "related-article-summary";
+  summary.textContent = article.summaryZh || "這篇文章目前沒有中文摘要，可前往文章索引查看英文全文。";
+
+  const tags = document.createElement("div");
+  tags.className = "related-article-tags";
+  state.selectedTags.forEach((tag) => {
+    const chip = document.createElement("span");
+    chip.textContent = tag;
+    tags.append(chip);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "related-article-links";
+  const indexLink = document.createElement("a");
+  indexLink.href = articleIndexUrl(state.selectedTags, article.titleEn || "");
+  indexLink.textContent = "查看站內文章";
+  actions.append(indexLink);
+  if (article.sourceUrl) {
+    const sourceLink = document.createElement("a");
+    sourceLink.href = article.sourceUrl;
+    sourceLink.target = "_blank";
+    sourceLink.rel = "noreferrer";
+    sourceLink.textContent = "英文原文 ↗";
+    actions.append(sourceLink);
+  }
+
+  item.append(meta, title, rubric, summary, tags, actions);
+  return item;
+}
+
+function renderRelatedArticles(articles) {
+  els.relatedArticlesList.replaceChildren();
+  els.relatedArticlesActions.replaceChildren();
+
+  if (state.selectedTags.length < 2) {
+    els.relatedArticlesTitle.textContent = "共同文章";
+    els.relatedArticlesDescription.textContent = state.selectedTags.length
+      ? `再選一個 tag，即可列出與「${state.selectedTags[0]}」同時出現的文章。`
+      : "選擇兩個 tag 後，這裡會列出同時包含兩者的文章。";
+    const empty = document.createElement("p");
+    empty.className = "related-articles-empty";
+    empty.textContent = state.selectedTags.length ? "還差一個 tag" : "尚未選擇分析組合";
+    els.relatedArticlesList.append(empty);
+    return;
+  }
+
+  const matches = articles
+    .filter((article) => state.selectedTags.every((tag) => (article.keywordsZh || []).includes(tag)))
+    .sort((a, b) => issueDate(b).localeCompare(issueDate(a)) || (a.titleEn || "").localeCompare(b.titleEn || ""));
+  const pair = `「${state.selectedTags.join("」與「")}」`;
+  els.relatedArticlesTitle.textContent = `${pair}共同文章・${matches.length} 篇`;
+  els.relatedArticlesDescription.textContent = `列出${scopeTitle(state.relationshipScope, state.relationshipIssue)}中，同時包含${pair}的文章。`;
+
+  if (!matches.length) {
+    const empty = document.createElement("p");
+    empty.className = "related-articles-empty";
+    empty.textContent = "這個資料範圍沒有同時包含兩個 tag 的文章。";
+    els.relatedArticlesList.append(empty);
+    return;
+  }
+
+  const appendCards = (items) => items.forEach((article) => els.relatedArticlesList.append(createRelatedArticleCard(article)));
+  appendCards(matches.slice(0, RELATED_ARTICLES_PREVIEW_LIMIT));
+
+  if (matches.length > RELATED_ARTICLES_PREVIEW_LIMIT) {
+    const showAll = document.createElement("button");
+    showAll.type = "button";
+    showAll.className = "related-articles-more";
+    showAll.textContent = `顯示其餘 ${matches.length - RELATED_ARTICLES_PREVIEW_LIMIT} 篇`;
+    showAll.addEventListener("click", () => {
+      appendCards(matches.slice(RELATED_ARTICLES_PREVIEW_LIMIT));
+      showAll.remove();
+    });
+    els.relatedArticlesActions.append(showAll);
+  }
+
+  const indexLink = document.createElement("a");
+  indexLink.className = "related-articles-index-link";
+  indexLink.href = articleIndexUrl(state.selectedTags);
+  indexLink.textContent = "在文章索引延伸搜尋 →";
+  els.relatedArticlesActions.append(indexLink);
 }
 
 function cloudFontSize(item, minCount, maxCount, cloudWidth) {
