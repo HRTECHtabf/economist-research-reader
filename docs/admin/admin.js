@@ -13,6 +13,10 @@ const els = {
   siteSyncDetail: document.querySelector("#site-sync-detail"),
   workflowOverall: document.querySelector("#workflow-overall"),
   runList: document.querySelector("#run-list"),
+  maintenanceOverall: document.querySelector("#maintenance-overall"),
+  maintenanceSummary: document.querySelector("#maintenance-summary"),
+  maintenanceAction: document.querySelector("#maintenance-action"),
+  incidentList: document.querySelector("#incident-list"),
 };
 
 const repository = "HRTECHtabf/economist-research-reader";
@@ -43,10 +47,14 @@ async function loadContentStatus() {
   const latestIssue = data.issueKey || [...new Set(data.articles.map((article) => article.issueKey))].sort().at(-1);
   const latestCount = data.articles.filter((article) => article.issueKey === latestIssue).length;
   els.articleCount.textContent = data.articles.length.toLocaleString("zh-TW");
-  els.translationCount.textContent = manifest ? `${manifest.articleCount}/${data.articles.length}` : "產製中";
-  els.translationDetail.textContent = manifest ? `${manifest.paragraphCount.toLocaleString("zh-TW")} 個段落` : "尚未完成全庫稽核";
+  const unavailableCount = manifest?.unavailableCount || 0;
+  const coveredCount = manifest ? manifest.articleCount + unavailableCount : 0;
+  els.translationCount.textContent = manifest ? `${coveredCount}/${data.articles.length}` : "產製中";
+  els.translationDetail.textContent = manifest
+    ? `${manifest.articleCount} 篇繁中全文；${unavailableCount} 篇隔離`
+    : "尚未完成全庫稽核";
   els.latestIssue.textContent = latestIssue || "—";
-  els.latestIssueCount.textContent = `${latestCount} 篇文章`;
+  els.latestIssueCount.textContent = `${latestCount} 篇文章；${data.summaryCount ?? latestCount} 篇摘要；${data.summaryUnavailableCount || 0} 篇隔離`;
   els.generatedAt.textContent = manifest ? formatDate(manifest.generatedAt) : "—";
   await loadSyncStatus(data, manifest);
 }
@@ -82,10 +90,10 @@ async function loadSyncStatus(publishedData, publishedManifest) {
     const sourceCurrent =
       repositoryData.issueFolder === latestSource.name &&
       repositoryData.sourceFolderSha === latestSource.sha &&
-      repositoryManifest.articleCount === repositoryData.totalArticleCount;
+      repositoryManifest.articleCount + (repositoryManifest.unavailableCount || 0) === repositoryData.totalArticleCount;
     updateSyncCard(els.sourceSyncCard, els.sourceSync, els.sourceSyncDetail, sourceCurrent
-      ? { status: "ok", value: "正常", detail: `${latestSource.name.replace(/^te_/, "")} 與 ${repositoryManifest.articleCount} 篇全文已寫入` }
-      : { status: "warning", value: "待補抓", detail: `上游 ${latestSource.name.replace(/^te_/, "")}；GitHub ${repositoryData.issueKey || "未知"}；全文 ${repositoryManifest.articleCount || 0}/${repositoryData.totalArticleCount || 0}` });
+      ? { status: "ok", value: "正常", detail: `${latestSource.name.replace(/^te_/, "")}；${repositoryManifest.articleCount} 篇全文、${repositoryManifest.unavailableCount || 0} 篇隔離` }
+      : { status: "warning", value: "待補抓", detail: `上游 ${latestSource.name.replace(/^te_/, "")}；GitHub ${repositoryData.issueKey || "未知"}；覆蓋 ${repositoryManifest.articleCount + (repositoryManifest.unavailableCount || 0)}/${repositoryData.totalArticleCount || 0}` });
 
     const siteCurrent =
       publishedData.issueFolder === repositoryData.issueFolder &&
@@ -107,6 +115,41 @@ async function loadSyncStatus(publishedData, publishedManifest) {
       detail: error.message,
     });
   }
+}
+
+async function loadMaintenanceStatus() {
+  const response = await fetch("../data/maintenance-status.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`維運狀態 HTTP ${response.status}`);
+  const status = await response.json();
+  const labels = {
+    success: "本次正常",
+    warning: "有文章隔離",
+    failure: "系統性故障",
+  };
+  els.maintenanceOverall.textContent = labels[status.outcome] || "狀態未知";
+  els.maintenanceOverall.className = `status-pill ${status.outcome === "failure" ? "failed" : status.outcome}`;
+  els.maintenanceSummary.textContent = status.diagnosis?.cause
+    || `單篇最多 ${status.policy?.maxAttemptsPerArticle || 3} 次；本次沒有待處理異常。`;
+  els.maintenanceAction.textContent = status.diagnosis
+    ? `系統處理：${status.diagnosis.automaticAction} 你可檢查：${status.diagnosis.userAction}`
+    : `超過 ${status.policy?.maxSkippedArticles || 10} 篇才會停止發布並進入系統性排查。`;
+  els.incidentList.replaceChildren();
+  for (const incident of status.incidents || []) {
+    const row = document.createElement("article");
+    row.className = `incident-row ${incident.status}`;
+    const heading = document.createElement("strong");
+    heading.textContent = `${incident.title}｜${incident.stage}`;
+    const meta = document.createElement("span");
+    const attemptLabel = incident.category === "content_filter"
+      ? "安全攔截後直接隔離"
+      : `嘗試 ${incident.attempts} 次`;
+    meta.textContent = `${incident.status === "skipped" ? "已隔離" : "系統性故障"}・${attemptLabel}・${incident.cause}`;
+    const reason = document.createElement("p");
+    reason.textContent = incident.message;
+    row.append(heading, meta, reason);
+    els.incidentList.append(row);
+  }
+  if (!(status.incidents || []).length) els.incidentList.textContent = "本次沒有失敗或隔離文章。";
 }
 
 async function loadWorkflowRuns() {
@@ -161,4 +204,10 @@ loadWorkflowRuns().catch((error) => {
   els.workflowOverall.textContent = "無法連線";
   els.workflowOverall.className = "status-pill failed";
   els.runList.textContent = `GitHub 執行紀錄暫時無法取得：${error.message}`;
+});
+loadMaintenanceStatus().catch((error) => {
+  els.maintenanceOverall.textContent = "無法載入";
+  els.maintenanceOverall.className = "status-pill failed";
+  els.maintenanceSummary.textContent = error.message;
+  els.maintenanceAction.textContent = "請查看最近一次 GitHub Actions 執行紀錄。";
 });

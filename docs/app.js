@@ -918,6 +918,12 @@ function renderCard(article) {
   const hasSummary = Boolean(article.summaryZh);
   summaryBlock.hidden = mode === "guide" && !hasSummary;
   pendingBlock.hidden = mode !== "guide" || hasSummary;
+  if (!hasSummary && article.summaryUnavailable) {
+    pendingBlock.querySelector("span").textContent = "中文摘要暫不可用";
+    pendingBlock.querySelector("p").textContent = article.summaryUnavailable.reason === "azure_content_filter"
+      ? "內容安全篩選未允許產生這篇中文摘要，請先閱讀英文全文。"
+      : "自動處理 3 次仍未通過，已隔離這篇摘要；英文全文仍可閱讀。";
+  }
 
   if (hasSummary) {
     const summary = fragment.querySelector(".summary");

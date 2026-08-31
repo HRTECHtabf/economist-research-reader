@@ -16,6 +16,20 @@ test("辨識限流與摘要驗證失敗", () => {
   );
 });
 
+test("維運頁可區分金鑰、連線與內容安全篩選並提供人工處理建議", () => {
+  const auth = diagnoseUpdateFailure("HTTP 401 invalid api key");
+  assert.equal(auth.kind, "azure_configuration");
+  assert.match(auth.userAction, /GitHub Secrets/);
+
+  const network = diagnoseUpdateFailure("fetch failed ECONNRESET");
+  assert.equal(network.kind, "transient_service");
+  assert.match(network.automaticAction, /3 次/);
+
+  const filtered = diagnoseUpdateFailure("response filtered due to content management policy");
+  assert.equal(filtered.kind, "content_filter");
+  assert.match(filtered.action, /不規避安全控制/);
+});
+
 test("未知錯誤保留為待追查，不誤判成功", () => {
   assert.equal(diagnoseUpdateFailure("unexpected condition").kind, "unknown");
 });

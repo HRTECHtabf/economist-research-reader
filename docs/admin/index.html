@@ -7,7 +7,7 @@
     <title>維護狀態｜Economist Research Reader</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles.css?v=20260817-4" />
-    <link rel="stylesheet" href="./admin.css?v=20260818-2" />
+    <link rel="stylesheet" href="./admin.css?v=20260831-1" />
   </head>
   <body>
     <header class="site-header">
@@ -23,7 +23,7 @@
       <div class="shell">
         <div class="admin-heading">
           <div><p class="eyebrow red">OPERATIONS</p><h1>網站維護狀態</h1></div>
-          <p>這裡只顯示可公開的內容與排程狀態；API 金鑰、登入資料及錯誤明細不會送到瀏覽器。</p>
+          <p>這裡顯示可公開的內容、排程與失敗原因；API 金鑰與登入資料不會送到瀏覽器，疑似敏感值會先遮蔽。</p>
         </div>
         <section class="status-grid" aria-label="網站內容狀態">
           <article class="status-card"><span>文章資料庫</span><strong id="article-count">—</strong><small>篇文章</small></article>
@@ -36,9 +36,9 @@
         <section class="admin-panel guardrail-panel" aria-labelledby="guardrail-title">
           <div class="panel-heading">
             <div><p class="eyebrow red">FAIL-SAFE</p><h2 id="guardrail-title">防呆機制怎麼運作</h2></div>
-            <span class="status-pill monitor-only">唯讀監測</span>
+            <span class="status-pill monitor-only">獨立監測</span>
           </div>
-          <p class="guardrail-intro">每週更新負責抓取、產製與發布；另一支獨立看門狗只負責核對結果。兩者分開運作，避免更新工作自己顯示成功，網站卻沒有真的更新。</p>
+          <p class="guardrail-intro">每週更新負責抓取、產製與發布；另一支獨立看門狗核對結果，發現落後時只觸發既有更新流程。兩者分開運作，避免更新工作自己顯示成功，網站卻沒有真的更新。</p>
           <ol class="guardrail-flow">
             <li>
               <span>01</span>
@@ -48,7 +48,7 @@
             <li>
               <span>02</span>
               <strong>發布前擋錯</strong>
-              <p>文章、導讀、標籤與中英文全文通過完整性稽核才會提交。任何一步失敗，都保留原本可用的網站。</p>
+              <p>一般錯誤單篇最多嘗試 3 次；10 篇以內可隔離後繼續，第 11 篇起視為系統性故障並停止內容發布。安全攔截則直接隔離，不反覆送出。</p>
             </li>
             <li>
               <span>03</span>
@@ -57,16 +57,25 @@
             </li>
             <li>
               <span>04</span>
-              <strong>異常就亮紅燈</strong>
-              <p>只要期數、版本或全文數量不一致，看門狗就會失敗，並在上方「來源同步」或「網站發布」顯示異常。</p>
+              <strong>異常就診斷補跑</strong>
+              <p>看門狗發現落後時會避免重複工作並自動補跑；失敗分類與人工處理建議直接寫入下方維運紀錄。</p>
             </li>
           </ol>
           <div class="guardrail-actions" aria-label="異常處理方式">
             <div><strong>上游已有新期，GitHub 還是舊期</strong><span>重新執行「Weekly Economist update」</span></div>
             <div><strong>GitHub 已更新，公開網站仍是舊版</strong><span>重新執行 GitHub Pages 發布</span></div>
-            <div><strong>中文全文少於文章總數</strong><span>查看週更工作中的翻譯與全文稽核步驟</span></div>
+            <div><strong>金鑰、額度或連線異常</strong><span>依下方「此次維運診斷」調整 Azure 或 GitHub Secrets</span></div>
           </div>
-          <p class="guardrail-boundary"><strong>目前權限邊界：</strong>看門狗只讀取並比對資料，不會自動改資料、補跑模型或重新發布。這可避免誤觸大量 API 用量或覆蓋正確網站；確認異常後，再依上方對應方式處理。</p>
+          <p class="guardrail-boundary"><strong>安全邊界：</strong>看門狗可觸發既有更新流程，但不能自行修改金鑰、提高 Azure 額度或關閉內容安全篩選。遇到這些情況會保留舊站，並把需要人工調整的項目寫在維運診斷。</p>
+        </section>
+        <section class="admin-panel maintenance-panel" aria-labelledby="maintenance-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow red">LATEST DIAGNOSIS</p><h2 id="maintenance-title">此次維運診斷</h2></div>
+            <span id="maintenance-overall" class="status-pill">讀取中</span>
+          </div>
+          <p id="maintenance-summary" class="maintenance-summary">正在載入最近一次更新原因…</p>
+          <p id="maintenance-action" class="maintenance-action"></p>
+          <div id="incident-list" class="incident-list" aria-live="polite"></div>
         </section>
         <div class="admin-columns">
           <section class="admin-panel">
@@ -78,7 +87,7 @@
             <div class="panel-heading"><div><p class="eyebrow red">INTEGRATIONS</p><h2>串接與資料保護</h2></div></div>
             <dl class="integration-list">
               <div><dt>Azure OpenAI</dt><dd>金鑰存於 GitHub Secrets／本機環境，不會寫入網站。</dd></div>
-              <div><dt>發布規則</dt><dd>導讀或全文任一步失敗，就保留舊站，不發布半成品。</dd></div>
+              <div><dt>發布規則</dt><dd>一般錯誤單篇 3 次失敗後隔離；最多 10 篇。安全攔截直接隔離；第 11 篇起停止發布並保留舊站。</dd></div>
               <div><dt>帳號同步</dt><dd class="pending">資料表與權限規則已備妥；等待 Supabase 專案連線後啟用。</dd></div>
               <div><dt>私人筆記</dt><dd>未登入時保存在本機；後端啟用後依帳號隔離同步。</dd></div>
             </dl>
@@ -86,6 +95,6 @@
         </div>
       </div>
     </main>
-    <script src="./admin.js?v=20260818-1" defer></script>
+    <script src="./admin.js?v=20260831-1" defer></script>
   </body>
 </html>

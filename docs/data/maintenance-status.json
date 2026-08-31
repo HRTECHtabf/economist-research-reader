@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "outcome": "warning",
+  "issueKey": "2026.08.29",
+  "systemicFailure": false,
+  "policy": {
+    "maxAttemptsPerArticle": 3,
+    "maxSkippedArticles": 10,
+    "systemicFailureStartsAt": 11
+  },
+  "stages": {
+    "期數偵測與摘要": "success",
+    "繁中全文翻譯": "success",
+    "全文稽核": "success"
+  },
+  "skippedArticleCount": 1,
+  "failedArticleCount": 0,
+  "diagnosis": {
+    "category": "content_filter",
+    "cause": "文章觸發 Azure 內容安全篩選",
+    "automaticAction": "隔離單篇並繼續；若超過 10 篇則停止發布並排查是否為模型或設定異常。",
+    "userAction": "可檢查 Azure Content Safety 設定與篩選分類，但不應關閉必要的安全保護。"
+  },
+  "incidents": [
+    {
+      "scope": "fulltext",
+      "stage": "繁中全文",
+      "status": "skipped",
+      "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
+      "title": "Politics",
+      "attempts": 1,
+      "category": "content_filter",
+      "cause": "文章觸發 Azure 內容安全篩選",
+      "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
+    }
+  ],
+  "updatedAt": "2026-08-31T02:59:46.499Z"
+}

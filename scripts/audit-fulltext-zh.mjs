@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
-import { CONTENT_FILTER_REASON } from "./lib/content-filter-policy.mjs";
+import { ALLOWED_UNAVAILABLE_REASONS } from "./lib/content-filter-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -49,7 +49,7 @@ for (const article of data.articles) {
   }
   if (value.unavailable === true) {
     if (
-      value.unavailableReason !== CONTENT_FILTER_REASON ||
+      !ALLOWED_UNAVAILABLE_REASONS.has(value.unavailableReason) ||
       value.translationVersion !== EXPECTED_VERSION ||
       value.sourceHash !== article.sourceHash
     ) {
@@ -57,7 +57,9 @@ for (const article of data.articles) {
       continue;
     }
     unavailableRecords.push({ key, titleEn: article.titleEn, reason: value.unavailableReason });
-    warnings.push({ key, issue: "Azure 內容安全篩選未允許產生繁中全文；保留摘要與英文原文" });
+    warnings.push({ key, issue: value.unavailableReason === "azure_content_filter"
+      ? "Azure 內容安全篩選未允許產生繁中全文；保留摘要與英文原文"
+      : "繁中全文連續 3 次失敗後已隔離；保留摘要與英文原文" });
     continue;
   }
   const sourceParagraphs = paragraphs(article.textEn || "");

@@ -8,13 +8,18 @@ import {
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import {
-  resolveRetryRounds,
-  retryFailedArticles,
-} from "./lib/retry-failed-articles.mjs";
-import {
+  ALLOWED_UNAVAILABLE_REASONS,
   CONTENT_FILTER_REASON,
+  describeAzureContentFilter,
   isContentFilterError,
 } from "./lib/content-filter-policy.mjs";
+import {
+  MAX_ARTICLE_ATTEMPTS,
+  MAX_SKIPPED_ARTICLES,
+  RETRY_EXHAUSTED_REASON,
+  isSystemicFailureCount,
+  sanitizePublicFailureMessage,
+} from "./lib/article-failure-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -24,7 +29,6 @@ const reportPath = resolve(projectRoot, ".cache/fulltext-zh-v2.report.json");
 const TRANSLATION_VERSION = "fulltext-zh-tw-v2";
 const DEFAULT_WORKERS = 3;
 const DEFAULT_CHUNK_CHARACTERS = 6200;
-const DEFAULT_ARTICLE_RETRY_ROUNDS = 2;
 
 function readEnv(path) {
   const values = {};
@@ -262,7 +266,9 @@ async function callAzure(chunk, article, feedback = "", structured = true) {
   });
   const payload = await response.json();
   if (!response.ok) {
-    const error = new Error(payload?.error?.message || `HTTP ${response.status}`);
+    const error = new Error(
+      describeAzureContentFilter(payload) || payload?.error?.message || `HTTP ${response.status}`,
+    );
     error.status = response.status;
     throw error;
   }
@@ -320,7 +326,9 @@ async function callAzurePolish(chunk, draftTranslations, article, feedback = "",
   });
   const payload = await response.json();
   if (!response.ok) {
-    const error = new Error(payload?.error?.message || `HTTP ${response.status}`);
+    const error = new Error(
+      describeAzureContentFilter(payload) || payload?.error?.message || `HTTP ${response.status}`,
+    );
     error.status = response.status;
     throw error;
   }
@@ -332,12 +340,13 @@ async function callAzurePolish(chunk, draftTranslations, article, feedback = "",
 async function polishChunk(chunk, draftTranslations, article) {
   let feedback = "";
   let lastFailure = "";
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  for (let attempt = 1; attempt <= MAX_ARTICLE_ATTEMPTS; attempt += 1) {
     try {
       let value;
       try {
         value = await callAzurePolish(chunk, draftTranslations, article, feedback, true);
       } catch (error) {
+        if (isContentFilterError(error)) throw error;
         if (error.status !== 400 && !(error instanceof SyntaxError)) throw error;
         value = await callAzurePolish(chunk, draftTranslations, article, feedback, false);
       }
@@ -358,18 +367,19 @@ async function polishChunk(chunk, draftTranslations, article) {
       }
     }
   }
-  throw new Error(lastFailure || "四次定稿均未通過檢查");
+  throw new Error(lastFailure || `${MAX_ARTICLE_ATTEMPTS} 次定稿均未通過檢查`);
 }
 
 async function translateChunk(chunk, article) {
   let feedback = "";
   let lastFailure = "";
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for (let attempt = 1; attempt <= MAX_ARTICLE_ATTEMPTS; attempt += 1) {
     try {
       let value;
       try {
         value = await callAzure(chunk, article, feedback, true);
       } catch (error) {
+        if (isContentFilterError(error)) throw error;
         if (error.status !== 400 && !(error instanceof SyntaxError)) throw error;
         value = await callAzure(chunk, article, feedback, false);
       }
@@ -393,7 +403,7 @@ async function translateChunk(chunk, article) {
       }
     }
   }
-  throw new Error(lastFailure || "五次輸出均未通過檢查");
+  throw new Error(lastFailure || `${MAX_ARTICLE_ATTEMPTS} 次輸出均未通過檢查`);
 }
 
 const data = readJson(dataPath);
@@ -410,14 +420,12 @@ const auditOnly = process.argv.includes("--audit-only");
 const selectedArticle = option("article");
 const limit = Math.max(0, Number(option("limit")) || 0);
 const workerCount = Math.max(1, Number(option("workers", env.TRANSLATION_WORKERS)) || DEFAULT_WORKERS);
-const articleRetryRoundsValue = option("article-retries", env.FULLTEXT_ARTICLE_RETRIES || "");
-const articleRetryRounds = resolveRetryRounds(articleRetryRoundsValue, DEFAULT_ARTICLE_RETRY_ROUNDS);
 
 function existingOutputValid(article) {
   const value = readJson(outputPath(article), null);
   if (
     value?.unavailable === true &&
-    value?.unavailableReason === CONTENT_FILTER_REASON &&
+    ALLOWED_UNAVAILABLE_REASONS.has(value?.unavailableReason) &&
     value?.translationVersion === TRANSLATION_VERSION &&
     value?.sourceHash === sourceHash(article)
   ) return true;
@@ -447,19 +455,23 @@ const report = {
   failed: [],
 };
 
-function quarantineFilteredArticle(article, error) {
+function quarantineArticle(article, failure) {
+  const filtered = failure.reason === CONTENT_FILTER_REASON;
   const value = {
     id: article.id,
     issueKey: article.issueKey,
     sourceHash: sourceHash(article),
     translationVersion: TRANSLATION_VERSION,
     unavailable: true,
-    unavailableReason: CONTENT_FILTER_REASON,
-    unavailableMessageZh: "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。",
+    unavailableReason: failure.reason,
+    unavailableMessageZh: filtered
+      ? "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。"
+      : `繁中全文連續 ${MAX_ARTICLE_ATTEMPTS} 次處理失敗，請先閱讀英文原文。`,
+    unavailableDetailZh: failure.message,
     recordedAt: new Date().toISOString(),
   };
   writeJsonAtomic(outputPath(article), value);
-  return { key: articleKey(article), reason: CONTENT_FILTER_REASON, message: error.message };
+  return failure;
 }
 
 async function translateArticle(article) {
@@ -513,6 +525,7 @@ if (auditOnly) {
   let cursor = 0;
   async function worker() {
     while (cursor < candidates.length) {
+      if (isSystemicFailureCount(report.failed.length)) return;
       const index = cursor;
       cursor += 1;
       const article = candidates[index];
@@ -521,51 +534,33 @@ if (auditOnly) {
         report.completed.push(result);
         console.log(`[${report.completed.length + report.failed.length}/${candidates.length}] 完成 ${result.key}（${result.paragraphs} 段）`);
       } catch (error) {
-        if (isContentFilterError(error)) {
-          const quarantined = quarantineFilteredArticle(article, error);
-          report.quarantined.push(quarantined);
-          console.warn(`[內容安全隔離] ${quarantined.key}：保留摘要與英文原文，繁中全文標記為不可用。`);
-        } else {
-          report.failed.push({ key: articleKey(article), message: error.message });
-          console.error(`[${report.completed.length + report.quarantined.length + report.failed.length}/${candidates.length}] 失敗 ${articleKey(article)}：${error.message}`);
-        }
+        report.failed.push({
+          key: articleKey(article),
+          reason: isContentFilterError(error) ? CONTENT_FILTER_REASON : RETRY_EXHAUSTED_REASON,
+          attempts: isContentFilterError(error) ? 1 : MAX_ARTICLE_ATTEMPTS,
+          message: sanitizePublicFailureMessage(error.message),
+        });
+        console.error(`[${report.completed.length + report.failed.length}/${candidates.length}] 失敗 ${articleKey(article)}：${error.message}`);
       }
       writeJsonAtomic(reportPath, { ...report, updatedAt: new Date().toISOString() });
     }
   }
   await Promise.all(Array.from({ length: Math.min(workerCount, candidates.length) }, worker));
-  if (report.failed.length && articleRetryRounds > 0) {
+  report.systemicFailure = isSystemicFailureCount(report.failed.length);
+  if (!report.systemicFailure && report.failed.length) {
     const articleByKey = new Map(candidates.map((article) => [articleKey(article), article]));
-    report.retryRounds = [];
-    report.failed = await retryFailedArticles({
-      initialFailures: report.failed,
-      maxRounds: articleRetryRounds,
-      findArticle: (key) => articleByKey.get(key),
-      retryArticle: translateArticle,
-      onRoundStart: ({ round, maxRounds, pending }) => {
-        console.warn(`[自動補跑 ${round}/${maxRounds}] 重新處理 ${pending.length} 篇失敗文章。`);
-      },
-      onSuccess: ({ round, result }) => {
-        report.completed.push(result);
-        console.log(`[自動補跑 ${round}] 完成 ${result.key}（${result.paragraphs} 段）`);
-      },
-      onFailure: ({ round, failure }) => {
-        console.error(`[自動補跑 ${round}] 仍失敗 ${failure.key}：${failure.message}`);
-      },
-      onRoundComplete: ({ round, pending }) => {
-        report.retryRounds.push({
-          round,
-          remainingFailures: pending.map(({ key, message }) => ({ key, message })),
-        });
-        report.failed = pending;
-        writeJsonAtomic(reportPath, { ...report, updatedAt: new Date().toISOString() });
-      },
-    });
+    for (const failure of report.failed) {
+      const article = articleByKey.get(failure.key);
+      if (!article) continue;
+      quarantineArticle(article, failure);
+      report.quarantined.push(failure);
+    }
+    report.failed = [];
   }
   report.finishedAt = new Date().toISOString();
   writeJsonAtomic(reportPath, report);
   if (report.failed.length) {
-    throw new Error(`${report.failed.length} 篇翻譯失敗；已完成內容與斷點均已保留。`);
+    throw new Error(`${report.failed.length} 篇翻譯失敗，超過可隔離上限 ${MAX_SKIPPED_ARTICLES} 篇，判定為系統性故障；已完成內容與斷點均已保留。`);
   }
-  console.log(`中文全文翻譯完成：${report.completed.length} 篇；內容安全隔離 ${report.quarantined.length} 篇。`);
+  console.log(`中文全文翻譯完成：${report.completed.length} 篇；隔離 ${report.quarantined.length} 篇。`);
 }

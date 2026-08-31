@@ -6,15 +6,23 @@ import {
   GENERAL_KEYWORD_TAXONOMY,
 } from "./general-keyword-taxonomy.mjs";
 import {
-  resolveRetryRounds,
-  retryFailedArticles,
-} from "./lib/retry-failed-articles.mjs";
-import {
   retryAfterMilliseconds,
   withTransientRetries,
 } from "./lib/transient-retry.mjs";
 import { briefLengthProfile } from "./lib/brief-length-profile.mjs";
 import { chooseNaturalizationResult } from "./lib/naturalization-fallback.mjs";
+import {
+  CONTENT_FILTER_REASON,
+  describeAzureContentFilter,
+  isContentFilterError,
+} from "./lib/content-filter-policy.mjs";
+import {
+  MAX_ARTICLE_ATTEMPTS,
+  MAX_SKIPPED_ARTICLES,
+  RETRY_EXHAUSTED_REASON,
+  isSystemicFailureCount,
+  sanitizePublicFailureMessage,
+} from "./lib/article-failure-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.json");
@@ -29,9 +37,10 @@ const humanizerGuidePath = resolve(
 const generationReportPath = resolve(projectRoot, ".cache/summary-generation.report.json");
 const SUMMARY_VERSION = "research-brief-v4";
 const HUMANIZER_VERSION = "economist-humanizer-v4";
-const MAX_BRIEF_ATTEMPTS = 4;
-const DEFAULT_ARTICLE_RETRY_ROUNDS = 2;
-const DEFAULT_TRANSIENT_API_ATTEMPTS = 3;
+const MAX_BRIEF_ATTEMPTS = MAX_ARTICLE_ATTEMPTS;
+// Article-level attempts are the single source of truth: one API attempt per round,
+// three rounds total, then quarantine or systemic-failure handling.
+const DEFAULT_TRANSIENT_API_ATTEMPTS = 1;
 
 function readEnv(path) {
   const values = {};
@@ -72,14 +81,7 @@ const env = {
   ...process.env,
 };
 const source = JSON.parse(readFileSync(sourcePath, "utf8"));
-const articleRetryRounds = resolveRetryRounds(
-  env.SUMMARY_ARTICLE_RETRIES,
-  DEFAULT_ARTICLE_RETRY_ROUNDS,
-);
-const transientApiAttempts = Math.max(
-  1,
-  Math.floor(Number(env.AZURE_TRANSIENT_ATTEMPTS) || DEFAULT_TRANSIENT_API_ATTEMPTS),
-);
+const transientApiAttempts = DEFAULT_TRANSIENT_API_ATTEMPTS;
 const generationReport = {
   version: 1,
   issueKey: source.issueKey,
@@ -436,7 +438,9 @@ async function callAzureJson({ instructions, input, schemaName }, structured = t
     }
 
     if (!response.ok) {
-      const error = new Error(payload?.error?.message || `HTTP ${response.status}`);
+      const error = new Error(
+        describeAzureContentFilter(payload) || payload?.error?.message || `HTTP ${response.status}`,
+      );
       error.status = response.status;
       error.retryAfterMs = retryAfterMilliseconds(response.headers.get("retry-after"));
       throw error;
@@ -462,6 +466,7 @@ async function callWithFallback(request) {
   try {
     return await callAzureJson(request, true);
   } catch (error) {
+    if (isContentFilterError(error)) throw error;
     if (error.status !== 400 && error.message !== "Azure 回應的 JSON 不完整") {
       throw error;
     }
@@ -572,10 +577,8 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
     processingVersion,
     totalArticles: items.length,
     completedArticles: Object.keys(values).length,
-    articleRetryRounds,
-    maximumAttemptsPerArticle: MAX_BRIEF_ATTEMPTS * (articleRetryRounds + 1),
+    maximumAttemptsPerArticle: MAX_BRIEF_ATTEMPTS,
     startedAt: new Date().toISOString(),
-    retryRounds: [],
     failures: [],
   };
   generationReport.stages[label] = stageReport;
@@ -619,6 +622,11 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
         }
       } catch (error) {
         lastFailure = error.message;
+        if (isContentFilterError(error)) {
+          error.attempts = 1;
+          error.reason = CONTENT_FILTER_REASON;
+          throw error;
+        }
         retryContexts.set(article.id, {
           attempts: totalAttempt,
           previousResult,
@@ -636,6 +644,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
   const initialFailures = [];
   async function worker() {
     while (true) {
+      if (isSystemicFailureCount(initialFailures.length)) return;
       const index = nextIndex++;
       if (index >= items.length) return;
       const article = items[index];
@@ -650,55 +659,46 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
           key: article.id,
           titleEn: article.titleEn,
           message: error.message,
+          attempts: error.attempts || MAX_ARTICLE_ATTEMPTS,
+          reason: error.reason || RETRY_EXHAUSTED_REASON,
         });
       }
     }
   }
   await Promise.all([worker(), worker()]);
 
-  let remainingFailures = initialFailures;
-  if (remainingFailures.length && articleRetryRounds > 0) {
-    remainingFailures = await retryFailedArticles({
-      initialFailures: remainingFailures,
-      maxRounds: articleRetryRounds,
-      findArticle: (id) => articlesById.get(id),
-      retryArticle: (article) => processArticle(article),
-      onRoundStart: ({ round, maxRounds, pending }) => {
-        console.warn(`[${label}自動補跑 ${round}/${maxRounds}] 重新處理 ${pending.length} 篇。`);
-      },
-      onSuccess: ({ round, result }) => {
-        console.log(`[${label}自動補跑 ${round}] 完成 ${result.titleEn}`);
-      },
-      onFailure: ({ round, failure, article }) => {
-        console.error(`[${label}自動補跑 ${round}] 仍失敗 ${article?.titleEn || failure.key}：${failure.message}`);
-      },
-      onRoundComplete: ({ round, pending }) => {
-        stageReport.retryRounds.push({
-          round,
-          remainingFailures: pending.map((failure) => ({
-            ...failure,
-            titleEn: articlesById.get(failure.key)?.titleEn || failure.key,
-          })),
-        });
-        saveCheckpoint(generationReportPath, generationReport);
-      },
-    });
-  }
+  const remainingFailures = initialFailures;
 
   stageReport.completedArticles = items.filter((article) => values[article.id]).length;
-  stageReport.failures = remainingFailures.map((failure) => ({
+  const classifiedFailures = remainingFailures.map((failure) => ({
     ...failure,
     titleEn: articlesById.get(failure.key)?.titleEn || failure.titleEn || failure.key,
+    message: sanitizePublicFailureMessage(failure.message),
+    attempts: failure.attempts || MAX_ARTICLE_ATTEMPTS,
+    reason: failure.reason || RETRY_EXHAUSTED_REASON,
   }));
+  stageReport.systemicFailure = isSystemicFailureCount(classifiedFailures.length);
+  stageReport.failures = stageReport.systemicFailure ? classifiedFailures : [];
+  stageReport.skipped = stageReport.systemicFailure ? [] : classifiedFailures;
   stageReport.finishedAt = new Date().toISOString();
   saveCheckpoint(generationReportPath, generationReport);
 
-  if (stageReport.failures.length) {
+  if (stageReport.systemicFailure) {
     const details = stageReport.failures.map(
       (failure) => `${failure.titleEn}：${failure.message}`,
     );
-    throw new Error(`${label}有 ${details.length} 篇失敗：\n${details.join("\n")}`);
+    generationReport.systemicFailure = {
+      stage: label,
+      failedArticles: details.length,
+      threshold: MAX_SKIPPED_ARTICLES,
+    };
+    saveCheckpoint(generationReportPath, generationReport);
+    throw new Error(`${label}有 ${details.length} 篇失敗，超過可隔離上限 ${MAX_SKIPPED_ARTICLES} 篇，判定為系統性故障：\n${details.join("\n")}`);
   }
+  if (stageReport.skipped.length) {
+    console.warn(`[${label}] ${stageReport.skipped.length} 篇連續 ${MAX_ARTICLE_ATTEMPTS} 次失敗，已隔離並繼續。`);
+  }
+  return stageReport.skipped;
 }
 
 const previousOutput = existsSync(outputPath)
@@ -732,7 +732,7 @@ const summaries = {
   ...summaryCheckpoint,
   ...manualSummaries,
 };
-await processWithWorkers({
+const skippedDrafts = await processWithWorkers({
   items: articlesToProcess,
   values: summaries,
   label: "初稿",
@@ -744,14 +744,30 @@ await processWithWorkers({
 const humanizedSummaries = {
   ...humanizedCheckpoint,
 };
-await processWithWorkers({
-  items: articlesToProcess,
+const skippedDraftIds = new Set(skippedDrafts.map((failure) => failure.key));
+const articlesWithDrafts = articlesToProcess.filter((article) => !skippedDraftIds.has(article.id));
+const skippedHumanizations = await processWithWorkers({
+  items: articlesWithDrafts,
   values: humanizedSummaries,
   label: "自然化",
   processItem: (article, retryContext) => humanize(article, summaries[article.id], retryContext),
   checkpointPath: humanizedCheckpointPath,
   processingVersion: HUMANIZER_VERSION,
 });
+for (const failure of skippedHumanizations) {
+  const draft = summaries[failure.key];
+  const article = articlesWithDrafts.find((item) => item.id === failure.key);
+  if (!draft || !article) continue;
+  humanizedSummaries[failure.key] = {
+    ...draft,
+    sourceHash: articleSourceHash(article),
+    processingVersion: HUMANIZER_VERSION,
+  };
+  saveCheckpoint(humanizedCheckpointPath, humanizedSummaries);
+}
+
+const skippedDraftById = new Map(skippedDrafts.map((failure) => [failure.key, failure]));
+const draftFallbackIds = new Set(skippedHumanizations.map((failure) => failure.key));
 
 const currentIssueArticles = source.articles.map((article) => {
   const storedSummary = humanizedSummaries[article.id];
@@ -769,6 +785,18 @@ const currentIssueArticles = source.articles.map((article) => {
     textEn: article.textEn,
     sourceHash: articleSourceHash(article),
     featured: Boolean(summary),
+    summaryStatus: skippedDraftById.has(article.id)
+      ? "unavailable"
+      : draftFallbackIds.has(article.id)
+        ? "draft_fallback"
+        : "complete",
+    summaryUnavailable: skippedDraftById.has(article.id)
+      ? {
+          reason: skippedDraftById.get(article.id).reason || RETRY_EXHAUSTED_REASON,
+          attempts: skippedDraftById.get(article.id).attempts || MAX_ARTICLE_ATTEMPTS,
+          message: skippedDraftById.get(article.id).message,
+        }
+      : null,
     summaryZh: summary?.summaryZh || null,
     keyPointsZh: summary?.keyPointsZh || [],
     researchLensZh: summary?.researchLensZh || null,
@@ -803,6 +831,8 @@ const output = {
   sectionCount: source.sectionCount,
   articleCount: source.articleCount,
   summaryCount: currentIssueArticles.filter((article) => article.summaryZh).length,
+  summaryUnavailableCount: currentIssueArticles.filter((article) => article.summaryStatus === "unavailable").length,
+  summaryDraftFallbackCount: currentIssueArticles.filter((article) => article.summaryStatus === "draft_fallback").length,
   featuredCount: currentIssueArticles.filter((article) => article.summaryZh).length,
   totalArticleCount: articles.length,
   issueCount: new Set(articles.map((article) => article.issueKey)).size,

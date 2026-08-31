@@ -6,5 +6,6 @@
   "unavailable": true,
   "unavailableReason": "azure_content_filter",
   "unavailableMessageZh": "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。",
+  "unavailableDetailZh": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。",
   "recordedAt": "2026-08-31T02:14:45.145Z"
 }
