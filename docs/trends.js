@@ -1950,8 +1950,22 @@ document.addEventListener("visibilitychange", () => {
   else if (state.autoPlay) schedulePlayback();
 });
 
-fetch("./data/articles.json", { cache: "no-store" })
-  .then((response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
+async function loadPublicCatalog() {
+  try {
+    const manifestResponse = await fetch("./data/public-manifest.json", { cache: "no-store" });
+    if (!manifestResponse.ok) throw new Error(`manifest HTTP ${manifestResponse.status}`);
+    const manifest = await manifestResponse.json();
+    const response = await fetch(`./data/${manifest.catalog.path}?v=${encodeURIComponent(manifest.catalog.version || "1")}`);
+    if (!response.ok) throw new Error(`catalog HTTP ${response.status}`);
+    return response.json();
+  } catch {
+    const response = await fetch("./data/articles.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+}
+
+loadPublicCatalog()
   .then((data) => {
     state.data = data;
     state.issues = [...new Set(data.articles.map(issueDate).filter(Boolean))].sort();

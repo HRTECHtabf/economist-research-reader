@@ -26,12 +26,13 @@ flowchart TD
   E --> F["第一階段：研究導讀初稿"]
   F --> G["第二階段：事實核對與去 AI 化"]
   G --> H["標籤、篇幅、句尾、台灣用語與內容指紋驗證"]
-  H --> I["docs/data/articles.json"]
+  H --> I["docs/data/articles.json<br/>產製主資料與安全回退"]
   I --> J["第一階段：逐段繁中全文翻譯"]
   J --> K["第二階段：對照英文定稿"]
   K --> L["段落、數字、用語與版本稽核"]
   L --> M["docs/data/fulltext/{issue}/{id}.json"]
-  I --> N["GitHub Pages 靜態網站"]
+  I --> P["catalog.json 與 fulltext-en/{issue}.json<br/>輕量目錄、按期英文分片與容量檢查"]
+  P --> N["GitHub Pages 靜態網站"]
   M --> N
   N --> O["搜尋、複選標籤、收藏、全文閱讀與私人筆記"]
 ```
@@ -51,13 +52,19 @@ flowchart TD
 | `scripts/translate-fulltext-zh.mjs` | 逐段完整翻譯、第二階段中文定稿、檢查點與按篇輸出 |
 | `scripts/audit-humanized-content.mjs` | 全庫檢查導讀、論述重點、研究角度、台灣用語、版本與廣義標籤 |
 | `scripts/audit-fulltext-zh.mjs` | 全庫檢查全文版本、內容指紋、段落、數字與禁用詞；更新 manifest |
+| `scripts/build-public-data.mjs` | 從完整主資料建立不含英文全文的公開目錄與按期英文分片 |
+| `scripts/check-storage-budget.mjs` | 產生容量狀態；接近 GitHub 單檔與 Pages 上限時警告或停止發布 |
 | `scripts/general-keyword-taxonomy.mjs` | 預設標籤的唯一詞彙表與選標政策 |
 | `scripts/retag-general-keywords.mjs` | 不改摘要與全文，只重新選擇全庫廣義標籤 |
 | `scripts/rehumanize-all-articles.mjs` | 依英文全文重做全庫導讀；全部成功才改寫資料庫 |
 | `scripts/backfill-recent-issues.mjs` | 回補指定歷史期數，略過已完成內容 |
 | `scripts/backfill-highlight-terms.mjs` | 舊資料的摘要重點短語審核工具；目前正式流程已內建同類規則 |
 | `.agents/skills/economist-humanizer-zh-tw/` | 繁中去 AI 化規則與研究摘要編輯標準 |
-| `docs/data/articles.json` | 網站主資料庫：文章索引、英文全文與研究導讀 |
+| `docs/data/articles.json` | 產製流程完整主資料與相容回退；第二階段會改為按期保存 |
+| `docs/data/catalog.json` | 公開首頁與趨勢頁的輕量文章目錄，不含英文全文 |
+| `docs/data/fulltext-en/{issue}.json` | 按期英文全文分片，閱讀或全文搜尋時才載入 |
+| `docs/data/public-manifest.json` | 公開目錄、英文分片路徑與內容版本 |
+| `docs/data/storage-status.json` | 主資料與公開資料大小、容量門檻及遷移建議 |
 | `docs/data/fulltext/{issue}/{id}.json` | 每篇文章的繁中全文，切換閱讀模式時才載入 |
 | `docs/data/fulltext/manifest.json` | 全文覆蓋率、段落數與各期統計 |
 | `docs/index.html`、`docs/app.js`、`docs/styles.css` | 公開閱讀網站 |
@@ -83,7 +90,7 @@ flowchart TD
 - 導讀、自然化與全文翻譯都有 `.cache/*.checkpoint.json` 檢查點。
 - Azure、格式或品質檢查失敗時保留已完成檢查點，下次接續。
 - GitHub Actions 的產製步驟失敗時不進入提交，公開網站維持原版本。
-- 只有 `docs/data/articles.json` 或 `docs/data/fulltext/` 真的變動，才提交並推送網站資料。
+- 只有 `docs/data/` 真的變動，才提交並推送網站資料；提交前會重建公開分片並檢查容量。
 - 工作流程使用互斥群組，同一時間不會有兩個更新工作互相覆蓋。
 
 ### 4.4 獨立防呆監測
@@ -94,14 +101,16 @@ flowchart TD
 2. 同時確認繁中全文 manifest 的文章數與主資料庫一致；避免只有索引更新、全文未完成卻被判定成功。
 3. 核對 GitHub 主資料與公開網站的來源 SHA、產製時間、文章數及全文 manifest。
 4. 任一環節不同步時，看門狗工作會失敗，GitHub Actions 留下紅色失敗紀錄與處理指引；維護狀態頁也會顯示異常。
-5. 看門狗只使用 `contents: read`，不具備補跑 Actions、重建 Pages、建立 issue 或改寫網站的權限，避免監測工具自行擴張發布範圍。
-6. 維護者收到異常後，可手動執行 `Weekly Economist update`；若 GitHub 資料已正確但網站仍舊，再重新執行 Pages build。
+5. 看門狗可以在確認沒有既有更新工作時觸發原本的每週更新流程；它不會自行產製內容、修改金鑰、調高額度或關閉安全篩選。
+6. 自動補跑仍失敗時，維護者可手動執行 `Weekly Economist update`；若 GitHub 資料已正確但網站仍舊，再重新執行 Pages build。
 
 維護狀態頁也會直接比較上游、GitHub raw 資料與目前公開網站，分別顯示「來源同步」及「網站發布」狀態。看門狗與維護頁都不會因為偵測異常而覆寫既有公開資料。
 
 ## 5. 資料結構
 
-### 5.1 主資料 `docs/data/articles.json`
+### 5.1 產製主資料 `docs/data/articles.json` 與公開目錄 `catalog.json`
+
+產製主資料暫時保留英文全文，確保每週更新、全文稽核與舊維護工具可安全回退。公開首頁與趨勢頁改讀同欄位但不含 `textEn` 的 `catalog.json`；英文全文由 `public-manifest.json` 指向各期分片。待新格式通過一段正式更新週期後，再把產製主資料改為按期保存，避免單一 Git blob 長期增長。
 
 頂層重要欄位：
 
