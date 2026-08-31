@@ -1,0 +1,10 @@
+{
+  "id": "f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
+  "issueKey": "2026.08.29",
+  "sourceHash": "a753814395f3479ab1cf2a6dcb86649108534801690f58fa406f3dd00cc8fe3c",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "unavailable": true,
+  "unavailableReason": "azure_content_filter",
+  "unavailableMessageZh": "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。",
+  "recordedAt": "2026-08-31T02:14:45.145Z"
+}
