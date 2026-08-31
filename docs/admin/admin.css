@@ -53,6 +53,9 @@
 .run-dot.failure { background: var(--red); }
 .run-row a { color: var(--red); text-decoration: none; }
 .run-row time { color: var(--muted); font-size: 9px; }
+.run-reason { grid-column: 2 / -1; margin: -2px 0 2px; color: #5d5851; font-size: 10px; line-height: 1.55; }
+.run-reason.failure { color: var(--red); }
+.run-reason.warning { color: #79540b; }
 .integration-list { margin: 0; }
 .integration-list div { padding: 14px 0; border-bottom: 1px solid var(--line); }
 .integration-list div:last-child { border-bottom: 0; }

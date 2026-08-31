@@ -13,6 +13,10 @@ import {
   MAX_SKIPPED_ARTICLES,
   sanitizePublicFailureMessage,
 } from "./lib/article-failure-policy.mjs";
+import {
+  mergeMaintenanceHistory,
+  workflowRunIdentity,
+} from "./lib/maintenance-history.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
@@ -227,8 +231,32 @@ const outcome = failedStages.length || systemicFailure
   : incidents.length
     ? "warning"
     : "success";
+const existingStatus = existsSync(maintenanceStatusPath)
+  ? JSON.parse(readFileSync(maintenanceStatusPath, "utf8"))
+  : null;
+const runIdentity = workflowRunIdentity();
+const runRecord = runIdentity
+  ? {
+      ...runIdentity,
+      workflow: "weekly-update",
+      recordedAt: new Date().toISOString(),
+      outcome,
+      issueKey,
+      systemicFailure,
+      stages: Object.fromEntries(steps.map((step) => [step.label, step.outcome || "unknown"])),
+      skippedArticleCount: incidents.filter(({ status }) => status === "skipped").length,
+      failedArticleCount: incidents.filter(({ status }) => status === "systemic_failure").length,
+      diagnosis: runDiagnosis
+        ? {
+            category: runDiagnosis.kind,
+            cause: runDiagnosis.cause,
+          }
+        : null,
+      incidents,
+    }
+  : null;
 const maintenanceStatus = {
-  version: 1,
+  version: 2,
   outcome,
   issueKey,
   systemicFailure,
@@ -249,11 +277,12 @@ const maintenanceStatus = {
       }
     : null,
   incidents,
+  history: mergeMaintenanceHistory(
+    runRecord ? [runRecord] : [],
+    existingStatus?.history || [],
+  ),
 };
 
-const existingStatus = existsSync(maintenanceStatusPath)
-  ? JSON.parse(readFileSync(maintenanceStatusPath, "utf8"))
-  : null;
 const existingComparable = existingStatus && { ...existingStatus, updatedAt: undefined };
 const nextComparable = { ...maintenanceStatus, updatedAt: undefined };
 if (JSON.stringify(existingComparable) !== JSON.stringify(nextComparable)) {

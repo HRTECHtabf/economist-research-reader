@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "outcome": "warning",
   "issueKey": "2026.08.29",
   "systemicFailure": false,
@@ -34,5 +34,42 @@
       "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
     }
   ],
-  "updatedAt": "2026-08-31T03:01:29.459Z"
+  "history": [
+    {
+      "runId": 33352471280,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33352471280",
+      "commitSha": "639c14dd91dc9d100e651402d5ab6730a6a4f061",
+      "workflow": "weekly-update",
+      "recordedAt": "2026-08-31T03:11:16.085Z",
+      "outcome": "warning",
+      "issueKey": "2026.08.29",
+      "systemicFailure": false,
+      "stages": {
+        "期數偵測與摘要": "success",
+        "繁中全文翻譯": "skipped",
+        "全文稽核": "skipped"
+      },
+      "skippedArticleCount": 1,
+      "failedArticleCount": 0,
+      "diagnosis": {
+        "category": "content_filter",
+        "cause": "文章觸發 Azure 內容安全篩選"
+      },
+      "incidents": [
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
+          "title": "Politics",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
+        }
+      ]
+    }
+  ],
+  "updatedAt": "2026-08-31T03:11:16.086Z"
 }

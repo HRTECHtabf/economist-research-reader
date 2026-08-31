@@ -122,7 +122,7 @@ jobs:
           script: |
             const fs = require("fs");
             const path = "docs/data/maintenance-status.json";
-            const nextContent = fs.readFileSync(path, "utf8");
+            const nextStatus = JSON.parse(fs.readFileSync(path, "utf8"));
             let current = null;
             try {
               const response = await github.rest.repos.getContent({
@@ -135,9 +135,15 @@ jobs:
             } catch (error) {
               if (error.status !== 404) throw error;
             }
-            const currentContent = current?.content
-              ? Buffer.from(current.content, "base64").toString("utf8")
-              : null;
+            const currentContent = current?.content ? Buffer.from(current.content, "base64").toString("utf8") : null;
+            const currentStatus = currentContent ? JSON.parse(currentContent) : null;
+            const mergedHistory = [...(nextStatus.history || []), ...(currentStatus?.history || [])]
+              .filter((item, index, values) => values.findIndex(
+                (candidate) => candidate.runId === item.runId && (candidate.runAttempt || 1) === (item.runAttempt || 1),
+              ) === index)
+              .sort((a, b) => String(b.recordedAt || "").localeCompare(String(a.recordedAt || "")))
+              .slice(0, 30);
+            const nextContent = `${JSON.stringify({ ...nextStatus, history: mergedHistory }, null, 2)}\n`;
             if (currentContent === nextContent) {
               core.notice("公開維運診斷內容未變，不建立重複提交。");
               return;

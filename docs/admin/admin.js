@@ -24,6 +24,7 @@ const workflows = [
   { file: "weekly-update.yml", label: "每週更新" },
   { file: "update-watchdog.yml", label: "每日防呆" },
 ];
+let maintenanceHistoryByRun = new Map();
 
 function formatDate(value, includeTime = false) {
   if (!value) return "—";
@@ -121,6 +122,9 @@ async function loadMaintenanceStatus() {
   const response = await fetch("../data/maintenance-status.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`維運狀態 HTTP ${response.status}`);
   const status = await response.json();
+  maintenanceHistoryByRun = new Map(
+    (status.history || []).map((record) => [String(record.runId), record]),
+  );
   const labels = {
     success: "本次正常",
     warning: "有文章隔離",
@@ -152,7 +156,29 @@ async function loadMaintenanceStatus() {
   if (!(status.incidents || []).length) els.incidentList.textContent = "本次沒有失敗或隔離文章。";
 }
 
-async function loadWorkflowRuns() {
+function workflowReasonText(run, record) {
+  if (!record) {
+    return run.conclusion === "failure"
+      ? "失敗原因：舊版流程未保存診斷；請點擊工作名稱查看當次 GitHub 紀錄。"
+      : "";
+  }
+  const failedStages = Object.entries(record.stages || {})
+    .filter(([, stageOutcome]) => stageOutcome === "failure")
+    .map(([stage]) => stage);
+  const incident = record.incidents?.[0];
+  const cause = record.diagnosis?.cause || incident?.cause || record.detail || "原因尚未分類";
+  const parts = [];
+  if (record.outcome === "failure") parts.push(`失敗原因：${cause}`);
+  else if (record.outcome === "warning") parts.push(`完成但有隔離：${cause}`);
+  else return "";
+  if (failedStages.length) parts.push(`失敗階段：${failedStages.join("、")}`);
+  if (incident) parts.push(`文章：${incident.title}；結果：${incident.status === "skipped" ? "已隔離" : "未完成"}`);
+  if (record.detail && record.detail !== cause) parts.push(record.detail);
+  return parts.join("｜");
+}
+
+async function loadWorkflowRuns(maintenanceReady) {
+  await maintenanceReady;
   const results = await Promise.all(workflows.map(async (workflow) => {
     const response = await fetch(`https://api.github.com/repos/${repository}/actions/workflows/${workflow.file}/runs?per_page=8`, {
       headers: { Accept: "application/vnd.github+json" },
@@ -191,6 +217,13 @@ async function loadWorkflowRuns() {
     time.dateTime = run.created_at;
     time.textContent = formatDate(run.created_at, true);
     row.append(dot, link, time);
+    const reasonText = workflowReasonText(run, maintenanceHistoryByRun.get(String(run.id)));
+    if (reasonText) {
+      const reason = document.createElement("p");
+      reason.className = `run-reason ${run.conclusion === "failure" ? "failure" : "warning"}`;
+      reason.textContent = reasonText;
+      row.append(reason);
+    }
     els.runList.append(row);
   }
   if (!runs.length) els.runList.textContent = "尚無執行紀錄。";
@@ -200,14 +233,14 @@ loadContentStatus().catch((error) => {
   els.translationCount.textContent = "無法載入";
   els.translationDetail.textContent = error.message;
 });
-loadWorkflowRuns().catch((error) => {
-  els.workflowOverall.textContent = "無法連線";
-  els.workflowOverall.className = "status-pill failed";
-  els.runList.textContent = `GitHub 執行紀錄暫時無法取得：${error.message}`;
-});
-loadMaintenanceStatus().catch((error) => {
+const maintenanceReady = loadMaintenanceStatus().catch((error) => {
   els.maintenanceOverall.textContent = "無法載入";
   els.maintenanceOverall.className = "status-pill failed";
   els.maintenanceSummary.textContent = error.message;
   els.maintenanceAction.textContent = "請查看最近一次 GitHub Actions 執行紀錄。";
+});
+loadWorkflowRuns(maintenanceReady).catch((error) => {
+  els.workflowOverall.textContent = "無法連線";
+  els.workflowOverall.className = "status-pill failed";
+  els.runList.textContent = `GitHub 執行紀錄暫時無法取得：${error.message}`;
 });
