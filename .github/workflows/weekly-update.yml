@@ -1,6 +1,13 @@
 name: Weekly Economist update
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/weekly-update.yml"
+      - "scripts/**"
+      - "tests/**"
   workflow_dispatch:
     inputs:
       test_azure:
