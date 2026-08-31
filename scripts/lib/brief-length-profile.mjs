@@ -4,15 +4,15 @@ export function briefLengthProfile(article = {}) {
   if (sourceLength > 0 && sourceLength < 500) {
     return {
       kind: "short",
-      summaryMin: 70,
+      summaryMin: 50,
       summaryMax: 180,
       pointMin: 18,
       pointMax: 70,
-      researchLensMin: 40,
+      researchLensMin: 35,
       researchLensMax: 120,
       instruction: [
         `原文是僅 ${sourceLength} 個英文字符的短訊，請依資訊量精簡撰寫，絕對不要為了湊字數補造背景。`,
-        "summaryZh 限 70–130 個中文字；keyPointsZh 固定三點，每點 18–45 個中文字；researchLensZh 限 45–90 個中文字。",
+        "summaryZh 限 50–100 個中文字；keyPointsZh 固定三點，每點 18–45 個中文字；researchLensZh 限 35–70 個中文字。",
       ].join("\n"),
     };
   }
