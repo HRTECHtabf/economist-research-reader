@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "checkedAt": "2026-08-31T07:07:45.344Z",
+  "level": "ok",
+  "limitsMiB": {
+    "sourceWarning": 40,
+    "sourceCritical": 90,
+    "publicWarning": 750,
+    "publicCritical": 900
+  },
+  "sizes": {
+    "sourceMiB": 3.47,
+    "catalogMiB": 1.17,
+    "publicDataMiB": 9.33
+  },
+  "recommendations": []
+}

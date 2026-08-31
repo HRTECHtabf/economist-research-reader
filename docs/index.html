@@ -190,6 +190,7 @@
             </div>
             <div class="reading-pane english-pane" data-pane="en" hidden>
               <div class="full-text english-full-text"></div>
+              <p class="full-text-status english-full-text-status" hidden></p>
             </div>
           </div>
           <div class="pending-block">
@@ -219,7 +220,7 @@
       </div>
       <blockquote id="note-quote"></blockquote>
       <label class="note-editor-label" for="note-editor">我的想法</label>
-      <textarea id="note-editor" rows="4" placeholder="記下判斷、疑問或待查資料…" required></textarea>
+      <textarea id="note-editor" rows="4" maxlength="10000" placeholder="記下判斷、疑問或待查資料…" required></textarea>
       <div class="note-popover-actions">
         <button class="note-delete" id="note-delete" type="button" hidden>刪除筆記</button>
         <button class="note-save" id="note-save" type="button">儲存筆記</button>
@@ -260,6 +261,6 @@
       </section>
     </div>
 
-    <script src="./app.js?v=20260831-2" defer></script>
+    <script src="./app.js?v=20260831-3" defer></script>
   </body>
 </html>

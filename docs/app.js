@@ -148,6 +148,10 @@ const state = {
   favoritesOnly: urlParams.get("favorites") === "1",
   page: Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1,
   internalTextById: new Map(),
+  publicManifest: null,
+  englishTextByArticle: new Map(),
+  englishIssuePromises: new Map(),
+  fullTextSearchLoading: false,
   readingModes: new Map(),
   chineseTextByArticle: new Map(),
   chineseTextLoading: new Set(),
@@ -230,7 +234,7 @@ function saveFavorites() {
   try {
     localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...state.favorites]));
   } catch {
-    // 收藏功能仍可在本次瀏覽使用；瀏覽器禁止儲存時不讓頁面中斷。
+    window.alert("瀏覽器儲存空間不足或被停用；這次收藏可能不會保留。請先匯出重要筆記或清理網站資料。");
   }
 }
 
@@ -238,7 +242,7 @@ function saveNotes() {
   try {
     localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(state.notes));
   } catch {
-    // 後端同步接上前先使用本機儲存；儲存被瀏覽器禁止時不讓閱讀頁中斷。
+    window.alert("筆記未能寫入瀏覽器儲存空間。這次內容仍會暫留在畫面中，但關閉頁面後可能遺失。");
   }
 }
 
@@ -246,7 +250,7 @@ function saveSavedTags() {
   try {
     localStorage.setItem(SAVED_TAGS_STORAGE_KEY, JSON.stringify(state.savedTags));
   } catch {
-    // 登入同步接上前先保留在本機；儲存被禁止時不讓搜尋中斷。
+    window.alert("自訂標籤未能寫入瀏覽器儲存空間，關閉頁面後可能遺失。");
   }
 }
 
@@ -255,6 +259,7 @@ function toggleSearchTag(query) {
   else state.selectedTags.add(query);
   state.page = 1;
   renderPreservingViewport({ x: window.scrollX, y: window.scrollY });
+  loadAllEnglishIssuesForSearch();
 }
 
 function renderQuickTags() {
@@ -418,6 +423,11 @@ function captureSelection(element) {
   if (!element.contains(range.startContainer) || !element.contains(range.endContainer)) return;
   const quote = range.toString().trim();
   if (quote.length < 2) return;
+  if (quote.length > 4000) {
+    hideSelectionToolbar();
+    window.alert("單則引用最多 4,000 字，請縮短反白範圍後再加入筆記。");
+    return;
+  }
   const before = document.createRange();
   before.selectNodeContents(element);
   before.setEnd(range.startContainer, range.startOffset);
@@ -614,6 +624,8 @@ async function focusNote(note) {
   const article = state.data?.articles.find((item) => articleKey(item) === note.articleKey);
   if (noteMode(note) === "zh" && article && !state.chineseTextByArticle.has(note.articleKey)) {
     await loadChineseFullText(article);
+  } else if (noteMode(note) === "en" && article && !englishTextFor(article)) {
+    await loadEnglishIssue(article);
   } else {
     render();
   }
@@ -635,7 +647,7 @@ async function loadChineseFullText(article) {
   try {
     const issue = encodeURIComponent(issueFor(article));
     const id = encodeURIComponent(article.id);
-    const response = await fetch(`./data/fulltext/${issue}/${id}.json`, { cache: "no-store" });
+    const response = await fetch(`./data/fulltext/${issue}/${id}.json?v=${encodeURIComponent(article.sourceHash || "1")}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const value = await response.json();
     if (!Array.isArray(value.paragraphsZh) || !value.paragraphsZh.length) throw new Error("缺少中文段落");
@@ -646,6 +658,56 @@ async function loadChineseFullText(article) {
     state.chineseTextLoading.delete(key);
     render();
   }
+}
+
+function englishTextFor(article) {
+  return article.textEn
+    || state.englishTextByArticle.get(articleKey(article))
+    || state.internalTextById.get(article.id)
+    || "";
+}
+
+async function loadEnglishIssue(article) {
+  if (englishTextFor(article)) return;
+  const issue = issueFor(article);
+  if (state.englishIssuePromises.has(issue)) return state.englishIssuePromises.get(issue);
+  const descriptor = state.publicManifest?.englishIssues?.[issue];
+  if (!descriptor?.path) return;
+  const request = fetch(`./data/${descriptor.path}?v=${encodeURIComponent(descriptor.version || "1")}`)
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then((value) => {
+      for (const record of value.articles || []) {
+        if (record?.id && record?.textEn) state.englishTextByArticle.set(`${issue}:${record.id}`, record.textEn);
+      }
+    })
+    .catch(() => {
+      // 單一期英文分片失效時，不影響摘要與中文全文閱讀。
+    })
+    .finally(() => {
+      state.englishIssuePromises.delete(issue);
+      render();
+    });
+  state.englishIssuePromises.set(issue, request);
+  render();
+  return request;
+}
+
+async function loadAllEnglishIssuesForSearch() {
+  const needsFullText = state.query.trim()
+    || [...state.selectedTags].some((tag) => !state.keywordSet.has(tag));
+  if (!needsFullText || !state.publicManifest?.englishIssues || state.fullTextSearchLoading) return;
+  state.fullTextSearchLoading = true;
+  render();
+  const representatives = new Map();
+  for (const article of state.data.articles) {
+    if (!representatives.has(issueFor(article))) representatives.set(issueFor(article), article);
+  }
+  await Promise.all([...representatives.values()].map(loadEnglishIssue));
+  state.fullTextSearchLoading = false;
+  render();
 }
 
 function updateBackToFiltersVisibility() {
@@ -773,7 +835,7 @@ function termMatchesText(text, term) {
 function searchableFields(article) {
   return [
     { label: "英文標題／副標", text: [article.titleEn, article.rubricEn].filter(Boolean).join(" ") },
-    { label: "英文全文", text: article.textEn || "" },
+    { label: "英文全文", text: englishTextFor(article) },
     { label: "欄目／分類", text: [article.section, categoryFor(article)].filter(Boolean).join(" ") },
     { label: "中文摘要", text: article.summaryZh || "" },
     { label: "論述重點", text: (article.keyPointsZh || []).join(" ") },
@@ -962,7 +1024,8 @@ function renderCard(article) {
   link.href = article.sourceUrl;
   link.hidden = !article.sourceUrl;
 
-  const internalEnglish = article.textEn || state.internalTextById.get(article.id);
+  const internalEnglish = englishTextFor(article);
+  const englishStatus = fragment.querySelector(".english-full-text-status");
   if (internalEnglish) {
     const textContainer = fragment.querySelector(".english-full-text");
     for (const [index, paragraph] of internalEnglish.split(/\n+/).filter(Boolean).entries()) {
@@ -971,6 +1034,12 @@ function renderCard(article) {
       renderAnnotatedText(p, paragraph, key, `en:p${index + 1}`);
       textContainer.append(p);
     }
+  } else if (state.englishIssuePromises.has(issueFor(article))) {
+    englishStatus.textContent = "英文全文載入中…";
+    englishStatus.hidden = false;
+  } else {
+    englishStatus.textContent = "切換後將載入英文全文。";
+    englishStatus.hidden = false;
   }
 
   const chineseValue = state.chineseTextByArticle.get(key);
@@ -999,14 +1068,11 @@ function renderCard(article) {
     const active = buttonMode === mode;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
-    if (buttonMode === "en" && !internalEnglish) {
-      button.disabled = true;
-      button.title = "英文全文尚未載入";
-    }
     button.addEventListener("click", () => {
       if (button.disabled) return;
       state.readingModes.set(key, buttonMode);
       if (buttonMode === "zh") loadChineseFullText(article);
+      else if (buttonMode === "en" && !internalEnglish) loadEnglishIssue(article);
       else render();
     });
   });
@@ -1133,7 +1199,8 @@ function render() {
   const rangeStart = filtered.length ? pageStart + 1 : 0;
   const rangeEnd = pageStart + visibleArticles.length;
   const tagStatus = state.selectedTags.size ? `；已選 ${state.selectedTags.size} 個標籤` : "";
-  els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）${tagStatus}`;
+  const searchStatus = state.fullTextSearchLoading ? "；英文全文搜尋索引載入中" : "";
+  els.resultCount.textContent = `顯示第 ${rangeStart}–${rangeEnd} 篇，篩選結果共 ${filtered.length} 篇（資料庫 ${state.data.articles.length} 篇）${tagStatus}${searchStatus}`;
   renderPagination(pageCount);
   els.clearSearch.hidden = !state.query;
   els.clearFilters.hidden = !state.query && !state.selectedTags.size && state.category === "全部" && state.issue === "全部" && !state.favoritesOnly;
@@ -1271,10 +1338,16 @@ function closeFeatureTour() {
   els.tourLaunch.focus({ preventScroll: true });
 }
 
+let searchInputTimer = null;
 els.searchInput.addEventListener("input", (event) => {
-  state.query = event.target.value;
-  state.page = 1;
-  render();
+  clearTimeout(searchInputTimer);
+  const query = event.target.value;
+  searchInputTimer = setTimeout(() => {
+    state.query = query;
+    state.page = 1;
+    render();
+    loadAllEnglishIssuesForSearch();
+  }, 180);
 });
 els.clearSearch.addEventListener("click", () => {
   state.query = "";
@@ -1402,11 +1475,23 @@ async function loadInternalEnglishText() {
   }
 }
 
-fetch("./data/articles.json", { cache: "no-store" })
-  .then((response) => {
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  })
+async function loadPublicData() {
+  try {
+    const manifestResponse = await fetch("./data/public-manifest.json", { cache: "no-store" });
+    if (!manifestResponse.ok) throw new Error(`manifest HTTP ${manifestResponse.status}`);
+    state.publicManifest = await manifestResponse.json();
+    const descriptor = state.publicManifest.catalog;
+    const catalogResponse = await fetch(`./data/${descriptor.path}?v=${encodeURIComponent(descriptor.version || "1")}`);
+    if (!catalogResponse.ok) throw new Error(`catalog HTTP ${catalogResponse.status}`);
+    return catalogResponse.json();
+  } catch {
+    const legacyResponse = await fetch("./data/articles.json", { cache: "no-store" });
+    if (!legacyResponse.ok) throw new Error(`HTTP ${legacyResponse.status}`);
+    return legacyResponse.json();
+  }
+}
+
+loadPublicData()
   .then(async (data) => {
     state.data = data;
     state.keywordSet = new Set(data.articles.flatMap((article) => article.keywordsZh || []));
@@ -1416,6 +1501,7 @@ fetch("./data/articles.json", { cache: "no-store" })
     setupIssueFilter(data);
     await loadInternalEnglishText();
     render();
+    loadAllEnglishIssuesForSearch();
   })
   .catch(() => {
     els.articleList.innerHTML = '<div class="empty-state"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';

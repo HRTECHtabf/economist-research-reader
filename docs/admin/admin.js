@@ -11,6 +11,9 @@ const els = {
   siteSyncCard: document.querySelector("#site-sync-card"),
   siteSync: document.querySelector("#site-sync"),
   siteSyncDetail: document.querySelector("#site-sync-detail"),
+  storageCard: document.querySelector("#storage-card"),
+  storageLevel: document.querySelector("#storage-level"),
+  storageDetail: document.querySelector("#storage-detail"),
   workflowOverall: document.querySelector("#workflow-overall"),
   runList: document.querySelector("#run-list"),
   maintenanceOverall: document.querySelector("#maintenance-overall"),
@@ -38,9 +41,10 @@ function formatDate(value, includeTime = false) {
 }
 
 async function loadContentStatus() {
-  const [articlesResponse, manifestResponse] = await Promise.all([
-    fetch("../data/articles.json", { cache: "no-store" }),
+  const [articlesResponse, manifestResponse, storageResponse] = await Promise.all([
+    fetch("../data/catalog.json"),
     fetch("../data/fulltext/manifest.json", { cache: "no-store" }),
+    fetch("../data/storage-status.json", { cache: "no-store" }),
   ]);
   if (!articlesResponse.ok) throw new Error("文章資料無法載入");
   const data = await articlesResponse.json();
@@ -57,6 +61,14 @@ async function loadContentStatus() {
   els.latestIssue.textContent = latestIssue || "—";
   els.latestIssueCount.textContent = `${latestCount} 篇文章；${data.summaryCount ?? latestCount} 篇摘要；${data.summaryUnavailableCount || 0} 篇隔離`;
   els.generatedAt.textContent = manifest ? formatDate(manifest.generatedAt) : "—";
+  if (storageResponse.ok) {
+    const storage = await storageResponse.json();
+    const labels = { ok: "正常", warning: "接近門檻", critical: "需要遷移" };
+    els.storageLevel.textContent = labels[storage.level] || "未知";
+    els.storageDetail.textContent = `主資料 ${storage.sizes.sourceMiB} MiB；公開資料 ${storage.sizes.publicDataMiB} MiB`;
+    els.storageCard.classList.toggle("ok", storage.level === "ok");
+    els.storageCard.classList.toggle("warning", storage.level !== "ok");
+  }
   await loadSyncStatus(data, manifest);
 }
 

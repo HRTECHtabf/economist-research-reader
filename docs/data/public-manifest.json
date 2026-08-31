@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-31T02:14:43.736Z",
+  "issueKey": "2026.08.29",
+  "totalArticleCount": 444,
+  "catalog": {
+    "path": "catalog.json",
+    "version": "2026-08-31T02:14:43.736Z"
+  },
+  "englishIssues": {
+    "2026.08.29": {
+      "path": "fulltext-en/2026.08.29.json",
+      "version": "617c6f737f89a97e",
+      "articleCount": 71
+    },
+    "2026.08.22": {
+      "path": "fulltext-en/2026.08.22.json",
+      "version": "ee5fe1f30a5da844",
+      "articleCount": 71
+    },
+    "2026.08.15": {
+      "path": "fulltext-en/2026.08.15.json",
+      "version": "343eb0d5a0343067",
+      "articleCount": 74
+    },
+    "2026.06.27": {
+      "path": "fulltext-en/2026.06.27.json",
+      "version": "360d0ad3b31b175a",
+      "articleCount": 74
+    },
+    "2026.06.20": {
+      "path": "fulltext-en/2026.06.20.json",
+      "version": "2e17f9f61bd12fd6",
+      "articleCount": 75
+    },
+    "2026.06.13": {
+      "path": "fulltext-en/2026.06.13.json",
+      "version": "8a2f74ad15cfb442",
+      "articleCount": 79
+    }
+  }
+}
