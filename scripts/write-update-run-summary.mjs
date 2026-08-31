@@ -90,4 +90,28 @@ if (existsSync(reportPath)) {
   }
 }
 
+const fulltextReportPath = resolve(projectRoot, ".cache/fulltext-zh-v2.report.json");
+if (existsSync(fulltextReportPath)) {
+  try {
+    const report = JSON.parse(readFileSync(fulltextReportPath, "utf8"));
+    if (report.failed?.length) {
+      const dataPath = resolve(projectRoot, "docs/data/articles.json");
+      const articles = existsSync(dataPath)
+        ? JSON.parse(readFileSync(dataPath, "utf8")).articles || []
+        : [];
+      const titleByKey = new Map(
+        articles.map((article) => [`${article.issueKey}:${article.id}`, article.titleEn]),
+      );
+      lines.push("", "### 尚未通過的全文", "");
+      for (const failure of report.failed) {
+        const title = titleByKey.get(failure.key) || failure.key;
+        lines.push(`- ${title}：${failure.message}`);
+        emitErrorAnnotation(`全文未通過：${title}`, failure.message);
+      }
+    }
+  } catch (error) {
+    lines.push("", `全文翻譯錯誤報告無法讀取：${error.message}`);
+  }
+}
+
 appendFileSync(summaryPath, `${lines.join("\n")}\n`, "utf8");
