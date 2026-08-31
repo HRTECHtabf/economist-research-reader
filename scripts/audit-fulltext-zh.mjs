@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
+import { CONTENT_FILTER_REASON } from "./lib/content-filter-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -36,6 +37,7 @@ const redundantPattern = /推(?:高|升).{0,12}(?:飆升|飆漲)|迫使.{0,12}(?
 const failures = [];
 const warnings = [];
 const records = [];
+const unavailableRecords = [];
 
 for (const article of data.articles) {
   const path = outputPath(article);
@@ -43,6 +45,19 @@ for (const article of data.articles) {
   const key = `${article.issueKey}:${article.id}`;
   if (!value) {
     failures.push({ key, issue: "缺少中文全文檔" });
+    continue;
+  }
+  if (value.unavailable === true) {
+    if (
+      value.unavailableReason !== CONTENT_FILTER_REASON ||
+      value.translationVersion !== EXPECTED_VERSION ||
+      value.sourceHash !== article.sourceHash
+    ) {
+      failures.push({ key, issue: "不可用標記格式或來源指紋不符" });
+      continue;
+    }
+    unavailableRecords.push({ key, titleEn: article.titleEn, reason: value.unavailableReason });
+    warnings.push({ key, issue: "Azure 內容安全篩選未允許產生繁中全文；保留摘要與英文原文" });
     continue;
   }
   const sourceParagraphs = paragraphs(article.textEn || "");
@@ -87,6 +102,7 @@ const report = {
   auditedAt: new Date().toISOString(),
   databaseArticles: data.articles.length,
   validArticleFiles: records.length,
+  unavailableArticleFiles: unavailableRecords.length,
   failures,
   warnings,
   manualReviewSample: sample,
@@ -102,12 +118,16 @@ if (!failures.length) {
   const manifestContent = {
     translationVersion: EXPECTED_VERSION,
     articleCount: records.length,
+    unavailableCount: unavailableRecords.length,
+    coveredArticleCount: records.length + unavailableRecords.length,
     paragraphCount: records.reduce((sum, record) => sum + record.paragraphCount, 0),
     issueCounts,
   };
   const existingContent = existingManifest && {
     translationVersion: existingManifest.translationVersion,
     articleCount: existingManifest.articleCount,
+    unavailableCount: existingManifest.unavailableCount || 0,
+    coveredArticleCount: existingManifest.coveredArticleCount || existingManifest.articleCount,
     paragraphCount: existingManifest.paragraphCount,
     issueCounts: existingManifest.issueCounts,
   };
@@ -121,6 +141,6 @@ if (!failures.length) {
   }
 }
 
-console.log(`中文全文稽核：${records.length}/${data.articles.length} 篇有檔案；${failures.length} 項失敗；${warnings.length} 項提醒。`);
+console.log(`中文全文稽核：${records.length} 篇有譯文、${unavailableRecords.length} 篇內容安全隔離，共覆蓋 ${records.length + unavailableRecords.length}/${data.articles.length} 篇；${failures.length} 項失敗；${warnings.length} 項提醒。`);
 console.log(`人工抽查樣本：${sample.length} 篇，清單已寫入 ${reportPath.slice(projectRoot.length + 1)}。`);
 if (failures.length) process.exitCode = 1;

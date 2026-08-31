@@ -4,6 +4,7 @@ import {
   readFileSync,
 } from "node:fs";
 import { resolve } from "node:path";
+import { translationCoverage } from "./lib/content-filter-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -81,7 +82,7 @@ const upstreamCurrent =
 const localArticleCount = localData.totalArticleCount ?? localData.articles?.length ?? 0;
 const fullTextComplete =
   localManifest.translationVersion === "fulltext-zh-tw-v2" &&
-  localManifest.articleCount === localArticleCount;
+  translationCoverage(localManifest) === localArticleCount;
 const sourceCurrent = upstreamCurrent && fullTextComplete;
 
 let siteData = null;
@@ -123,6 +124,7 @@ const report = {
     repositorySourceSha: localData.sourceFolderSha || null,
     repositoryArticleCount: localArticleCount,
     fullTextArticleCount: localManifest.articleCount ?? null,
+    unavailableFullTextCount: localManifest.unavailableCount ?? 0,
   },
   site: siteDataUrl
     ? {
@@ -148,7 +150,7 @@ githubOutput("published_issue", String(siteData?.issueKey || "not_checked"));
 githubOutput("health_summary", [
   `上游 ${latestEntry.name}`,
   `GitHub 資料 ${localData.issueFolder || "unknown"}`,
-  `中文全文 ${localManifest.articleCount ?? 0}/${localArticleCount}`,
+  `中文全文 ${localManifest.articleCount ?? 0} 篇、隔離 ${localManifest.unavailableCount ?? 0} 篇，共 ${translationCoverage(localManifest)}/${localArticleCount}`,
   siteDataUrl ? `公開網站 ${siteData?.issueFolder || "unavailable"}` : "公開網站未檢查",
 ].join("；"));
 

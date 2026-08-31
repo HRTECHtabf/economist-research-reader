@@ -11,6 +11,10 @@ import {
   resolveRetryRounds,
   retryFailedArticles,
 } from "./lib/retry-failed-articles.mjs";
+import {
+  CONTENT_FILTER_REASON,
+  isContentFilterError,
+} from "./lib/content-filter-policy.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -346,6 +350,7 @@ async function polishChunk(chunk, draftTranslations, article) {
       lastFailure = failures.join("；");
       feedback = lastFailure;
     } catch (error) {
+      if (isContentFilterError(error)) throw error;
       lastFailure = error.message;
       feedback = `API 或格式錯誤：${error.message}`;
       if (error.status === 429 || error.status >= 500) {
@@ -380,6 +385,7 @@ async function translateChunk(chunk, article) {
       lastFailure = failures.join("；");
       feedback = lastFailure;
     } catch (error) {
+      if (isContentFilterError(error)) throw error;
       lastFailure = error.message;
       feedback = `API 或格式錯誤：${error.message}`;
       if (error.status === 429 || error.status >= 500) {
@@ -409,6 +415,12 @@ const articleRetryRounds = resolveRetryRounds(articleRetryRoundsValue, DEFAULT_A
 
 function existingOutputValid(article) {
   const value = readJson(outputPath(article), null);
+  if (
+    value?.unavailable === true &&
+    value?.unavailableReason === CONTENT_FILTER_REASON &&
+    value?.translationVersion === TRANSLATION_VERSION &&
+    value?.sourceHash === sourceHash(article)
+  ) return true;
   return (
     value?.translationVersion === TRANSLATION_VERSION &&
     value?.sourceHash === sourceHash(article) &&
@@ -431,8 +443,24 @@ const report = {
   totalDatabaseArticles: data.articles.length,
   selectedArticles: candidates.length,
   completed: [],
+  quarantined: [],
   failed: [],
 };
+
+function quarantineFilteredArticle(article, error) {
+  const value = {
+    id: article.id,
+    issueKey: article.issueKey,
+    sourceHash: sourceHash(article),
+    translationVersion: TRANSLATION_VERSION,
+    unavailable: true,
+    unavailableReason: CONTENT_FILTER_REASON,
+    unavailableMessageZh: "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。",
+    recordedAt: new Date().toISOString(),
+  };
+  writeJsonAtomic(outputPath(article), value);
+  return { key: articleKey(article), reason: CONTENT_FILTER_REASON, message: error.message };
+}
 
 async function translateArticle(article) {
   const paragraphs = splitParagraphs(article.textEn);
@@ -493,8 +521,14 @@ if (auditOnly) {
         report.completed.push(result);
         console.log(`[${report.completed.length + report.failed.length}/${candidates.length}] 完成 ${result.key}（${result.paragraphs} 段）`);
       } catch (error) {
-        report.failed.push({ key: articleKey(article), message: error.message });
-        console.error(`[${report.completed.length + report.failed.length}/${candidates.length}] 失敗 ${articleKey(article)}：${error.message}`);
+        if (isContentFilterError(error)) {
+          const quarantined = quarantineFilteredArticle(article, error);
+          report.quarantined.push(quarantined);
+          console.warn(`[內容安全隔離] ${quarantined.key}：保留摘要與英文原文，繁中全文標記為不可用。`);
+        } else {
+          report.failed.push({ key: articleKey(article), message: error.message });
+          console.error(`[${report.completed.length + report.quarantined.length + report.failed.length}/${candidates.length}] 失敗 ${articleKey(article)}：${error.message}`);
+        }
       }
       writeJsonAtomic(reportPath, { ...report, updatedAt: new Date().toISOString() });
     }
@@ -533,5 +567,5 @@ if (auditOnly) {
   if (report.failed.length) {
     throw new Error(`${report.failed.length} 篇翻譯失敗；已完成內容與斷點均已保留。`);
   }
-  console.log(`中文全文翻譯完成：${report.completed.length} 篇。`);
+  console.log(`中文全文翻譯完成：${report.completed.length} 篇；內容安全隔離 ${report.quarantined.length} 篇。`);
 }

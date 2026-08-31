@@ -26,6 +26,11 @@ const emitErrorAnnotation = (title, message) => {
     `::error title=${workflowCommandEscape(title)}::${workflowCommandEscape(message)}`,
   );
 };
+const emitWarningAnnotation = (title, message) => {
+  console.warn(
+    `::warning title=${workflowCommandEscape(title)}::${workflowCommandEscape(message)}`,
+  );
+};
 const escapeHtml = (value) => value
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
@@ -107,6 +112,13 @@ if (existsSync(fulltextReportPath)) {
         const title = titleByKey.get(failure.key) || failure.key;
         lines.push(`- ${title}：${failure.message}`);
         emitErrorAnnotation(`全文未通過：${title}`, failure.message);
+      }
+    }
+    if (report.quarantined?.length) {
+      lines.push("", "### 內容安全隔離的全文", "");
+      for (const item of report.quarantined) {
+        lines.push(`- ${item.key}：保留摘要與英文原文，繁中全文暫不可用。`);
+        emitWarningAnnotation(`全文內容安全隔離：${item.key}`, "未規避 Azure 安全篩選；文章與英文原文仍會發布。");
       }
     }
   } catch (error) {
