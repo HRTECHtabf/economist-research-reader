@@ -31,6 +31,7 @@ const SECTION_CATEGORIES = {
 const FAVORITES_STORAGE_KEY = "economist-research-reader:favorites:v1";
 const NOTES_STORAGE_KEY = "economist-research-reader:notes:v1";
 const SAVED_TAGS_STORAGE_KEY = "economist-research-reader:saved-search-tags:v1";
+const HIDDEN_COMMON_TAGS_STORAGE_KEY = "economist-research-reader:hidden-common-search-tags:v1";
 const COMMON_SEARCH_TAGS = ["人工智慧", "金融市場", "貨幣政策", "能源市場", "中國", "國際貿易"];
 const ARTICLES_PER_PAGE = 5;
 const TOUR_STEPS = [
@@ -126,11 +127,22 @@ function loadSavedTags() {
     const stored = JSON.parse(localStorage.getItem(SAVED_TAGS_STORAGE_KEY) || "[]");
     return Array.isArray(stored)
       ? stored
-        .filter((tag) => tag?.id && tag?.query)
+        .filter((tag) => tag?.id && tag?.query && !COMMON_SEARCH_TAGS.includes(tag.query))
         .map((tag) => ({ ...tag, label: tag.query }))
       : [];
   } catch {
     return [];
+  }
+}
+
+function loadHiddenCommonTags() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HIDDEN_COMMON_TAGS_STORAGE_KEY) || "[]");
+    return new Set(Array.isArray(stored)
+      ? stored.filter((query) => COMMON_SEARCH_TAGS.includes(query))
+      : []);
+  } catch {
+    return new Set();
   }
 }
 
@@ -145,6 +157,7 @@ const state = {
   favorites: loadFavorites(),
   notes: loadNotes(),
   savedTags: loadSavedTags(),
+  hiddenCommonTags: loadHiddenCommonTags(),
   favoritesOnly: urlParams.get("favorites") === "1",
   page: Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1,
   internalTextById: new Map(),
@@ -254,6 +267,14 @@ function saveSavedTags() {
   }
 }
 
+function saveHiddenCommonTags() {
+  try {
+    localStorage.setItem(HIDDEN_COMMON_TAGS_STORAGE_KEY, JSON.stringify([...state.hiddenCommonTags]));
+  } catch {
+    window.alert("預設標籤的調整未能寫入瀏覽器儲存空間，關閉頁面後可能遺失。");
+  }
+}
+
 function toggleSearchTag(query) {
   if (state.selectedTags.has(query)) state.selectedTags.delete(query);
   else state.selectedTags.add(query);
@@ -266,7 +287,9 @@ function renderQuickTags() {
   els.quickTagsList.replaceChildren();
   const tagsByQuery = new Map();
   for (const tag of [
-    ...COMMON_SEARCH_TAGS.map((query) => ({ id: `common:${query}`, label: query, query, custom: false })),
+    ...COMMON_SEARCH_TAGS
+      .filter((query) => !state.hiddenCommonTags.has(query))
+      .map((query) => ({ id: `common:${query}`, label: query, query, custom: false })),
     ...state.savedTags.map((tag) => ({ ...tag, custom: true })),
     ...[...state.selectedTags].map((query) => ({ id: `selected:${query}`, label: query, query, custom: false })),
   ]) {
@@ -288,26 +311,45 @@ function renderQuickTags() {
 
 function renderSavedTags() {
   els.savedTagsList.replaceChildren();
-  if (!state.savedTags.length) {
+  const managedTags = [
+    ...COMMON_SEARCH_TAGS
+      .filter((query) => !state.hiddenCommonTags.has(query))
+      .map((query) => ({ id: `common:${query}`, query, isDefault: true })),
+    ...state.savedTags.map((tag) => ({ ...tag, isDefault: false })),
+  ];
+  if (!managedTags.length) {
     const empty = document.createElement("p");
     empty.className = "note-empty";
-    empty.textContent = "還沒有自訂標籤。可以把目前的搜尋內容存起來。";
+    empty.textContent = "目前沒有標籤。可用上方欄位新增；輸入原本的預設標籤即可恢復。";
     els.savedTagsList.append(empty);
     return;
   }
-  for (const tag of state.savedTags) {
+  for (const tag of managedTags) {
     const row = document.createElement("div");
     row.className = "saved-tag-row";
     const query = document.createElement("span");
     query.textContent = tag.query;
+    if (tag.isDefault) {
+      const type = document.createElement("small");
+      type.textContent = "預設";
+      query.append(" ", type);
+    }
     const remove = document.createElement("button");
     remove.type = "button";
     remove.textContent = "刪除";
+    remove.setAttribute("aria-label", `刪除標籤「${tag.query}」`);
     remove.addEventListener("click", () => {
-      state.savedTags = state.savedTags.filter((item) => item.id !== tag.id);
-      saveSavedTags();
+      if (tag.isDefault) {
+        state.hiddenCommonTags.add(tag.query);
+        saveHiddenCommonTags();
+      } else {
+        state.savedTags = state.savedTags.filter((item) => item.id !== tag.id);
+        saveSavedTags();
+      }
+      state.selectedTags.delete(tag.query);
+      state.page = 1;
       renderSavedTags();
-      renderQuickTags();
+      render();
     });
     row.append(query, remove);
     els.savedTagsList.append(row);
@@ -1413,19 +1455,21 @@ els.tagManagerForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const query = els.tagQueryInput.value.trim();
   if (!query) return;
-  const duplicate = state.savedTags.find((tag) => tag.query === query);
-  if (duplicate) {
-    duplicate.query = query;
-    duplicate.label = query;
+  if (COMMON_SEARCH_TAGS.includes(query)) {
+    state.hiddenCommonTags.delete(query);
+    saveHiddenCommonTags();
   } else {
-    state.savedTags.push({
-      id: crypto.randomUUID?.() || `tag-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      label: query,
-      query,
-      createdAt: new Date().toISOString(),
-    });
+    const duplicate = state.savedTags.find((tag) => tag.query === query);
+    if (!duplicate) {
+      state.savedTags.push({
+        id: crypto.randomUUID?.() || `tag-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        label: query,
+        query,
+        createdAt: new Date().toISOString(),
+      });
+      saveSavedTags();
+    }
   }
-  saveSavedTags();
   els.tagQueryInput.value = "";
   renderSavedTags();
   renderQuickTags();

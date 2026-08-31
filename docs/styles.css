@@ -204,6 +204,7 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .saved-tag-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; background: #f4f0e9; font-size: 11px; }
 .saved-tag-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .saved-tag-row span { color: var(--muted); }
+.saved-tag-row small { margin-left: 5px; color: #8e8880; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
 .saved-tag-row button { border: 0; background: transparent; color: var(--red); cursor: pointer; font-size: 10px; }
 .tag-storage-hint { margin-bottom: 0; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px; }
