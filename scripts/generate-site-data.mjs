@@ -14,6 +14,7 @@ import {
   withTransientRetries,
 } from "./lib/transient-retry.mjs";
 import { briefLengthProfile } from "./lib/brief-length-profile.mjs";
+import { chooseNaturalizationResult } from "./lib/naturalization-fallback.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.json");
@@ -506,9 +507,9 @@ function summarize(article, retryContext) {
   });
 }
 
-function humanize(article, draft, retryContext) {
+async function humanize(article, draft, retryContext) {
   const lengthProfile = briefLengthProfile(article);
-  return callWithFallback({
+  const candidate = normalizeGeneratedBrief(await callWithFallback({
     schemaName: "humanized_research_brief",
     instructions: [
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
@@ -529,7 +530,20 @@ function humanize(article, draft, retryContext) {
     ]
       .filter(Boolean)
       .join("\n\n"),
+  }));
+  const decision = chooseNaturalizationResult({
+    draft,
+    candidate,
+    attempt: retryContext?.attempt || 1,
+    attemptsPerRound: MAX_BRIEF_ATTEMPTS,
+    isComplete: (value) => isCompleteBrief(value, article),
   });
+  if (decision.fellBack) {
+    console.warn(
+      `[自然化安全回退] ${article.titleEn} 連續 ${MAX_BRIEF_ATTEMPTS} 次未能改善合格初稿，保留初稿並繼續。`,
+    );
+  }
+  return decision.value;
 }
 
 async function processWithWorkers({ items, values, label, processItem, checkpointPath, processingVersion }) {
