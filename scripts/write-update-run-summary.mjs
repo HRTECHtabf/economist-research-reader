@@ -17,6 +17,15 @@ const labels = {
   skipped: "略過",
   cancelled: "取消",
 };
+const workflowCommandEscape = (value) => String(value)
+  .replaceAll("%", "%25")
+  .replaceAll("\r", "%0D")
+  .replaceAll("\n", "%0A");
+const emitErrorAnnotation = (title, message) => {
+  console.error(
+    `::error title=${workflowCommandEscape(title)}::${workflowCommandEscape(message)}`,
+  );
+};
 const escapeHtml = (value) => value
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
@@ -53,6 +62,10 @@ if (failedLogTexts.length) {
     `- 判定：${diagnosis.cause}`,
     `- 處理：${diagnosis.action}`,
   );
+  emitErrorAnnotation(
+    `Economist 更新失敗：${diagnosis.cause}`,
+    diagnosis.action,
+  );
 }
 
 const reportPath = resolve(projectRoot, ".cache/summary-generation.report.json");
@@ -66,6 +79,10 @@ if (existsSync(reportPath)) {
       lines.push("", "### 尚未通過的文章", "");
       for (const failure of failures) {
         lines.push(`- ${failure.stage}｜${failure.titleEn || failure.key}：${failure.message}`);
+        emitErrorAnnotation(
+          `${failure.stage}未通過：${failure.titleEn || failure.key}`,
+          failure.message,
+        );
       }
     }
   } catch (error) {
