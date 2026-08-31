@@ -93,17 +93,32 @@ const report = {
 };
 writeJsonAtomic(reportPath, report);
 if (!failures.length) {
-  writeJsonAtomic(manifestPath, {
+  const issueCounts = Object.fromEntries(Object.entries(records.reduce((counts, record) => {
+    const issueKey = record.key.split(":", 1)[0];
+    counts[issueKey] = (counts[issueKey] || 0) + 1;
+    return counts;
+  }, {})).sort(([a], [b]) => b.localeCompare(a)));
+  const existingManifest = readJson(manifestPath);
+  const manifestContent = {
     translationVersion: EXPECTED_VERSION,
-    generatedAt: report.auditedAt,
     articleCount: records.length,
     paragraphCount: records.reduce((sum, record) => sum + record.paragraphCount, 0),
-    issueCounts: Object.fromEntries(Object.entries(records.reduce((counts, record) => {
-      const issueKey = record.key.split(":", 1)[0];
-      counts[issueKey] = (counts[issueKey] || 0) + 1;
-      return counts;
-    }, {})).sort(([a], [b]) => b.localeCompare(a))),
-  });
+    issueCounts,
+  };
+  const existingContent = existingManifest && {
+    translationVersion: existingManifest.translationVersion,
+    articleCount: existingManifest.articleCount,
+    paragraphCount: existingManifest.paragraphCount,
+    issueCounts: existingManifest.issueCounts,
+  };
+  if (JSON.stringify(existingContent) !== JSON.stringify(manifestContent)) {
+    writeJsonAtomic(manifestPath, {
+      ...manifestContent,
+      generatedAt: report.auditedAt,
+    });
+  } else {
+    console.log("全文清單內容未變，不改寫 manifest。");
+  }
 }
 
 console.log(`中文全文稽核：${records.length}/${data.articles.length} 篇有檔案；${failures.length} 項失敗；${warnings.length} 項提醒。`);

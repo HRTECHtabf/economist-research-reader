@@ -1,13 +1,25 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, resolve } from "node:path";
+import { classifyUpdateState } from "./lib/update-state.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const envPath = resolve(projectRoot, ".env.local");
 const siteDataPath = resolve(projectRoot, "docs/data/articles.json");
 const rawArticlesPath = resolve(projectRoot, ".cache/articles.raw.json");
 const force = process.argv.includes("--force");
+
+function githubOutput(name, value) {
+  if (!process.env.GITHUB_OUTPUT) return;
+  appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`, "utf8");
+}
+
+function recordUpdateOutputs({ contentChanged, siteDataChanged }, issueFolder) {
+  githubOutput("content_changed", contentChanged);
+  githubOutput("site_data_changed", siteDataChanged);
+  githubOutput("issue_folder", issueFolder);
+}
 
 function readEnv(path) {
   const values = {};
@@ -94,19 +106,23 @@ const latestFolder = latestEntry.name;
 const currentData = existsSync(siteDataPath)
   ? JSON.parse(readFileSync(siteDataPath, "utf8"))
   : null;
+const updateState = classifyUpdateState({
+  currentData,
+  latestFolder,
+  latestSha: latestEntry.sha,
+  force,
+});
 
-if (
-  !force &&
-  currentData?.issueFolder === latestFolder &&
-  currentData?.sourceFolderSha === latestEntry.sha
-) {
+if (updateState.kind === "none") {
+  recordUpdateOutputs(updateState, latestFolder);
   console.log(`目前已是最新一期：${latestFolder}`);
   process.exit(0);
 }
 
-if (!force && currentData?.issueFolder === latestFolder && !currentData?.sourceFolderSha) {
+if (updateState.kind === "metadata") {
   currentData.sourceFolderSha = latestEntry.sha;
   writeFileSync(siteDataPath, `${JSON.stringify(currentData, null, 2)}\n`, "utf8");
+  recordUpdateOutputs(updateState, latestFolder);
   console.log(`已記錄目前期數的來源版本：${latestFolder}`);
   process.exit(0);
 }
@@ -145,5 +161,6 @@ execFileSync(process.execPath, [
 
 const updatedData = JSON.parse(readFileSync(siteDataPath, "utf8"));
 validateSiteData(updatedData, latestFolder, latestEntry.sha);
+recordUpdateOutputs(updateState, latestFolder);
 
 console.log(`網站資料已更新至 ${latestFolder}。`);

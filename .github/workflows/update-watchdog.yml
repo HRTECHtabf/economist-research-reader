@@ -6,12 +6,15 @@ on:
     # Asia/Taipei 每天 12:47 獨立檢查上游、GitHub 資料與公開網站。
     # 週六執行時間晚於原更新流程的 11:17 補查。
     - cron: "47 4 * * *"
+    # 週六 15:47、19:47 再檢查兩次；GitHub 排程若延遲，仍有後續自癒窗口。
+    - cron: "47 7,11 * * 6"
 
 concurrency:
   group: economist-update-watchdog
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: read
 
 jobs:
@@ -24,14 +27,14 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Compare upstream, repository data and public site
         id: health
@@ -44,10 +47,44 @@ jobs:
           echo "## Economist 更新防呆：正常" >> "$GITHUB_STEP_SUMMARY"
           echo "上游最新一期、GitHub 主資料、繁中全文覆蓋率與公開網站一致。" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Trigger a self-healing update when repository data is stale
+        if: ${{ failure() && steps.health.outputs.source_current != 'true' }}
+        uses: actions/github-script@v9
+        with:
+          retries: 3
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const workflow_id = "weekly-update.yml";
+            const activeStatuses = ["queued", "in_progress", "waiting", "requested", "pending"];
+            const activeRuns = [];
+            for (const status of activeStatuses) {
+              const response = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id,
+                branch: "main",
+                status,
+                per_page: 1,
+              });
+              activeRuns.push(...response.data.workflow_runs);
+            }
+            if (activeRuns.length) {
+              core.notice("已有更新工作在排隊或執行，不重複觸發。");
+              return;
+            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id,
+              ref: "main",
+            });
+            core.notice("已自動觸發 Weekly Economist update 補跑。");
+
       - name: Record maintenance guidance
         if: ${{ failure() }}
         shell: bash
         run: |
           echo "## Economist 更新防呆：需要處理" >> "$GITHUB_STEP_SUMMARY"
           echo "看門狗發現上游、GitHub 資料、繁中全文覆蓋率或公開網站不同步。" >> "$GITHUB_STEP_SUMMARY"
-          echo "請手動執行 Weekly Economist update；若 GitHub 資料已正確但網站仍舊，請重新執行 Pages build。" >> "$GITHUB_STEP_SUMMARY"
+          echo "若 GitHub 主資料落後，看門狗會自動觸發 Weekly Economist update；若只有公開網站落後，請重新執行 Pages build。" >> "$GITHUB_STEP_SUMMARY"

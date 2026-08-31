@@ -1,10 +1,18 @@
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import {
   GENERAL_KEYWORD_POLICY,
   GENERAL_KEYWORD_TAXONOMY,
 } from "./general-keyword-taxonomy.mjs";
+import {
+  resolveRetryRounds,
+  retryFailedArticles,
+} from "./lib/retry-failed-articles.mjs";
+import {
+  retryAfterMilliseconds,
+  withTransientRetries,
+} from "./lib/transient-retry.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.json");
@@ -16,9 +24,12 @@ const humanizerGuidePath = resolve(
   projectRoot,
   ".agents/skills/economist-humanizer-zh-tw/references/economist-research-summary.md",
 );
+const generationReportPath = resolve(projectRoot, ".cache/summary-generation.report.json");
 const SUMMARY_VERSION = "research-brief-v4";
 const HUMANIZER_VERSION = "economist-humanizer-v4";
 const MAX_BRIEF_ATTEMPTS = 4;
+const DEFAULT_ARTICLE_RETRY_ROUNDS = 2;
+const DEFAULT_TRANSIENT_API_ATTEMPTS = 3;
 
 function readEnv(path) {
   const values = {};
@@ -49,7 +60,9 @@ function readCheckpoint(path) {
 
 function saveCheckpoint(path, values) {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(values, null, 2)}\n`, "utf8");
+  const temporaryPath = `${path}.${process.pid}.tmp`;
+  writeFileSync(temporaryPath, `${JSON.stringify(values, null, 2)}\n`, "utf8");
+  renameSync(temporaryPath, path);
 }
 
 const env = {
@@ -57,6 +70,21 @@ const env = {
   ...process.env,
 };
 const source = JSON.parse(readFileSync(sourcePath, "utf8"));
+const articleRetryRounds = resolveRetryRounds(
+  env.SUMMARY_ARTICLE_RETRIES,
+  DEFAULT_ARTICLE_RETRY_ROUNDS,
+);
+const transientApiAttempts = Math.max(
+  1,
+  Math.floor(Number(env.AZURE_TRANSIENT_ATTEMPTS) || DEFAULT_TRANSIENT_API_ATTEMPTS),
+);
+const generationReport = {
+  version: 1,
+  issueKey: source.issueKey,
+  startedAt: new Date().toISOString(),
+  stages: {},
+};
+saveCheckpoint(generationReportPath, generationReport);
 const humanizerGuide = readFileSync(humanizerGuidePath, "utf8");
 const naturalStyleRules = [
   "直接從具體事件、主張或數據開場，不要固定以『本文指出』『文章聚焦』『作者認為』起句。",
@@ -375,28 +403,44 @@ async function callAzureJson({ instructions, input, schemaName }, structured = t
     };
   }
 
-  const response = await fetch(responseUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": env.AZURE_OPENAI_API_KEY,
+  return withTransientRetries(async () => {
+    const response = await fetch(responseUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": env.AZURE_OPENAI_API_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+    const responseText = await response.text();
+    let payload = null;
+    try {
+      payload = JSON.parse(responseText);
+    } catch {
+      if (response.ok) throw new Error("Azure 回應的 JSON 不完整");
+    }
+
+    if (!response.ok) {
+      const error = new Error(payload?.error?.message || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.retryAfterMs = retryAfterMilliseconds(response.headers.get("retry-after"));
+      throw error;
+    }
+
+    const outputText = extractOutputText(payload);
+    if (!outputText) {
+      const reason = payload?.incomplete_details?.reason || payload?.status || "沒有文字輸出";
+      throw new Error(`Azure 回應沒有完整文字（${reason}）`);
+    }
+    return parseJsonText(outputText);
+  }, {
+    maxAttempts: transientApiAttempts,
+    onRetry: ({ attempt, maxAttempts, delayMs, error }) => {
+      console.warn(
+        `[Azure 暫時性錯誤 ${attempt}/${maxAttempts - 1}] ${error.message}；${Math.ceil(delayMs / 1000)} 秒後重試。`,
+      );
     },
-    body: JSON.stringify(body),
   });
-  const payload = await response.json();
-
-  if (!response.ok) {
-    const error = new Error(payload?.error?.message || `HTTP ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-
-  const outputText = extractOutputText(payload);
-  if (!outputText) {
-    const reason = payload?.incomplete_details?.reason || payload?.status || "沒有文字輸出";
-    throw new Error(`Azure 回應沒有完整文字（${reason}）`);
-  }
-  return parseJsonText(outputText);
 }
 
 async function callWithFallback(request) {
@@ -472,8 +516,9 @@ function humanize(article, draft, retryContext) {
 }
 
 async function processWithWorkers({ items, values, label, processItem, checkpointPath, processingVersion }) {
-  const failures = [];
   const itemIds = new Set(items.map((article) => article.id));
+  const articlesById = new Map(items.map((article) => [article.id, article]));
+  const retryContexts = new Map();
   for (const id of Object.keys(values)) {
     if (!itemIds.has(id)) delete values[id];
   }
@@ -491,7 +536,73 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
   }
   saveCheckpoint(checkpointPath, values);
 
+  const stageReport = {
+    label,
+    processingVersion,
+    totalArticles: items.length,
+    completedArticles: Object.keys(values).length,
+    articleRetryRounds,
+    maximumAttemptsPerArticle: MAX_BRIEF_ATTEMPTS * (articleRetryRounds + 1),
+    startedAt: new Date().toISOString(),
+    retryRounds: [],
+    failures: [],
+  };
+  generationReport.stages[label] = stageReport;
+  saveCheckpoint(generationReportPath, generationReport);
+
+  async function processArticle(article, index = items.indexOf(article)) {
+    console.log(`[${label} ${index + 1}/${items.length}] 正在處理：${article.titleEn}`);
+    const storedRetryContext = retryContexts.get(article.id) || {};
+    let previousResult = storedRetryContext.previousResult || null;
+    let validationFailures = storedRetryContext.validationFailures || [];
+    const previousAttempts = storedRetryContext.attempts || 0;
+    let lastFailure = "未完成";
+    for (let attempt = 1; attempt <= MAX_BRIEF_ATTEMPTS; attempt += 1) {
+      const totalAttempt = previousAttempts + attempt;
+      try {
+        const result = normalizeGeneratedBrief(await processItem(article, {
+          attempt: totalAttempt,
+          previousResult,
+          validationFailures,
+        }));
+        if (isCompleteBrief(result)) {
+          values[article.id] = {
+            ...result,
+            sourceHash: articleSourceHash(article),
+            processingVersion,
+          };
+          retryContexts.delete(article.id);
+          saveCheckpoint(checkpointPath, values);
+          return { key: article.id, titleEn: article.titleEn };
+        }
+        previousResult = result;
+        validationFailures = briefValidationFailures(result);
+        lastFailure = validationFailures.join("、");
+        retryContexts.set(article.id, {
+          attempts: totalAttempt,
+          previousResult,
+          validationFailures,
+        });
+        if (attempt < MAX_BRIEF_ATTEMPTS) {
+          console.log(`[${label}] ${lastFailure}，第 ${totalAttempt + 1} 次嘗試。`);
+        }
+      } catch (error) {
+        lastFailure = error.message;
+        retryContexts.set(article.id, {
+          attempts: totalAttempt,
+          previousResult,
+          validationFailures,
+        });
+        if (attempt < MAX_BRIEF_ATTEMPTS) {
+          console.log(`[${label}] 單篇處理失敗，第 ${totalAttempt + 1} 次嘗試：${article.titleEn}（${lastFailure}）`);
+        }
+      }
+    }
+    throw new Error(lastFailure);
+  }
+
   let nextIndex = 0;
+  const initialFailures = [];
   async function worker() {
     while (true) {
       const index = nextIndex++;
@@ -501,47 +612,61 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
         console.log(`[${label} ${index + 1}/${items.length}] 已有暫存：${article.titleEn}`);
         continue;
       }
-      console.log(`[${label} ${index + 1}/${items.length}] 正在處理：${article.titleEn}`);
-      let previousResult = null;
-      let validationFailures = [];
-      for (let attempt = 1; attempt <= MAX_BRIEF_ATTEMPTS; attempt += 1) {
-        try {
-          const result = normalizeGeneratedBrief(await processItem(article, {
-            attempt,
-            previousResult,
-            validationFailures,
-          }));
-          if (isCompleteBrief(result)) {
-            values[article.id] = {
-              ...result,
-              sourceHash: articleSourceHash(article),
-              processingVersion,
-            };
-            break;
-          }
-          previousResult = result;
-          validationFailures = briefValidationFailures(result);
-          if (attempt === MAX_BRIEF_ATTEMPTS) {
-            failures.push(`${article.titleEn}：${validationFailures.join("、")}`);
-          } else {
-            console.log(
-              `[${label}] ${validationFailures.join("、")}，第 ${attempt + 1} 次嘗試。`,
-            );
-          }
-        } catch (error) {
-          if (attempt === MAX_BRIEF_ATTEMPTS) {
-            failures.push(`${article.titleEn}：${error.message}`);
-          } else {
-            console.log(`[${label}] 單篇處理失敗，第 ${attempt + 1} 次嘗試：${article.titleEn}`);
-          }
-        }
+      try {
+        await processArticle(article, index);
+      } catch (error) {
+        initialFailures.push({
+          key: article.id,
+          titleEn: article.titleEn,
+          message: error.message,
+        });
       }
-      if (values[article.id]) saveCheckpoint(checkpointPath, values);
     }
   }
   await Promise.all([worker(), worker()]);
-  if (failures.length) {
-    throw new Error(`${label}有 ${failures.length} 篇失敗：\n${failures.join("\n")}`);
+
+  let remainingFailures = initialFailures;
+  if (remainingFailures.length && articleRetryRounds > 0) {
+    remainingFailures = await retryFailedArticles({
+      initialFailures: remainingFailures,
+      maxRounds: articleRetryRounds,
+      findArticle: (id) => articlesById.get(id),
+      retryArticle: (article) => processArticle(article),
+      onRoundStart: ({ round, maxRounds, pending }) => {
+        console.warn(`[${label}自動補跑 ${round}/${maxRounds}] 重新處理 ${pending.length} 篇。`);
+      },
+      onSuccess: ({ round, result }) => {
+        console.log(`[${label}自動補跑 ${round}] 完成 ${result.titleEn}`);
+      },
+      onFailure: ({ round, failure, article }) => {
+        console.error(`[${label}自動補跑 ${round}] 仍失敗 ${article?.titleEn || failure.key}：${failure.message}`);
+      },
+      onRoundComplete: ({ round, pending }) => {
+        stageReport.retryRounds.push({
+          round,
+          remainingFailures: pending.map((failure) => ({
+            ...failure,
+            titleEn: articlesById.get(failure.key)?.titleEn || failure.key,
+          })),
+        });
+        saveCheckpoint(generationReportPath, generationReport);
+      },
+    });
+  }
+
+  stageReport.completedArticles = items.filter((article) => values[article.id]).length;
+  stageReport.failures = remainingFailures.map((failure) => ({
+    ...failure,
+    titleEn: articlesById.get(failure.key)?.titleEn || failure.titleEn || failure.key,
+  }));
+  stageReport.finishedAt = new Date().toISOString();
+  saveCheckpoint(generationReportPath, generationReport);
+
+  if (stageReport.failures.length) {
+    const details = stageReport.failures.map(
+      (failure) => `${failure.titleEn}：${failure.message}`,
+    );
+    throw new Error(`${label}有 ${details.length} 篇失敗：\n${details.join("\n")}`);
   }
 }
 
@@ -657,4 +782,7 @@ const output = {
 
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+generationReport.finishedAt = new Date().toISOString();
+generationReport.summaryCount = output.summaryCount;
+saveCheckpoint(generationReportPath, generationReport);
 console.log(`完成本期 ${output.summaryCount} 篇繁中研究摘要與自然化校修。`);
