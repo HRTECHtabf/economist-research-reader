@@ -10,7 +10,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="all-tags"]',
     title: "先從全部 tag 找主題",
-    description: "搜尋或瀏覽目前期數的所有 tag。點選一個 tag 可查看相關主題；最多選兩個，用來找同時包含兩者的文章。",
+    description: "可切換每期、每月或全部資料後搜尋 tag。這裡的範圍改變時，下方關聯圖與共同文章也會一起更新。",
   },
   {
     selector: '[data-tour="relationship-range"]',
@@ -49,6 +49,7 @@ const requestedTopScope = params.get("topView") || "issue";
 const requestedRelationshipIssue = params.get("network") || "";
 const requestedRelationshipScope = params.get("networkView") || "issue";
 const requestedOverviewIssue = params.get("overview") || "";
+const requestedOverviewScope = params.get("overviewView") || "issue";
 const requestedCloudIssue = params.get("cloud") || "";
 const requestedCloudScope = params.get("cloudView") || "issue";
 
@@ -63,6 +64,7 @@ const state = {
   relationshipScope: ["all", "month", "issue"].includes(requestedRelationshipScope) ? requestedRelationshipScope : "issue",
   relationshipRenderKey: "",
   overviewIssue: requestedOverviewIssue,
+  overviewScope: ["all", "month", "issue"].includes(requestedOverviewScope) ? requestedOverviewScope : "issue",
   cloudIssue: requestedCloudIssue,
   cloudScope: ["all", "month", "issue"].includes(requestedCloudScope) ? requestedCloudScope : "issue",
   months: [],
@@ -94,6 +96,8 @@ const els = {
   overviewSort: document.querySelector("#tag-overview-sort"),
   overviewCount: document.querySelector("#tag-overview-count"),
   overviewGrid: document.querySelector("#tag-overview-grid"),
+  overviewScope: document.querySelector("#overview-scope"),
+  overviewPeriodLabel: document.querySelector("#overview-period-label"),
   overviewIssue: document.querySelector("#overview-issue"),
   signalCards: document.querySelector("#signal-cards"),
   relationshipTitle: document.querySelector("#relationship-title"),
@@ -470,7 +474,9 @@ function syncUrl() {
   if (state.relationshipScope !== "issue") next.set("networkView", state.relationshipScope);
   if (state.relationshipScope === "month" && state.relationshipIssue) next.set("network", state.relationshipIssue);
   if (state.relationshipScope === "issue" && state.relationshipIssue && state.relationshipIssue !== state.issues.at(-1)) next.set("network", state.relationshipIssue);
-  if (state.overviewIssue && state.overviewIssue !== state.issues.at(-1)) next.set("overview", state.overviewIssue);
+  if (state.overviewScope !== "issue") next.set("overviewView", state.overviewScope);
+  if (state.overviewScope === "month" && state.overviewIssue) next.set("overview", state.overviewIssue);
+  if (state.overviewScope === "issue" && state.overviewIssue && state.overviewIssue !== state.issues.at(-1)) next.set("overview", state.overviewIssue);
   if (state.cloudScope !== "issue") next.set("cloudView", state.cloudScope);
   if (state.cloudScope === "month" && state.cloudIssue) next.set("cloud", state.cloudIssue);
   if (state.cloudScope === "issue" && state.cloudIssue && state.cloudIssue !== state.issues.at(-1)) next.set("cloud", state.cloudIssue);
@@ -679,8 +685,12 @@ function renderRelationshipControls() {
   renderRangeControls(els.relationshipScope, els.relationshipIssue, els.relationshipPeriodLabel, state.relationshipScope, state.relationshipIssue);
 }
 
+function renderOverviewControls() {
+  renderRangeControls(els.overviewScope, els.overviewIssue, els.overviewPeriodLabel, state.overviewScope, state.overviewIssue);
+}
+
 function renderIndependentIssueControls() {
-  fillIssueSelect(els.overviewIssue, state.overviewIssue);
+  renderOverviewControls();
   renderRelationshipControls();
   renderCloudControls();
 }
@@ -777,7 +787,7 @@ function sortStats(stats, sort) {
   });
 }
 
-function renderTagOverview(articles, stats) {
+function renderTagOverview(articles, stats, previousKey = "") {
   renderSelectedTags();
   const statsByTag = statsMapFor(stats);
   const query = state.overviewQuery.trim().toLocaleLowerCase("zh-Hant");
@@ -797,10 +807,11 @@ function renderTagOverview(articles, stats) {
     count.textContent = item.count;
     button.append(label, count);
     button.addEventListener("click", () => toggleFocusTag(item.tag));
-    button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag));
+    const trendFormatter = (trend) => previousKey ? trendText(trend) : "無比較基準";
+    button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag, trendFormatter));
     button.addEventListener("pointermove", positionTooltip);
     button.addEventListener("pointerleave", clearTagHighlights);
-    button.addEventListener("focus", (event) => highlightTag(item.tag, event, articles, statsByTag));
+    button.addEventListener("focus", (event) => highlightTag(item.tag, event, articles, statsByTag, trendFormatter));
     button.addEventListener("blur", clearTagHighlights);
     els.overviewGrid.append(button);
   }
@@ -820,13 +831,19 @@ function appendSignalCard(label, value, description, accent = false, help = null
   els.signalCards.append(card);
 }
 
-function renderSignals(articles, periods, stats, relationships) {
+function renderSignals(articles, periods, stats, relationships, previousKey = "") {
   els.signalCards.replaceChildren();
   const activeTags = stats.filter((item) => item.count > 0);
-  appendSignalCard("觀測期數", "1 期", `${issueTitle(state.overviewIssue)}｜${issueRange(state.overviewIssue, true)}`);
+  const observedIssues = periods.length;
+  const scopeDescription = state.overviewScope === "all"
+    ? `全部資料｜${state.issues.length} 期`
+    : state.overviewScope === "month"
+      ? `${monthTitle(state.overviewIssue)}｜${observedIssues} 期`
+      : `${issueTitle(state.overviewIssue)}｜${issueRange(state.overviewIssue, true)}`;
+  appendSignalCard("觀測範圍", `${observedIssues} 期`, scopeDescription);
   appendSignalCard("涵蓋文章", `${articles.length} 篇`, `目前期間共涵蓋 ${activeTags.length} 個 tag`, false, {
     title: "涵蓋文章怎麼算？",
-    body: "文章數是目前所選期數的文章總數；tag 數會把這些文章使用過的 tag 去除重複後計算。",
+    body: "文章數是目前所選範圍的文章總數；tag 數會把這些文章使用過的 tag 去除重複後計算。",
   });
   if (!state.selectedTags.length) {
     const strongest = relationships[0];
@@ -850,9 +867,11 @@ function renderSignals(articles, periods, stats, relationships) {
     });
   }
   const rising = [...activeTags].filter((item) => item.trend.delta > 0).sort((a, b) => b.trend.delta - a.trend.delta || b.count - a.count)[0];
-  appendSignalCard("較前一期升溫", rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : state.overviewIssue === state.issues[0] ? "最早一期沒有前期資料可比較" : "目前沒有明顯升溫的 tag", false, {
+  const comparisonLabel = state.overviewScope === "month" ? "較前月升溫" : state.overviewScope === "all" ? "近期升溫" : "較前一期升溫";
+  const comparisonUnit = state.overviewScope === "month" ? "前一月" : "前一期";
+  appendSignalCard(comparisonLabel, rising?.tag || "資料不足", rising ? `${trendText(rising.trend)}；目前範圍出現 ${rising.count} 篇` : !previousKey ? `沒有${comparisonUnit}資料可比較` : "目前沒有明顯升溫的 tag", false, {
     title: "升溫怎麼算？",
-    body: "先算每個 tag 在當期文章中的占比，再與前一期占比比較；卡片挑出占比增加最多的 tag。百分比表示相對增幅，不是增加的文章篇數。",
+    body: `先算每個 tag 在目前範圍的文章占比，再與${comparisonUnit}比較；卡片挑出占比增加最多的 tag。百分比表示相對增幅，不是增加的文章篇數。`,
   });
 }
 
@@ -1808,13 +1827,38 @@ function renderTopModule() {
   syncUrl();
 }
 
+function overviewStatistics() {
+  const articles = articlesForScope(state.overviewScope, state.overviewIssue);
+  const periods = periodsFor(articles);
+  const stats = tagStatistics(articles, periods, true, "");
+  if (state.overviewScope === "all") {
+    return { articles, periods, stats, previousKey: state.issues.at(-2) || "" };
+  }
+
+  const keys = state.overviewScope === "month" ? state.months : state.issues;
+  const index = keys.indexOf(state.overviewIssue);
+  const previousKey = index > 0 ? keys[index - 1] : "";
+  const previousArticles = previousKey ? articlesForScope(state.overviewScope, previousKey) : [];
+  stats.forEach((item) => {
+    const currentRate = articles.length ? (item.count / articles.length) * 100 : 0;
+    const previousRate = previousArticles.length ? (countContaining(previousArticles, [item.tag]) / previousArticles.length) * 100 : 0;
+    item.trend = previousKey ? trendFor([previousRate, currentRate]) : { delta: 0, percent: 0, recent: currentRate, previous: 0 };
+  });
+  return { articles, periods, stats, previousKey };
+}
+
 function renderOverviewModule() {
-  const articles = articlesInWindow(state.overviewIssue);
-  const stats = tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue);
-  fillIssueSelect(els.overviewIssue, state.overviewIssue);
-  renderTagOverview(articles, stats);
-  renderSignals(articles, [state.overviewIssue], stats, relationshipsFor(articles));
+  const { articles, periods, stats, previousKey } = overviewStatistics();
+  renderOverviewControls();
+  renderTagOverview(articles, stats, previousKey);
+  renderSignals(articles, periods, stats, relationshipsFor(articles), previousKey);
   syncUrl();
+}
+
+function syncRelationshipWithOverview() {
+  state.relationshipScope = state.overviewScope;
+  state.relationshipIssue = state.overviewIssue;
+  state.relationshipRenderKey = "";
 }
 
 function renderCloudModule() {
@@ -1836,9 +1880,23 @@ function renderAll() {
 }
 
 els.clearFocus.addEventListener("click", () => { state.selectedTags = []; renderAll(); });
-els.overviewSearch.addEventListener("input", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewQuery = els.overviewSearch.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
-els.overviewSort.addEventListener("change", () => { const articles = articlesInWindow(state.overviewIssue); state.overviewSort = els.overviewSort.value; renderTagOverview(articles, tagStatistics(articles, [state.overviewIssue], true, state.overviewIssue)); });
-els.overviewIssue.addEventListener("change", () => { state.overviewIssue = els.overviewIssue.value; renderOverviewModule(); });
+els.overviewSearch.addEventListener("input", () => { state.overviewQuery = els.overviewSearch.value; renderOverviewModule(); });
+els.overviewSort.addEventListener("change", () => { state.overviewSort = els.overviewSort.value; renderOverviewModule(); });
+els.overviewScope.addEventListener("change", () => {
+  state.overviewScope = els.overviewScope.value;
+  state.overviewIssue = state.overviewScope === "all" ? "all" : state.overviewScope === "month" ? state.months.at(-1) : state.issues.at(-1);
+  syncRelationshipWithOverview();
+  renderOverviewModule();
+  renderRelationshipPanel();
+  syncUrl();
+});
+els.overviewIssue.addEventListener("change", () => {
+  state.overviewIssue = els.overviewIssue.value;
+  syncRelationshipWithOverview();
+  renderOverviewModule();
+  renderRelationshipPanel();
+  syncUrl();
+});
 els.relationshipScope.addEventListener("change", () => {
   state.relationshipScope = els.relationshipScope.value;
   state.relationshipIssue = state.relationshipScope === "all" ? "all" : state.relationshipScope === "month" ? state.months.at(-1) : state.issues.at(-1);
@@ -1911,7 +1969,10 @@ fetch("./data/articles.json", { cache: "no-store" })
     else if (state.relationshipScope === "month") {
       if (!state.months.includes(state.relationshipIssue)) state.relationshipIssue = state.months.at(-1) || "";
     } else if (!state.issues.includes(state.relationshipIssue)) state.relationshipIssue = state.issues.at(-1) || state.issue;
-    if (!state.issues.includes(state.overviewIssue)) state.overviewIssue = state.issues.at(-1) || state.issue;
+    if (state.overviewScope === "all") state.overviewIssue = "all";
+    else if (state.overviewScope === "month") {
+      if (!state.months.includes(state.overviewIssue)) state.overviewIssue = state.months.at(-1) || "";
+    } else if (!state.issues.includes(state.overviewIssue)) state.overviewIssue = state.issues.at(-1) || state.issue;
     if (state.cloudScope === "all") state.cloudIssue = "all";
     else if (state.cloudScope === "month") {
       if (!state.months.includes(state.cloudIssue)) state.cloudIssue = state.months.at(-1) || "";

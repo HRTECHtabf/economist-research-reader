@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260821-12" />
-    <link rel="stylesheet" href="./trends.css?v=20260831-1" />
+    <link rel="stylesheet" href="./trends.css?v=20260831-2" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -30,7 +30,7 @@
       <section class="trend-hero">
         <div class="shell trend-hero-grid">
           <div><p class="eyebrow">RESEARCH SIGNALS · 趨勢觀測</p><h1>關鍵字趨勢儀表板</h1></div>
-          <p>各分析區塊可獨立選擇期數或月份；選擇兩個 tag 後，關聯分析下方會直接列出共同文章。</p>
+          <p>可按每期、每月或全部資料檢視；上方 tag 範圍會同步關聯圖與共同文章，各圖表仍可另行調整。</p>
         </div>
       </section>
 
@@ -39,7 +39,7 @@
           <section class="dashboard-card tag-overview-card" aria-labelledby="tag-overview-title" data-tour="all-tags">
             <div class="card-heading tag-overview-heading">
               <div><p class="eyebrow red">ALL TAGS</p><h2 id="tag-overview-title">全部 tag</h2></div>
-              <div><p>所有 tag 直接列在這裡。這個區塊有自己的期數，不會被其他圖表影響。</p><label class="module-period-control"><span>全部 tag 期數</span><select id="overview-issue" aria-label="選擇全部 tag 統計期數"></select></label></div>
+              <div><p>可按每期、每月或全部資料查看 tag；切換後，下方關聯圖與共同文章會一起更新。</p><div class="range-controls overview-range-controls"><label><span>統計方式</span><select id="overview-scope" aria-label="選擇全部 tag 統計方式"><option value="issue" selected>每期</option><option value="month">每月</option><option value="all">全部資料</option></select></label><label><span id="overview-period-label">期數</span><select id="overview-issue" aria-label="選擇全部 tag 資料範圍"></select></label></div></div>
             </div>
             <div class="focus-strip">
               <div><small>分析焦點（最多兩個；排名會顯示共同文章的相關 tag）</small><div class="selected-tag-list" id="selected-tag-list"><span>尚未選擇，顯示目前資料範圍的最強關聯</span></div></div>
@@ -143,6 +143,6 @@
         </div>
       </section>
     </div>
-    <script src="./trends.js?v=20260831-1" defer></script>
+    <script src="./trends.js?v=20260831-2" defer></script>
   </body>
 </html>
