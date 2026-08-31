@@ -13,6 +13,7 @@ import {
   retryAfterMilliseconds,
   withTransientRetries,
 } from "./lib/transient-retry.mjs";
+import { briefLengthProfile } from "./lib/brief-length-profile.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const sourcePath = resolve(projectRoot, process.argv[2] || ".cache/articles.raw.json");
@@ -228,7 +229,8 @@ function endsAsCompleteSentence(value) {
   return typeof value === "string" && /[。！？…》〉」』”’]$/.test(value.trim());
 }
 
-function isCompleteBrief(value) {
+function isCompleteBrief(value, article) {
+  const lengthProfile = briefLengthProfile(article);
   const keywordsAreGeneral =
     Array.isArray(value?.keywordsZh) &&
     value.keywordsZh.every((keyword) => GENERAL_KEYWORD_TAXONOMY.includes(keyword));
@@ -242,19 +244,22 @@ function isCompleteBrief(value) {
   return (
     value &&
     endsAsCompleteSentence(value.summaryZh) &&
-    value.summaryZh.length >= 130 &&
-    value.summaryZh.length <= 250 &&
+    value.summaryZh.length >= lengthProfile.summaryMin &&
+    value.summaryZh.length <= lengthProfile.summaryMax &&
     !/^(?:本文指出|文章聚焦|作者認為)/u.test(value.summaryZh) &&
     !aiStylePattern.test(value.summaryZh) &&
     endsAsCompleteSentence(value.researchLensZh) &&
-    value.researchLensZh.length >= 50 &&
-    value.researchLensZh.length <= 135 &&
+    value.researchLensZh.length >= lengthProfile.researchLensMin &&
+    value.researchLensZh.length <= lengthProfile.researchLensMax &&
     !aiStylePattern.test(value.researchLensZh) &&
     Array.isArray(value.keyPointsZh) &&
     value.keyPointsZh.length >= 3 &&
     value.keyPointsZh.length <= 5 &&
     value.keyPointsZh.every(
-      (point) => endsAsCompleteSentence(point) && point.length >= 25 && point.length <= 86 && isStandaloneKeyPoint(point),
+      (point) => endsAsCompleteSentence(point) &&
+        point.length >= lengthProfile.pointMin &&
+        point.length <= lengthProfile.pointMax &&
+        isStandaloneKeyPoint(point),
     ) &&
     Array.isArray(value.keywordsZh) &&
     value.keywordsZh.length >= 3 &&
@@ -263,11 +268,16 @@ function isCompleteBrief(value) {
   );
 }
 
-function briefValidationFailures(value) {
+function briefValidationFailures(value, article) {
+  const lengthProfile = briefLengthProfile(article);
   const failures = [];
   if (!value || typeof value !== "object") return ["不是物件"];
   if (!endsAsCompleteSentence(value.summaryZh)) failures.push("摘要句尾不完整");
-  if (typeof value.summaryZh !== "string" || value.summaryZh.length < 130 || value.summaryZh.length > 250) {
+  if (
+    typeof value.summaryZh !== "string" ||
+    value.summaryZh.length < lengthProfile.summaryMin ||
+    value.summaryZh.length > lengthProfile.summaryMax
+  ) {
     failures.push(`摘要長度 ${value.summaryZh?.length ?? 0}`);
   }
   if (/^(?:本文指出|文章聚焦|作者認為)/u.test(value.summaryZh || "")) failures.push("摘要以公式化來源提示開場");
@@ -284,7 +294,11 @@ function briefValidationFailures(value) {
   } else {
     value.keyPointsZh.forEach((point, index) => {
       if (!endsAsCompleteSentence(point)) failures.push(`重點 ${index + 1} 句尾不完整`);
-      if (typeof point !== "string" || point.length < 25 || point.length > 86) {
+      if (
+        typeof point !== "string" ||
+        point.length < lengthProfile.pointMin ||
+        point.length > lengthProfile.pointMax
+      ) {
         failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
       }
       for (const failure of standaloneKeyPointFailures(point)) {
@@ -467,13 +481,14 @@ function retryFeedback({ attempt = 1, previousResult, validationFailures = [] } 
 }
 
 function summarize(article, retryContext) {
+  const lengthProfile = briefLengthProfile(article);
   return callWithFallback({
     schemaName: "research_brief",
     instructions: [
       "你是台灣金融與經濟研究機構的資深研究助理。",
       "根據英文文章，以繁體中文（台灣用語）製作第一版研究導讀。",
       "不得補造原文沒有的事實、數字、來源或因果關係。",
-      "summaryZh 限 150–230 個中文字；keyPointsZh 依內容使用三至五點，每點嚴格控制在 35–65 個中文字並以完整標點收尾；researchLensZh 限 60–120 個中文字。",
+      lengthProfile.instruction,
       "highlightTermsZh 通常選 1–3 個在 summaryZh 中逐字出現的短語，只能選關鍵結論、因果機制或重要證據；不要只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。",
       GENERAL_KEYWORD_POLICY,
       naturalStyleRules,
@@ -492,12 +507,14 @@ function summarize(article, retryContext) {
 }
 
 function humanize(article, draft, retryContext) {
+  const lengthProfile = briefLengthProfile(article);
   return callWithFallback({
     schemaName: "humanized_research_brief",
     instructions: [
       "你是繁體中文研究摘要編輯。請校修第一版摘要，降低公式化 AI 腔。",
       "必須鎖定英文原文的事實、數字、因果關係與不確定程度，不得新增內容。",
       naturalStyleRules,
+      lengthProfile.instruction,
       GENERAL_KEYWORD_POLICY,
       "保留 JSON 欄位；keyPointsZh 可依內容調整為三至五點。highlightTermsZh 必須重新檢查，只保留 summaryZh 中逐字出現的關鍵結論、因果機制或重要證據；不得只選國名、地名、人名、機構名或普通名詞。若沒有適合的短語，回傳空陣列，不要硬湊。輸出 JSON，不要使用 Markdown。",
       humanizerGuide,
@@ -526,7 +543,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
     const storedHash = values[article.id]?.sourceHash;
     if (
       values[article.id] &&
-      (!isCompleteBrief(values[article.id]) ||
+      (!isCompleteBrief(values[article.id], article) ||
         (storedHash && storedHash !== articleSourceHash(article)) ||
         values[article.id]?.processingVersion !== processingVersion)
     ) {
@@ -565,7 +582,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
           previousResult,
           validationFailures,
         }));
-        if (isCompleteBrief(result)) {
+        if (isCompleteBrief(result, article)) {
           values[article.id] = {
             ...result,
             sourceHash: articleSourceHash(article),
@@ -576,7 +593,7 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
           return { key: article.id, titleEn: article.titleEn };
         }
         previousResult = result;
-        validationFailures = briefValidationFailures(result);
+        validationFailures = briefValidationFailures(result, article);
         lastFailure = validationFailures.join("、");
         retryContexts.set(article.id, {
           attempts: totalAttempt,
