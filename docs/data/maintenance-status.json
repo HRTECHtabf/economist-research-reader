@@ -36,6 +36,25 @@
   ],
   "history": [
     {
+      "runId": 33385563057,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33385563057",
+      "commitSha": "1c09aae9af1b889242ef0af36843efd25cc5e4a8",
+      "workflow": "watchdog",
+      "recordedAt": "2026-08-31T11:08:28.310Z",
+      "outcome": "success",
+      "issueKey": "2026.08.29",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.08.29；GitHub 資料 te_2026.08.29；中文全文 443 篇、隔離 1 篇，共 444/444；公開網站 te_2026.08.29",
+      "incidents": []
+    },
+    {
       "runId": 33370754773,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33370754773",
