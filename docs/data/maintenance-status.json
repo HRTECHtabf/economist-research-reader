@@ -10,8 +10,8 @@
   },
   "stages": {
     "期數偵測與摘要": "success",
-    "繁中全文翻譯": "success",
-    "全文稽核": "success"
+    "繁中全文翻譯": "skipped",
+    "全文稽核": "skipped"
   },
   "skippedArticleCount": 1,
   "failedArticleCount": 0,
@@ -34,5 +34,5 @@
       "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
     }
   ],
-  "updatedAt": "2026-08-31T02:59:46.499Z"
+  "updatedAt": "2026-08-31T03:01:29.459Z"
 }
