@@ -13,7 +13,7 @@
     "繁中全文翻譯": "success",
     "全文稽核": "success"
   },
-  "skippedArticleCount": 8,
+  "skippedArticleCount": 3,
   "failedArticleCount": 0,
   "diagnosis": {
     "category": "content_filter",
@@ -32,61 +32,6 @@
       "category": "content_filter",
       "cause": "文章觸發 Azure 內容安全篩選",
       "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-    },
-    {
-      "scope": "summary",
-      "stage": "初稿",
-      "status": "skipped",
-      "key": "45ba4175-8585-4676-894f-fb0af17a7284",
-      "title": "France is love-bombing Britain",
-      "attempts": 3,
-      "category": "summary_validation",
-      "cause": "少數摘要未通過內容或格式驗證",
-      "message": "研究角度長度 158、重點 5 以依賴前文的語句開頭：\"文章也將兩國民族主義上升放進同一敘事，連動到法國大選前的極右翼動員與英國改革黨的出席。\""
-    },
-    {
-      "scope": "summary",
-      "stage": "初稿",
-      "status": "skipped",
-      "key": "5fc2a6c6-7499-46aa-b80b-4dfa7bc13749",
-      "title": "How work makes families more equal",
-      "attempts": 3,
-      "category": "summary_validation",
-      "cause": "少數摘要未通過內容或格式驗證",
-      "message": "重點 4 以名詞式短標題加冒號開頭：\"文章提出傳導機制：外出工作提升自信與議價能力、讓女性更能影響支出，也提供離開不理想關係的籌碼。\""
-    },
-    {
-      "scope": "summary",
-      "stage": "初稿",
-      "status": "skipped",
-      "key": "08b60401-d3b9-42ce-bf18-693e9b37b036",
-      "title": "Why get an MBA when you can watch a sports documentary?",
-      "attempts": 3,
-      "category": "summary_validation",
-      "cause": "少數摘要未通過內容或格式驗證",
-      "message": "重點 5 以依賴前文的語句開頭：\"文中同時提出投資人追看紀錄片的較務實動機：賽事被視為相對不易被AI破壞的商業與注意力載體。\""
-    },
-    {
-      "scope": "summary",
-      "stage": "初稿",
-      "status": "skipped",
-      "key": "4808bfad-8219-47c5-acef-6a1e8a17f356",
-      "title": "Europe’s bond markets are suffering a post-holiday shock",
-      "attempts": 3,
-      "category": "summary_validation",
-      "cause": "少數摘要未通過內容或格式驗證",
-      "message": "摘要長度 105"
-    },
-    {
-      "scope": "summary",
-      "stage": "初稿",
-      "status": "skipped",
-      "key": "5fa5f9ed-d6cd-42bb-95ef-a461ac6f8510",
-      "title": "What do a spoiled Venezuelan and poor Texan have in common?",
-      "attempts": 3,
-      "category": "summary_validation",
-      "cause": "少數摘要未通過內容或格式驗證",
-      "message": "摘要長度 117"
     },
     {
       "scope": "fulltext",
@@ -112,6 +57,63 @@
     }
   ],
   "history": [
+    {
+      "runId": 33859641338,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33859641338",
+      "commitSha": "bb28eb39326b07fda5f3686f9d5ec0285251caea",
+      "workflow": "weekly-update",
+      "recordedAt": "2026-09-04T09:43:42.482Z",
+      "outcome": "warning",
+      "issueKey": "2026.09.05",
+      "systemicFailure": false,
+      "stages": {
+        "期數偵測與摘要": "success",
+        "繁中全文翻譯": "success",
+        "全文稽核": "success"
+      },
+      "skippedArticleCount": 3,
+      "failedArticleCount": 0,
+      "diagnosis": {
+        "category": "content_filter",
+        "cause": "文章觸發 Azure 內容安全篩選"
+      },
+      "incidents": [
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "00c65be5-f114-4c43-97ca-e6e20a1451b3",
+          "title": "The changing geography of violent crime in Britain",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.05:00c65be5-f114-4c43-97ca-e6e20a1451b3",
+          "title": "The changing geography of violent crime in Britain",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
+          "title": "Politics",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
+        }
+      ]
+    },
     {
       "runId": 33856433575,
       "runAttempt": 1,
@@ -533,5 +535,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-09-04T09:39:08.942Z"
+  "updatedAt": "2026-09-04T09:43:42.489Z"
 }
