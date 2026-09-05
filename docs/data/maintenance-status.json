@@ -58,6 +58,63 @@
   ],
   "history": [
     {
+      "runId": 33963208684,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33963208684",
+      "commitSha": "4179bad016c48b3ba7e315589aae437ab1811eb5",
+      "workflow": "weekly-update",
+      "recordedAt": "2026-09-05T11:23:47.539Z",
+      "outcome": "warning",
+      "issueKey": "2026.09.05",
+      "systemicFailure": false,
+      "stages": {
+        "期數偵測與摘要": "success",
+        "繁中全文翻譯": "success",
+        "全文稽核": "success"
+      },
+      "skippedArticleCount": 3,
+      "failedArticleCount": 0,
+      "diagnosis": {
+        "category": "content_filter",
+        "cause": "文章觸發 Azure 內容安全篩選"
+      },
+      "incidents": [
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "00c65be5-f114-4c43-97ca-e6e20a1451b3",
+          "title": "The changing geography of violent crime in Britain",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.05:00c65be5-f114-4c43-97ca-e6e20a1451b3",
+          "title": "The changing geography of violent crime in Britain",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
+          "title": "Politics",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
+        }
+      ]
+    },
+    {
       "runId": 33963200767,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33963200767",
@@ -785,5 +842,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-09-05T08:35:40.733Z"
+  "updatedAt": "2026-09-05T11:23:47.547Z"
 }
