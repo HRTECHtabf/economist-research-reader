@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { ALLOWED_UNAVAILABLE_REASONS } from "./lib/content-filter-policy.mjs";
+import { untranslatedParagraphFailures } from "./lib/filtered-paragraph-fallback.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -38,6 +39,7 @@ const failures = [];
 const warnings = [];
 const records = [];
 const unavailableRecords = [];
+const partialRecords = [];
 
 for (const article of data.articles) {
   const path = outputPath(article);
@@ -69,7 +71,15 @@ for (const article of data.articles) {
     failures.push({ key, issue: `段落數 ${value.paragraphsZh?.length ?? 0}/${sourceParagraphs.length}` });
     continue;
   }
+  const untranslatedFailures = untranslatedParagraphFailures(value, sourceParagraphs);
+  for (const issue of untranslatedFailures) failures.push({ key, issue });
+  const untranslated = new Set(untranslatedFailures.length ? [] : value.untranslatedParagraphs || []);
+  if (untranslated.size) {
+    partialRecords.push({ key, titleEn: article.titleEn, untranslatedParagraphs: untranslated.size });
+    warnings.push({ key, issue: `Azure 內容安全篩選擋下 ${untranslated.size} 段；其餘段落已翻譯，被擋段落保留英文原文` });
+  }
   for (const [index, textZhValue] of value.paragraphsZh.entries()) {
+    if (untranslated.has(index)) continue;
     const textZh = String(textZhValue || "").trim();
     const textEn = sourceParagraphs[index];
     if (!textZh) failures.push({ key, paragraph: index + 1, issue: "空白譯文" });
@@ -105,6 +115,7 @@ const report = {
   databaseArticles: data.articles.length,
   validArticleFiles: records.length,
   unavailableArticleFiles: unavailableRecords.length,
+  partialArticleFiles: partialRecords,
   failures,
   warnings,
   manualReviewSample: sample,
@@ -122,6 +133,7 @@ if (!failures.length) {
     articleCount: records.length,
     unavailableCount: unavailableRecords.length,
     coveredArticleCount: records.length + unavailableRecords.length,
+    ...(partialRecords.length ? { partialArticleCount: partialRecords.length } : {}),
     paragraphCount: records.reduce((sum, record) => sum + record.paragraphCount, 0),
     issueCounts,
   };
@@ -130,6 +142,7 @@ if (!failures.length) {
     articleCount: existingManifest.articleCount,
     unavailableCount: existingManifest.unavailableCount || 0,
     coveredArticleCount: existingManifest.coveredArticleCount || existingManifest.articleCount,
+    ...(existingManifest.partialArticleCount ? { partialArticleCount: existingManifest.partialArticleCount } : {}),
     paragraphCount: existingManifest.paragraphCount,
     issueCounts: existingManifest.issueCounts,
   };
@@ -143,6 +156,6 @@ if (!failures.length) {
   }
 }
 
-console.log(`中文全文稽核：${records.length} 篇有譯文、${unavailableRecords.length} 篇內容安全隔離，共覆蓋 ${records.length + unavailableRecords.length}/${data.articles.length} 篇；${failures.length} 項失敗；${warnings.length} 項提醒。`);
+console.log(`中文全文稽核：${records.length} 篇有譯文（其中 ${partialRecords.length} 篇部分段落保留英文）、${unavailableRecords.length} 篇內容安全隔離，共覆蓋 ${records.length + unavailableRecords.length}/${data.articles.length} 篇；${failures.length} 項失敗；${warnings.length} 項提醒。`);
 console.log(`人工抽查樣本：${sample.length} 篇，清單已寫入 ${reportPath.slice(projectRoot.length + 1)}。`);
 if (failures.length) process.exitCode = 1;

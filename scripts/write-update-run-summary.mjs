@@ -173,6 +173,24 @@ if (existsSync(fulltextReportPath)) {
       lines.push(`- ${title}：保留摘要與英文原文，繁中全文暫不可用。`);
       emitWarningAnnotation(`全文已隔離：${title}`, "文章與英文原文仍會發布，詳細原因已寫入維運頁。");
     }
+    if (report.partial?.length) lines.push("", "### 部分段落保留英文的全文", "");
+    for (const item of report.partial || []) {
+      const title = titleByKey.get(item.key) || item.key;
+      const count = item.untranslatedParagraphs?.length || 0;
+      incidents.push({
+        scope: "fulltext",
+        stage: "繁中全文",
+        status: "partial",
+        key: item.key,
+        title,
+        attempts: 1,
+        category: "content_filter",
+        cause: `Azure 內容安全篩選擋下 ${count} 段，其餘段落已翻譯`,
+        message: sanitizePublicFailureMessage(item.message),
+      });
+      lines.push(`- ${title}：${count}/${item.paragraphs} 段保留英文原文，其餘段落已發布繁中譯文。`);
+      emitWarningAnnotation(`全文部分段落保留英文：${title}`, "其餘段落已翻譯並發布，詳細原因已寫入維運頁。");
+    }
   } catch (error) {
     lines.push("", `全文翻譯錯誤報告無法讀取：${error.message}`);
   }
@@ -204,6 +222,20 @@ if (existsSync(publishedDataPath)) {
     const fulltextPath = resolve(projectRoot, "docs/data/fulltext", article.issueKey, `${article.id}.json`);
     if (!existsSync(fulltextPath)) continue;
     const fulltext = JSON.parse(readFileSync(fulltextPath, "utf8"));
+    if (fulltext.untranslatedParagraphs?.length) {
+      incidents.push({
+        scope: "fulltext",
+        stage: "繁中全文",
+        status: "partial",
+        key,
+        title: article.titleEn,
+        attempts: 1,
+        category: "content_filter",
+        cause: `Azure 內容安全篩選擋下 ${fulltext.untranslatedParagraphs.length} 段，其餘段落已翻譯`,
+        message: fulltext.untranslatedDetailZh || "被擋段落保留英文原文。",
+      });
+      continue;
+    }
     if (fulltext.unavailable !== true) continue;
     const filtered = fulltext.unavailableReason === "azure_content_filter";
     incidents.push({

@@ -20,6 +20,14 @@ import {
   isSystemicFailureCount,
   sanitizePublicFailureMessage,
 } from "./lib/article-failure-policy.mjs";
+import {
+  FILTER_SPLIT_STRATEGY,
+  mergeParagraphTranslations,
+  needsFilterRetry,
+  translatableParagraphs,
+  translateWithFilterSplit,
+  untranslatedParagraphFailures,
+} from "./lib/filtered-paragraph-fallback.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const dataPath = resolve(projectRoot, "docs/data/articles.json");
@@ -389,8 +397,14 @@ async function translateChunk(chunk, article) {
       }));
       const failures = validateChunk(chunk, value.translations);
       if (!failures.length) {
-        const polished = await polishChunk(chunk, value.translations, article);
-        return { translations: polished.translations, attempts: attempt + polished.attempts };
+        try {
+          const polished = await polishChunk(chunk, value.translations, article);
+          return { translations: polished.translations, attempts: attempt + polished.attempts };
+        } catch (error) {
+          // 初稿已通過檢查；定稿若被內容安全篩選擋下，保留初稿，不讓整批段落退回英文。
+          if (!isContentFilterError(error)) throw error;
+          return { translations: value.translations, attempts: attempt + 1 };
+        }
       }
       lastFailure = failures.join("；");
       feedback = lastFailure;
@@ -416,6 +430,7 @@ if (checkpoint.version !== TRANSLATION_VERSION) {
 
 const maximumCharacters = Math.max(2500, Number(option("chunk-chars", env.TRANSLATION_CHUNK_CHARACTERS)) || DEFAULT_CHUNK_CHARACTERS);
 const force = process.argv.includes("--force");
+const retryFiltered = process.argv.includes("--retry-filtered");
 const auditOnly = process.argv.includes("--audit-only");
 const selectedArticle = option("article");
 const limit = Math.max(0, Number(option("limit")) || 0);
@@ -423,18 +438,21 @@ const workerCount = Math.max(1, Number(option("workers", env.TRANSLATION_WORKERS
 
 function existingOutputValid(article) {
   const value = readJson(outputPath(article), null);
+  if (needsFilterRetry(value, { retryFiltered })) return false;
   if (
     value?.unavailable === true &&
     ALLOWED_UNAVAILABLE_REASONS.has(value?.unavailableReason) &&
     value?.translationVersion === TRANSLATION_VERSION &&
     value?.sourceHash === sourceHash(article)
   ) return true;
+  const paragraphsEn = splitParagraphs(article.textEn);
   return (
     value?.translationVersion === TRANSLATION_VERSION &&
     value?.sourceHash === sourceHash(article) &&
     Array.isArray(value?.paragraphsZh) &&
-    value.paragraphsZh.length === splitParagraphs(article.textEn).length &&
-    !value.paragraphsZh.some((text) => !String(text).trim())
+    value.paragraphsZh.length === paragraphsEn.length &&
+    !value.paragraphsZh.some((text) => !String(text).trim()) &&
+    !untranslatedParagraphFailures(value, paragraphsEn).length
   );
 }
 
@@ -451,6 +469,7 @@ const report = {
   totalDatabaseArticles: data.articles.length,
   selectedArticles: candidates.length,
   completed: [],
+  partial: [],
   quarantined: [],
   failed: [],
 };
@@ -468,6 +487,7 @@ function quarantineArticle(article, failure) {
       ? "Azure 內容安全篩選未允許產生這篇繁中全文，請先閱讀英文原文。"
       : `繁中全文連續 ${MAX_ARTICLE_ATTEMPTS} 次處理失敗，請先閱讀英文原文。`,
     unavailableDetailZh: failure.message,
+    ...(filtered ? { filterStrategy: FILTER_SPLIT_STRATEGY } : {}),
     recordedAt: new Date().toISOString(),
   };
   writeJsonAtomic(outputPath(article), value);
@@ -478,16 +498,25 @@ async function translateArticle(article) {
   const paragraphs = splitParagraphs(article.textEn);
   const chunks = chunkParagraphs(paragraphs, maximumCharacters);
   const translatedByIndex = new Map();
+  const filteredIndexes = new Set();
+  const filterMessages = [];
   let apiAttempts = 0;
   for (const [chunkIndex, chunk] of chunks.entries()) {
     const cacheKey = `${articleKey(article)}:${sourceHash(article)}:${chunkIndex}:${createHash("sha256").update(JSON.stringify(chunk)).digest("hex")}`;
     let cached = checkpoint.chunks[cacheKey];
-    if (force || validateChunk(chunk, cached?.translations).length) cached = null;
+    if (
+      force ||
+      (retryFiltered && cached?.filteredIndexes?.length) ||
+      validateChunk(translatableParagraphs(chunk, cached?.filteredIndexes), cached?.translations).length
+    ) cached = null;
     if (!cached) {
-      const translated = await translateChunk(chunk, article);
+      const translated = await translateWithFilterSplit(chunk, (part) => translateChunk(part, article));
       cached = {
         translations: translated.translations,
         attempts: translated.attempts,
+        ...(translated.filteredIndexes.length
+          ? { filteredIndexes: translated.filteredIndexes, filterMessages: translated.filterMessages }
+          : {}),
         completedAt: new Date().toISOString(),
       };
       checkpoint.chunks[cacheKey] = cached;
@@ -495,9 +524,16 @@ async function translateArticle(article) {
     }
     apiAttempts += cached.attempts || 0;
     for (const item of cached.translations) translatedByIndex.set(item.index, item.textZh);
+    for (const index of cached.filteredIndexes || []) filteredIndexes.add(index);
+    filterMessages.push(...(cached.filterMessages || []));
   }
-  const paragraphsZh = paragraphs.map((_, index) => translatedByIndex.get(index));
+  if (filteredIndexes.size >= paragraphs.length) {
+    throw new Error(filterMessages[0] || "Azure 內容安全篩選拒絕了這篇文章的所有段落");
+  }
+  const untranslatedParagraphs = [...filteredIndexes].sort((a, b) => a - b);
+  const paragraphsZh = mergeParagraphTranslations(paragraphs, translatedByIndex, untranslatedParagraphs);
   if (paragraphsZh.some((text) => !text)) throw new Error("合併後缺少中文段落");
+  const untranslatedDetailZh = sanitizePublicFailureMessage(filterMessages[0] || "");
   const value = {
     id: article.id,
     issueKey: article.issueKey,
@@ -506,9 +542,24 @@ async function translateArticle(article) {
     translatedAt: new Date().toISOString(),
     paragraphCount: paragraphsZh.length,
     paragraphsZh,
+    ...(untranslatedParagraphs.length
+      ? {
+          untranslatedParagraphs,
+          untranslatedReason: CONTENT_FILTER_REASON,
+          untranslatedDetailZh,
+          filterStrategy: FILTER_SPLIT_STRATEGY,
+        }
+      : {}),
   };
   writeJsonAtomic(outputPath(article), value);
-  return { key: articleKey(article), paragraphs: paragraphsZh.length, chunks: chunks.length, apiAttempts };
+  return {
+    key: articleKey(article),
+    paragraphs: paragraphsZh.length,
+    chunks: chunks.length,
+    apiAttempts,
+    untranslatedParagraphs,
+    message: untranslatedDetailZh,
+  };
 }
 
 if (auditOnly) {
@@ -532,7 +583,18 @@ if (auditOnly) {
       try {
         const result = await translateArticle(article);
         report.completed.push(result);
-        console.log(`[${report.completed.length + report.failed.length}/${candidates.length}] 完成 ${result.key}（${result.paragraphs} 段）`);
+        if (result.untranslatedParagraphs.length) {
+          report.partial.push({
+            key: result.key,
+            paragraphs: result.paragraphs,
+            untranslatedParagraphs: result.untranslatedParagraphs,
+            message: result.message,
+          });
+        }
+        const partialLabel = result.untranslatedParagraphs.length
+          ? `；${result.untranslatedParagraphs.length} 段被內容安全篩選擋下，保留英文`
+          : "";
+        console.log(`[${report.completed.length + report.failed.length}/${candidates.length}] 完成 ${result.key}（${result.paragraphs} 段${partialLabel}）`);
       } catch (error) {
         report.failed.push({
           key: articleKey(article),
@@ -562,5 +624,5 @@ if (auditOnly) {
   if (report.failed.length) {
     throw new Error(`${report.failed.length} 篇翻譯失敗，超過可隔離上限 ${MAX_SKIPPED_ARTICLES} 篇，判定為系統性故障；已完成內容與斷點均已保留。`);
   }
-  console.log(`中文全文翻譯完成：${report.completed.length} 篇；隔離 ${report.quarantined.length} 篇。`);
+  console.log(`中文全文翻譯完成：${report.completed.length} 篇（其中 ${report.partial.length} 篇部分段落保留英文）；隔離 ${report.quarantined.length} 篇。`);
 }
