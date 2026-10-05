@@ -1,0 +1,94 @@
+name: Retranslate Chinese full text
+
+# 只重譯指定文章的中文全文：不偵測新期數、不重跑摘要，也不會處理整期文章。
+on:
+  workflow_dispatch:
+    inputs:
+      article:
+        description: "文章鍵（期數:文章 ID）或文章 ID；留空則重試所有被內容安全篩選擋下的文章"
+        required: false
+        type: string
+        default: "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef"
+
+# 與每週更新共用群組，避免兩者同時改寫 docs/data。
+concurrency:
+  group: weekly-economist-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  retranslate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_PATH: /openai/v1/
+      ARTICLE: ${{ inputs.article }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Test update safeguards
+        run: node --test tests/*.test.mjs
+
+      # Azure 無法連線時，翻譯會被記成「三次失敗」並覆蓋原本的隔離狀態；先確認連線再動資料。
+      - name: Test Azure OpenAI connection
+        run: node scripts/test-azure-openai.mjs
+
+      - name: Retranslate selected full text
+        shell: bash
+        run: |
+          mkdir -p .cache
+          set -o pipefail
+          node scripts/translate-fulltext-zh.mjs --workers=2 --retry-filtered ${ARTICLE:+--article=$ARTICLE} 2>&1 | tee .cache/translate-fulltext.log
+
+      - name: Refuse to publish retry-exhausted quarantines
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = ".cache/fulltext-zh-v2.report.json";
+            if (!fs.existsSync(path)) {
+              console.log("沒有需要重譯的文章。");
+              process.exit(0);
+            }
+            const report = JSON.parse(fs.readFileSync(path, "utf8"));
+            const exhausted = (report.quarantined || []).filter((item) => item.reason !== "azure_content_filter");
+            for (const item of exhausted) console.log(`::error::${item.key} 重試後仍失敗：${item.message}`);
+            if (exhausted.length) process.exit(1);
+            console.log(`完成 ${report.completed.length} 篇；部分段落保留英文 ${report.partial.length} 篇；整篇隔離 ${report.quarantined.length} 篇。`);
+          '
+
+      - name: Audit full-text coverage and rebuild the manifest
+        run: node scripts/audit-fulltext-zh.mjs
+
+      - name: Publish retranslated full text
+        run: |
+          if [ -z "$(git status --porcelain -- docs/data/fulltext)" ]; then
+            echo "沒有需要發布的中文全文變更。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/fulltext
+          git commit -m "Retranslate Chinese full text${ARTICLE:+ for $ARTICLE}"
+          git restore --staged --worktree -- .
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "::warning::發布第 ${attempt} 次失敗，稍後重試。"
+            sleep $((attempt * 15))
+          done
+          echo "::error::中文全文連續 3 次推送失敗；既有網站保持不變。"
+          exit 1

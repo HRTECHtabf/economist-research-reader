@@ -44,6 +44,7 @@
 - 也可在 GitHub 的 Actions 頁面手動執行 `Weekly Economist update`，作為排程延遲時的備援。
 - 更新 Azure Secrets 後，可手動執行工作流程並勾選 `test_azure`；它只測試連線，不會重跑既有摘要。
 - 沒有新一期時也能手動執行並勾選 `retry_fulltext`，補跑尚缺的中文全文，並重新嘗試先前被內容安全篩選擋下的文章與段落。本機可執行 `node scripts/translate-fulltext-zh.mjs --retry-filtered` 達到相同效果。
+- 只想重譯單篇、不想觸發新期處理時，在 Actions 手動執行 `Retranslate Chinese full text` 並填入文章鍵（期數:文章 ID）；它會先測試 Azure 連線，失敗就不發布。
 - `AZURE_OPENAI_ENDPOINT` 同時接受資源根網址與 Foundry 完整的 `/openai/v1/responses` 網址。
 
 公開儲存庫若連續 60 天沒有任何活動，GitHub 可能自動停用排程；屆時到 Actions 頁面重新啟用即可。
