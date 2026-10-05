@@ -5,6 +5,15 @@ const PINCH_ZOOM_SENSITIVITY = 1.8;
 const GRAPH_WIDTH = 1000;
 const GRAPH_HEIGHT = 760;
 const RELATED_ARTICLES_PREVIEW_LIMIT = 8;
+// 節點大小依文章篇數，但最大與最小只差約 1.8 倍，避免小 tag 看不見、大 tag 蓋住整張圖。
+const NODE_MIN_RADIUS = 18;
+const NODE_MAX_RADIUS = 32;
+const NODE_COMPOUND_RADIUS = 28;
+// 預設視角把整張圖放進這個區域（上方留給說明與縮放鈕，下方留給圖例）。
+const NETWORK_FIT_AREA = { left: 60, right: GRAPH_WIDTH - 60, top: 74, bottom: GRAPH_HEIGHT - 120 };
+const NETWORK_LABEL_SPACE = 26;
+const NETWORK_MAX_SPREAD = 2.4;
+const NETWORK_MAX_FIT_ZOOM = 1.4;
 const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const TOUR_STEPS = [
   {
@@ -20,7 +29,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="relationship-network"]',
     title: "旋轉並辨認關聯網絡",
-    description: "按住空白處拖曳可旋轉視角；電腦可用滾輪，手機可用雙指縮放，也可使用右上角按鈕。滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
+    description: "按住空白處拖曳可旋轉視角；電腦可用滾輪，手機可用雙指縮放，也可使用右上角按鈕。滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群；點一下圓球就會列出對應的文章。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
   },
   {
     selector: '[data-tour="relationship-ranking"]',
@@ -947,28 +956,63 @@ function assignGraphCommunities(nodes, edges) {
   nodes.forEach((node) => { node.community = node.compound || node.selected ? COMMUNITY_NAMES.length : normalized.get(labels.get(node.id)) || 0; });
 }
 
+function fitLayoutToCanvas(nodes) {
+  const area = NETWORK_FIT_AREA;
+  const maxRadius = Math.max(...nodes.map((node) => node.radius));
+  const xs = nodes.map((node) => node.x);
+  const ys = nodes.map((node) => node.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const usableWidth = area.right - area.left - maxRadius * 2;
+  const usableHeight = area.bottom - area.top - maxRadius * 2 - NETWORK_LABEL_SPACE;
+  // 節點少時拉開間距鋪滿畫面，但最多拉開 2.4 倍，免得三五個節點散得太遠。
+  const spread = Math.max(.85, Math.min(
+    NETWORK_MAX_SPREAD,
+    usableWidth / Math.max(1, maxX - minX),
+    usableHeight / Math.max(1, maxY - minY),
+  ));
+  const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
+  const targetX = (area.left + area.right) / 2, targetY = (area.top + area.bottom) / 2;
+  nodes.forEach((node) => {
+    node.x = targetX + (node.x - centerX) * spread;
+    node.y = targetY + (node.y - centerY) * spread;
+  });
+  const width = (maxX - minX) * spread + maxRadius * 2;
+  const height = (maxY - minY) * spread + maxRadius * 2 + NETWORK_LABEL_SPACE;
+  const zoom = Math.max(1, Math.min(NETWORK_MAX_FIT_ZOOM, (area.right - area.left) / width, (area.bottom - area.top) / height));
+  // 縮放以畫布中心為基準；補償平移，讓放大後的圖仍落在可用區域中央。
+  return {
+    zoom,
+    panX: (targetX - GRAPH_WIDTH / 2) * (1 - zoom),
+    panY: (targetY - GRAPH_HEIGHT / 2) * (1 - zoom),
+  };
+}
+
 function layoutGraph(nodes, edges) {
   assignGraphCommunities(nodes, edges);
-  const maxCount = Math.max(1, ...nodes.map((node) => node.count));
+  const tagCounts = nodes.filter((node) => !node.compound).map((node) => Math.max(0, node.count));
+  const minRoot = tagCounts.length ? Math.sqrt(Math.min(...tagCounts)) : 0;
+  const maxRoot = Math.sqrt(Math.max(0, ...tagCounts));
   const centers = COMMUNITY_NAMES.map((_, index) => {
     const angle = -Math.PI / 2 + (index / COMMUNITY_NAMES.length) * Math.PI * 2;
     return { x: 500 + Math.cos(angle) * 320, y: 380 + Math.sin(angle) * 225 };
   });
   const focusCenter = { x: 500, y: 380 };
   nodes.forEach((node, index) => {
-    node.radius = node.compound ? 38 : node.selected ? 42 : 19 + Math.sqrt(node.count / maxCount) * 19;
+    const sizeRatio = maxRoot > minRoot ? (Math.sqrt(node.count) - minRoot) / (maxRoot - minRoot) : .5;
+    node.radius = node.compound ? NODE_COMPOUND_RADIUS : NODE_MIN_RADIUS + sizeRatio * (NODE_MAX_RADIUS - NODE_MIN_RADIUS);
     const center = centers[node.community] || centers[0];
     const angle = (stableHash(node.id) % 628) / 100;
     const distance = 45 + (stableHash(`${node.id}:distance`) % 90);
     node.x = center.x + Math.cos(angle) * distance;
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
-    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 18;
+    // 深度只用來在旋轉時錯開重疊節點；幅度壓小，避免透視讓同篇數的節點忽大忽小。
+    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) * .22 + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 6;
     if (node.id === "focus") { node.x = 500; node.y = 380; }
     if (node.id === "focus-a") { node.x = 350; node.y = 235; }
     if (node.id === "focus-b") { node.x = 650; node.y = 235; }
     if (node.id === "compound") { node.x = 500; node.y = 405; }
-    if (node.fixed) node.z = 110;
+    if (node.fixed) node.z = 24;
     node.layoutIndex = index;
   });
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -1003,7 +1047,9 @@ function layoutGraph(nodes, edges) {
       node.y = Math.max(node.radius + 34, Math.min(GRAPH_HEIGHT - node.radius - 44, node.y + node.vy));
     });
   }
+  const view = fitLayoutToCanvas(nodes);
   nodes.forEach((node) => { node.baseX = node.x; node.baseY = node.y; node.baseZ = node.z; });
+  return view;
 }
 
 function communityLabel(node) {
@@ -1038,7 +1084,9 @@ function renderNetwork(articles, stats, relationships) {
     els.relationshipNetwork.append(empty);
     return;
   }
-  layoutGraph(nodes, edges);
+  const fittedView = layoutGraph(nodes, edges);
+  const minZoom = fittedView.zoom * .6;
+  const maxZoom = fittedView.zoom * 2.2;
   els.relationshipNetwork.classList.add("network-3d");
   const nodeTooltip = document.createElement("div");
   nodeTooltip.className = "network-node-tooltip";
@@ -1089,12 +1137,12 @@ function renderNetwork(articles, stats, relationships) {
     pitch: -.16,
     targetYaw: -.2,
     targetPitch: -.16,
-    zoom: 1,
-    targetZoom: 1,
-    panX: 0,
-    panY: 0,
-    targetPanX: 0,
-    targetPanY: 0,
+    zoom: fittedView.zoom,
+    targetZoom: fittedView.zoom,
+    panX: fittedView.panX,
+    panY: fittedView.panY,
+    targetPanX: fittedView.panX,
+    targetPanY: fittedView.panY,
     dragging: false,
     pointerId: null,
     lastX: 0,
@@ -1131,8 +1179,8 @@ function renderNetwork(articles, stats, relationships) {
     return { x: graphPoint.x, y: graphPoint.y };
   }
   function constrainNetworkPan(panX, panY, zoom) {
-    const maxPanX = GRAPH_WIDTH * Math.max(0, zoom - .58) * .5;
-    const maxPanY = GRAPH_HEIGHT * Math.max(0, zoom - .58) * .5;
+    const maxPanX = GRAPH_WIDTH * Math.max(0, zoom - minZoom) * .5 + Math.abs(fittedView.panX) + panelShift.x;
+    const maxPanY = GRAPH_HEIGHT * Math.max(0, zoom - minZoom) * .5 + Math.abs(fittedView.panY);
     return {
       x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
       y: Math.max(-maxPanY, Math.min(maxPanY, panY)),
@@ -1160,9 +1208,9 @@ function renderNetwork(articles, stats, relationships) {
     const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
     const y1 = y * cosX - z1 * sinX;
     const z2 = y * sinX + z1 * cosX;
-    const perspectiveScale = 820 / (820 - z2);
+    const perspectiveScale = 1400 / (1400 - z2);
     const scale = perspectiveScale * orbit.zoom;
-    return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.48, Math.min(2.35, scale)) };
+    return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.3, Math.min(3.2, scale)) };
   }
   function updatePositions(lightweight = false) {
     const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
@@ -1179,7 +1227,8 @@ function renderNetwork(articles, stats, relationships) {
     nodeElements.forEach((group, id) => {
       const point = projected.get(id);
       group.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${point.scale})`);
-      group.style.opacity = String(Math.max(.48, Math.min(1, .72 + point.z / 720)));
+      // 用變數而非行內 opacity，滑過節點時 .dimmed 的淡化才會生效。
+      group.style.setProperty("--depth-opacity", String(Math.max(.86, Math.min(1, .94 + point.z / 900))));
       if (!lightweight) group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
     if (!lightweight) {
@@ -1223,24 +1272,68 @@ function renderNetwork(articles, stats, relationships) {
     if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
   }
   function setNetworkZoom(nextZoom, focus = { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, zoomOrigin = null) {
-    const boundedZoom = Math.max(.58, Math.min(2.15, nextZoom));
+    const boundedZoom = Math.max(minZoom, Math.min(maxZoom, nextZoom));
     const origin = zoomOrigin || { zoom: orbit.targetZoom, panX: orbit.targetPanX, panY: orbit.targetPanY };
     zoomPanAtPoint(boundedZoom, focus, origin.zoom, origin.panX, origin.panY);
     orbit.targetZoom = boundedZoom;
-    if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round(orbit.targetZoom * 100)}%`;
-    if (zoomOutButton) zoomOutButton.disabled = orbit.targetZoom <= .581;
-    if (zoomInButton) zoomInButton.disabled = orbit.targetZoom >= 2.149;
+    if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round((orbit.targetZoom / fittedView.zoom) * 100)}%`;
+    if (zoomOutButton) zoomOutButton.disabled = orbit.targetZoom <= minZoom * 1.001;
+    if (zoomInButton) zoomInButton.disabled = orbit.targetZoom >= maxZoom * .999;
     requestOrbitFrame();
   }
   function resetNetworkView() {
     orbit.targetYaw = -.2;
     orbit.targetPitch = -.16;
-    orbit.targetPanX = 0;
-    orbit.targetPanY = 0;
-    setNetworkZoom(1);
+    orbit.targetPanX = fittedView.panX - panelShift.x;
+    orbit.targetPanY = fittedView.panY;
+    setNetworkZoom(fittedView.zoom, { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, { zoom: fittedView.zoom, panX: orbit.targetPanX, panY: orbit.targetPanY });
+  }
+  // 點圓球後在右側列出對應文章；圖往左挪，讓文章面板不擋住節點。
+  const panelShift = { x: 0 };
+  function closeArticlePanel() {
+    const panel = els.relationshipNetwork.querySelector(".network-article-panel");
+    if (!panel) return;
+    panel.remove();
+    nodeElements.forEach((element) => element.classList.remove("active"));
+    if (panelShift.x) {
+      orbit.targetPanX += panelShift.x;
+      panelShift.x = 0;
+      requestOrbitFrame();
+    }
+  }
+  function shiftGraphBesidePanel(panel) {
+    if (panelShift.x) return;
+    const networkRect = els.relationshipNetwork.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    if (!networkRect.width || panelRect.width > networkRect.width * .6) return;
+    const visibleLeft = clientPointToGraph(networkRect.left, networkRect.top + networkRect.height / 2, true).x;
+    const visibleRight = clientPointToGraph(panelRect.left - 12, networkRect.top + networkRect.height / 2).x;
+    const shift = (Math.max(0, visibleLeft) + Math.min(GRAPH_WIDTH, visibleRight)) / 2 - GRAPH_WIDTH / 2;
+    if (shift >= 0) return;
+    panelShift.x = -shift;
+    orbit.targetPanX += shift;
+    requestOrbitFrame();
+  }
+  function openArticlePanel(tags, nodeId = "") {
+    const hadPanel = Boolean(els.relationshipNetwork.querySelector(".network-article-panel"));
+    els.relationshipNetwork.querySelector(".network-article-panel")?.remove();
+    nodeElements.forEach((element, id) => element.classList.toggle("active", id === nodeId));
+    const panel = buildArticlePanel(articles, tags, closeArticlePanel, (nextTags) => openArticlePanel(nextTags, nodeIdForTags(nextTags)));
+    els.relationshipNetwork.append(panel);
+    if (!hadPanel) shiftGraphBesidePanel(panel);
+    panel.querySelector(".network-article-panel-close")?.focus({ preventScroll: true });
+  }
+  function nodeIdForTags(tags) {
+    if (tags.length !== 1) return "";
+    return nodes.find((node) => node.tag === tags[0] && !node.compound)?.id || "";
+  }
+  function panelTagsForNode(node) {
+    if (node.compound) return [...state.selectedTags];
+    if (node.selected || !state.selectedTags.length) return [node.tag];
+    return [...state.selectedTags, node.tag];
   }
   nodes.forEach((node, index) => {
-    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, "data-minor": String(node.count <= 5 && !node.selected), tabindex: node.compound ? "-1" : "0", role: node.compound ? "img" : "button", "aria-label": `${node.tag}，${node.count} 篇文章` });
+    const group = svgElement("g", { class: `network-node${node.selected ? " selected" : ""}${node.compound ? " compound" : ""}`, "data-community": node.community, "data-minor": String(node.count <= 5 && !node.selected), tabindex: "0", role: "button", "aria-label": `${node.tag}，${node.count} 篇文章；按下可列出文章` });
     group.style.setProperty("--node-delay", `${index * 32}ms`);
     const title = svgElement("title"); title.textContent = `${node.tag}｜${node.count} 篇文章`;
     const circle = svgElement("circle", { r: node.radius });
@@ -1265,16 +1358,16 @@ function renderNetwork(articles, stats, relationships) {
     group.addEventListener("blur", hideNodeTooltip);
     group.addEventListener("click", (event) => {
       if (performance.now() < orbit.suppressClickUntil) { event.preventDefault(); return; }
-      if (!node.compound) toggleFocusTag(node.tag);
+      openArticlePanel(panelTagsForNode(node), node.id);
     });
     group.addEventListener("keydown", (event) => {
-      if (!node.compound && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleFocusTag(node.tag); }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openArticlePanel(panelTagsForNode(node), node.id); }
     });
     nodeLayer.append(group);
     nodeElements.set(node.id, group);
   });
   els.relationshipNetwork.onpointerdown = (event) => {
-    if (event.target.closest?.(".network-zoom-controls")) return;
+    if (event.target.closest?.(".network-zoom-controls, .network-article-panel")) return;
     if (event.button !== 0) return;
     orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     hideNodeTooltip();
@@ -1310,7 +1403,7 @@ function renderNetwork(articles, stats, relationships) {
       const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
       const pinchRatio = distance / orbit.pinchStartDistance;
       const pinchCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2);
-      const boundedZoom = Math.max(.58, Math.min(2.15, orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY)));
+      const boundedZoom = Math.max(minZoom, Math.min(maxZoom, orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY)));
       const startCenter = orbit.pinchStartCenter || { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
       const zoomRatio = boundedZoom / Math.max(.001, orbit.pinchStartZoom);
       const centerX = GRAPH_WIDTH / 2;
@@ -1372,18 +1465,20 @@ function renderNetwork(articles, stats, relationships) {
   els.relationshipNetwork.onpointerup = finishOrbitDrag;
   els.relationshipNetwork.onpointercancel = finishOrbitDrag;
   els.relationshipNetwork.onwheel = (event) => {
+    if (event.target.closest?.(".network-article-panel")) return;
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * .0015);
     setNetworkZoom(orbit.targetZoom * factor, clientPointToGraph(event.clientX, event.clientY));
   };
   els.relationshipNetwork.ondblclick = (event) => {
+    if (event.target.closest?.(".network-article-panel")) return;
     event.preventDefault();
     resetNetworkView();
   };
   updatePositions();
   const guide = document.createElement("div");
   guide.className = "network-guide";
-  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>拖曳旋轉 · 滾輪／雙指／按鈕縮放 · 雙擊重設</span>";
+  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>點圓球看文章 · 拖曳旋轉 · 滾輪／雙指／按鈕縮放 · 雙擊重設</span>";
   const zoomControls = document.createElement("div");
   zoomControls.className = "network-zoom-controls";
   zoomOutButton = document.createElement("button");
@@ -1430,13 +1525,111 @@ function renderNetwork(articles, stats, relationships) {
   });
   if (state.selectedTags.length === 2) appendKeyItem("compound-node", "共同文章");
   const orbitHint = document.createElement("b");
-  orbitHint.textContent = "拖曳旋轉 · 滾輪或雙指縮放 · 雙擊重設";
+  orbitHint.textContent = "點圓球看文章 · 拖曳旋轉 · 滾輪或雙指縮放 · 雙擊重設";
   const legendNote = document.createElement("small");
   legendNote.textContent = "社群是依目前範圍的連線密度自動形成，不是固定主題分類；冒號後列出該群代表 tag。大小＝文章篇數；遠近只用來分開重疊節點。";
   key.append(orbitHint, legendNote);
   els.relationshipNetwork.append(svg, guide, zoomControls, zoomLevel, key, nodeTooltip);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
   els.relationshipNetwork.setAttribute("aria-label", `${modeText}，顯示 ${nodes.length} 個 tag 與 ${edges.length} 條關聯`);
+  state.closeNetworkPanel = closeArticlePanel;
+  if (state.pendingNetworkPanel) {
+    const tags = state.pendingNetworkPanel;
+    state.pendingNetworkPanel = null;
+    openArticlePanel(tags, nodeIdForTags(tags) || (tags.length === 1 ? "focus" : "compound"));
+  }
+}
+
+function articlesWithTags(articles, tags) {
+  return articles
+    .filter((article) => tags.every((tag) => (article.keywordsZh || []).includes(tag)))
+    .sort((a, b) => issueDate(b).localeCompare(issueDate(a)) || (a.titleEn || "").localeCompare(b.titleEn || ""));
+}
+
+function buildArticlePanel(articles, tags, onClose, onShowTags) {
+  const matches = articlesWithTags(articles, tags);
+  const panel = document.createElement("aside");
+  panel.className = "network-article-panel";
+  const label = tags.length === 1 ? `「${tags[0]}」相關文章` : `「${tags.join("」×「")}」共同文章`;
+  panel.setAttribute("aria-label", label);
+
+  const header = document.createElement("div");
+  header.className = "network-article-panel-header";
+  const heading = document.createElement("div");
+  const range = document.createElement("small");
+  range.textContent = scopeTitle(state.relationshipScope, state.relationshipIssue);
+  const title = document.createElement("h3");
+  title.textContent = `${label}・${matches.length} 篇`;
+  heading.append(range, title);
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "network-article-panel-close";
+  close.setAttribute("aria-label", "關閉文章列表");
+  close.textContent = "×";
+  close.addEventListener("click", onClose);
+  header.append(heading, close);
+
+  const actions = document.createElement("div");
+  actions.className = "network-article-panel-actions";
+  const lastTag = tags.at(-1);
+  if (tags.length === 1 && !state.selectedTags.includes(lastTag)) {
+    const focus = document.createElement("button");
+    focus.type = "button";
+    focus.textContent = `以「${lastTag}」為中心看關聯`;
+    focus.addEventListener("click", () => {
+      state.pendingNetworkPanel = [lastTag];
+      state.selectedTags = [lastTag];
+      renderAll();
+    });
+    actions.append(focus);
+  }
+  if (tags.length === 2 && state.selectedTags.length === 1 && !state.selectedTags.includes(lastTag)) {
+    const pair = document.createElement("button");
+    pair.type = "button";
+    pair.textContent = `把「${lastTag}」加入分析`;
+    pair.addEventListener("click", () => {
+      state.pendingNetworkPanel = [...tags];
+      toggleFocusTag(lastTag);
+    });
+    const only = document.createElement("button");
+    only.type = "button";
+    only.className = "secondary";
+    only.textContent = `只看「${lastTag}」的文章`;
+    only.addEventListener("click", () => onShowTags([lastTag]));
+    actions.append(pair, only);
+  }
+  const indexLink = document.createElement("a");
+  indexLink.href = articleIndexUrl(tags);
+  indexLink.textContent = "在文章索引查看 →";
+  actions.append(indexLink);
+
+  const list = document.createElement("div");
+  list.className = "network-article-panel-list";
+  if (!matches.length) {
+    const empty = document.createElement("p");
+    empty.className = "related-articles-empty";
+    empty.textContent = "這個資料範圍沒有符合的文章。";
+    list.append(empty);
+  }
+  const appendCards = (items) => items.forEach((article) => list.append(createRelatedArticleCard(article, tags)));
+  appendCards(matches.slice(0, RELATED_ARTICLES_PREVIEW_LIMIT));
+  if (matches.length > RELATED_ARTICLES_PREVIEW_LIMIT) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "related-articles-more";
+    more.textContent = `顯示其餘 ${matches.length - RELATED_ARTICLES_PREVIEW_LIMIT} 篇`;
+    more.addEventListener("click", () => {
+      more.remove();
+      appendCards(matches.slice(RELATED_ARTICLES_PREVIEW_LIMIT));
+    });
+    list.append(more);
+  }
+
+  panel.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.stopPropagation(); onClose(); }
+  });
+  panel.append(header, actions, list);
+  return panel;
 }
 
 function renderRelationshipRanking(relationships) {
@@ -1469,10 +1662,10 @@ function renderRelationships(articles, stats, relationships) {
   const range = scopeTitle(state.relationshipScope, state.relationshipIssue);
   if (!state.selectedTags.length) {
     els.relationshipTitle.textContent = "tag 關聯網絡"; els.analysisMode.textContent = range; els.rankingTitle.textContent = "最強關聯組合";
-    els.relationshipDescription.textContent = `${range}中，顯示比隨機預期更常一起出現在同篇文章的 tag。`;
+    els.relationshipDescription.textContent = `${range}中，顯示比隨機預期更常一起出現在同篇文章的 tag。點圓球可列出相關文章。`;
   } else if (state.selectedTags.length === 1) {
     els.relationshipTitle.textContent = `「${state.selectedTags[0]}」的相關主題`; els.analysisMode.textContent = range; els.rankingTitle.textContent = "相關 tag";
-    els.relationshipDescription.textContent = `${range}中，查看「${state.selectedTags[0]}」與其他 tag 的關聯強度。點選另一個 tag 可查看兩者的共同文章。`;
+    els.relationshipDescription.textContent = `${range}中，查看「${state.selectedTags[0]}」與其他 tag 的關聯強度。點選另一個圓球可列出兩者的共同文章。`;
   } else {
     els.relationshipTitle.textContent = `「${state.selectedTags.join("」與「")}」的共同文章`; els.analysisMode.textContent = range; els.rankingTitle.textContent = "共同文章的相關 tag";
     els.relationshipDescription.textContent = `${range}中，黑色節點代表同時包含「${state.selectedTags.join("」與「")}」的文章；外圍節點顯示這些文章還常和哪些 tag 一起出現。`;
@@ -1489,7 +1682,7 @@ function articleIndexUrl(tags, title = "") {
   return `./index.html?${query.toString()}#articles`;
 }
 
-function createRelatedArticleCard(article) {
+function createRelatedArticleCard(article, cardTags = state.selectedTags) {
   const item = document.createElement("article");
   item.className = "related-article-card";
 
@@ -1511,7 +1704,7 @@ function createRelatedArticleCard(article) {
 
   const tags = document.createElement("div");
   tags.className = "related-article-tags";
-  state.selectedTags.forEach((tag) => {
+  cardTags.forEach((tag) => {
     const chip = document.createElement("span");
     chip.textContent = tag;
     tags.append(chip);
@@ -1520,7 +1713,7 @@ function createRelatedArticleCard(article) {
   const actions = document.createElement("div");
   actions.className = "related-article-links";
   const indexLink = document.createElement("a");
-  indexLink.href = articleIndexUrl(state.selectedTags, article.titleEn || "");
+  indexLink.href = articleIndexUrl(cardTags, article.titleEn || "");
   indexLink.textContent = "查看站內文章";
   actions.append(indexLink);
   if (article.sourceUrl) {
@@ -1951,7 +2144,11 @@ window.addEventListener("resize", () => {
   renderCloud(articles, stats);
 });
 window.addEventListener("scroll", () => { hideCalculationHelp(); positionTourStep(); }, { passive: true });
-document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !els.featureTour.hidden) closeFeatureTour(); });
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (!els.featureTour.hidden) closeFeatureTour();
+  else state.closeNetworkPanel?.();
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearPlaybackTimer();
   else if (state.autoPlay) schedulePlayback();
