@@ -11,6 +11,7 @@ import {
 } from "./lib/transient-retry.mjs";
 import { briefLengthProfile } from "./lib/brief-length-profile.mjs";
 import { chooseNaturalizationResult } from "./lib/naturalization-fallback.mjs";
+import { isLowContentArticle } from "./lib/low-content-policy.mjs";
 import {
   CONTENT_FILTER_REASON,
   describeAzureContentFilter,
@@ -810,6 +811,7 @@ const currentIssueArticles = source.articles.map((article) => {
 
 const previousArticles = (previousOutput?.articles || [])
   .filter((article) => (article.issueKey || previousOutput.issueKey) !== source.issueKey)
+  .filter((article) => !isLowContentArticle(article))
   .map((article) => ({
     ...article,
     issueKey: article.issueKey || previousOutput.issueKey,
