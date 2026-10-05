@@ -3,14 +3,23 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const PLAYBACK_DELAY = 2000;
 const PINCH_ZOOM_SENSITIVITY = 1.8;
 const GRAPH_WIDTH = 1000;
-const GRAPH_HEIGHT = 760;
+// 畫布寬固定 1000 單位，高度依外框比例調整，讓關聯圖填滿外框而不是兩側留空。
+let GRAPH_HEIGHT = 560;
 const RELATED_ARTICLES_PREVIEW_LIMIT = 8;
-// 節點大小依文章篇數，但最大與最小只差約 1.8 倍，避免小 tag 看不見、大 tag 蓋住整張圖。
-const NODE_MIN_RADIUS = 18;
-const NODE_MAX_RADIUS = 32;
-const NODE_COMPOUND_RADIUS = 28;
+// 節點大小依文章篇數，但最大與最小只差 1.3 倍；確切篇數看球上的數字。
+const NODE_MIN_RADIUS = 20;
+const NODE_MAX_RADIUS = 26;
+const NODE_COMPOUND_RADIUS = 24;
 // 預設視角把整張圖放進這個區域（上方留給說明與縮放鈕，下方留給圖例）。
-const NETWORK_FIT_AREA = { left: 60, right: GRAPH_WIDTH - 60, top: 74, bottom: GRAPH_HEIGHT - 120 };
+function networkFitArea() {
+  return { left: 60, right: GRAPH_WIDTH - 60, top: 70, bottom: GRAPH_HEIGHT - 100 };
+}
+
+function measureGraphHeight() {
+  const { clientWidth, clientHeight } = els.relationshipNetwork;
+  if (!clientWidth || !clientHeight) return GRAPH_HEIGHT;
+  return Math.round(Math.max(480, Math.min(1100, (GRAPH_WIDTH * clientHeight) / clientWidth)));
+}
 const NETWORK_LABEL_SPACE = 26;
 const NETWORK_MAX_SPREAD = 2.4;
 const NETWORK_MAX_FIT_ZOOM = 1.4;
@@ -957,7 +966,7 @@ function assignGraphCommunities(nodes, edges) {
 }
 
 function fitLayoutToCanvas(nodes) {
-  const area = NETWORK_FIT_AREA;
+  const area = networkFitArea();
   const maxRadius = Math.max(...nodes.map((node) => node.radius));
   const xs = nodes.map((node) => node.x);
   const ys = nodes.map((node) => node.y);
@@ -965,19 +974,20 @@ function fitLayoutToCanvas(nodes) {
   const usableWidth = area.right - area.left - maxRadius * 2;
   const usableHeight = area.bottom - area.top - maxRadius * 2 - NETWORK_LABEL_SPACE;
   // 節點少時拉開間距鋪滿畫面，但最多拉開 2.4 倍，免得三五個節點散得太遠。
-  const spread = Math.max(.85, Math.min(
-    NETWORK_MAX_SPREAD,
-    usableWidth / Math.max(1, maxX - minX),
-    usableHeight / Math.max(1, maxY - minY),
-  ));
+  // 水平與垂直分開計算，橫長的外框也能用滿寬度；兩軸差距限制在 1.8 倍內，避免圖形被拉得太扁。
+  const clampSpread = (value) => Math.max(.85, Math.min(NETWORK_MAX_SPREAD, value));
+  const fitX = clampSpread(usableWidth / Math.max(1, maxX - minX));
+  const fitY = clampSpread(usableHeight / Math.max(1, maxY - minY));
+  const spreadX = Math.min(fitX, Math.min(fitX, fitY) * 1.8);
+  const spreadY = Math.min(fitY, Math.min(fitX, fitY) * 1.8);
   const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
   const targetX = (area.left + area.right) / 2, targetY = (area.top + area.bottom) / 2;
   nodes.forEach((node) => {
-    node.x = targetX + (node.x - centerX) * spread;
-    node.y = targetY + (node.y - centerY) * spread;
+    node.x = targetX + (node.x - centerX) * spreadX;
+    node.y = targetY + (node.y - centerY) * spreadY;
   });
-  const width = (maxX - minX) * spread + maxRadius * 2;
-  const height = (maxY - minY) * spread + maxRadius * 2 + NETWORK_LABEL_SPACE;
+  const width = (maxX - minX) * spreadX + maxRadius * 2;
+  const height = (maxY - minY) * spreadY + maxRadius * 2 + NETWORK_LABEL_SPACE;
   const zoom = Math.max(1, Math.min(NETWORK_MAX_FIT_ZOOM, (area.right - area.left) / width, (area.bottom - area.top) / height));
   // 縮放以畫布中心為基準；補償平移，讓放大後的圖仍落在可用區域中央。
   return {
@@ -992,11 +1002,16 @@ function layoutGraph(nodes, edges) {
   const tagCounts = nodes.filter((node) => !node.compound).map((node) => Math.max(0, node.count));
   const minRoot = tagCounts.length ? Math.sqrt(Math.min(...tagCounts)) : 0;
   const maxRoot = Math.sqrt(Math.max(0, ...tagCounts));
+  // 排版只在說明框與圖例之間進行，球不會壓到上方說明或下方圖例。
+  const area = networkFitArea();
+  const areaBottom = area.bottom - NETWORK_LABEL_SPACE;
+  const middleX = (area.left + area.right) / 2;
+  const middleY = (area.top + areaBottom) / 2;
   const centers = COMMUNITY_NAMES.map((_, index) => {
     const angle = -Math.PI / 2 + (index / COMMUNITY_NAMES.length) * Math.PI * 2;
-    return { x: 500 + Math.cos(angle) * 320, y: 380 + Math.sin(angle) * 225 };
+    return { x: middleX + Math.cos(angle) * (area.right - area.left) * .36, y: middleY + Math.sin(angle) * (areaBottom - area.top) * .32 };
   });
-  const focusCenter = { x: 500, y: 380 };
+  const focusCenter = { x: middleX, y: middleY };
   nodes.forEach((node, index) => {
     const sizeRatio = maxRoot > minRoot ? (Math.sqrt(node.count) - minRoot) / (maxRoot - minRoot) : .5;
     node.radius = node.compound ? NODE_COMPOUND_RADIUS : NODE_MIN_RADIUS + sizeRatio * (NODE_MAX_RADIUS - NODE_MIN_RADIUS);
@@ -1008,10 +1023,10 @@ function layoutGraph(nodes, edges) {
     node.vx = 0; node.vy = 0;
     // 深度只用來在旋轉時錯開重疊節點；幅度壓小，避免透視讓同篇數的節點忽大忽小。
     node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) * .22 + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 6;
-    if (node.id === "focus") { node.x = 500; node.y = 380; }
-    if (node.id === "focus-a") { node.x = 350; node.y = 235; }
-    if (node.id === "focus-b") { node.x = 650; node.y = 235; }
-    if (node.id === "compound") { node.x = 500; node.y = 405; }
+    if (node.id === "focus") { node.x = focusCenter.x; node.y = focusCenter.y; }
+    if (node.id === "focus-a") { node.x = GRAPH_WIDTH * .35; node.y = area.top + (areaBottom - area.top) * .22; }
+    if (node.id === "focus-b") { node.x = GRAPH_WIDTH * .65; node.y = area.top + (areaBottom - area.top) * .22; }
+    if (node.id === "compound") { node.x = focusCenter.x; node.y = middleY + (areaBottom - area.top) * .08; }
     if (node.fixed) node.z = 24;
     node.layoutIndex = index;
   });
@@ -1043,8 +1058,8 @@ function layoutGraph(nodes, edges) {
       node.vx += (center.x - node.x) * .004;
       node.vy += (center.y - node.y) * .004;
       node.vx *= .82; node.vy *= .82;
-      node.x = Math.max(node.radius + 28, Math.min(GRAPH_WIDTH - node.radius - 28, node.x + node.vx));
-      node.y = Math.max(node.radius + 34, Math.min(GRAPH_HEIGHT - node.radius - 44, node.y + node.vy));
+      node.x = Math.max(area.left + node.radius, Math.min(area.right - node.radius, node.x + node.vx));
+      node.y = Math.max(area.top + node.radius, Math.min(areaBottom - node.radius, node.y + node.vy));
     });
   }
   const view = fitLayoutToCanvas(nodes);
@@ -1076,6 +1091,7 @@ function renderNetwork(articles, stats, relationships) {
   state.networkFrame = null;
   els.relationshipNetwork.classList.remove("dragging", "is-moving");
   els.relationshipNetwork.replaceChildren();
+  GRAPH_HEIGHT = measureGraphHeight();
   const { nodes, edges } = graphData(articles, stats, relationships);
   if (!nodes.length || !edges.length) {
     const empty = document.createElement("div");
@@ -1208,7 +1224,7 @@ function renderNetwork(articles, stats, relationships) {
     const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
     const y1 = y * cosX - z1 * sinX;
     const z2 = y * sinX + z1 * cosX;
-    const perspectiveScale = 1400 / (1400 - z2);
+    const perspectiveScale = 2400 / (2400 - z2);
     const scale = perspectiveScale * orbit.zoom;
     return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.3, Math.min(3.2, scale)) };
   }
@@ -1308,7 +1324,13 @@ function renderNetwork(articles, stats, relationships) {
     if (!networkRect.width || panelRect.width > networkRect.width * .6) return;
     const visibleLeft = clientPointToGraph(networkRect.left, networkRect.top + networkRect.height / 2, true).x;
     const visibleRight = clientPointToGraph(panelRect.left - 12, networkRect.top + networkRect.height / 2).x;
-    const shift = (Math.max(0, visibleLeft) + Math.min(GRAPH_WIDTH, visibleRight)) / 2 - GRAPH_WIDTH / 2;
+    const wanted = (Math.max(0, visibleLeft) + Math.min(GRAPH_WIDTH, visibleRight)) / 2 - GRAPH_WIDTH / 2;
+    // 只往左挪到最左邊的球貼近邊緣為止；球多時寧可讓面板蓋住一點，也不把左側的球推出框外。
+    const leftmost = Math.min(...nodes.map((node) => {
+      const point = projectNode(node, orbit.pitch, orbit.yaw);
+      return point.x - node.radius * point.scale;
+    }));
+    const shift = Math.max(wanted, Math.min(0, Math.max(0, visibleLeft) + 12 - leftmost));
     if (shift >= 0) return;
     panelShift.x = -shift;
     orbit.targetPanX += shift;
@@ -2136,9 +2158,16 @@ els.tourNext.addEventListener("click", () => {
   else showTourStep(tourStepIndex + 1);
 });
 els.featureTour.addEventListener("click", (event) => { if (event.target === els.featureTour) closeFeatureTour(); });
+let networkResizeTimer = null;
 window.addEventListener("resize", () => {
   positionTourStep();
   if (!state.data) return;
+  clearTimeout(networkResizeTimer);
+  networkResizeTimer = setTimeout(() => {
+    if (Math.abs(measureGraphHeight() - GRAPH_HEIGHT) / GRAPH_HEIGHT < .12) return;
+    state.relationshipRenderKey = "";
+    renderRelationshipPanel();
+  }, 250);
   hideCalculationHelp();
   const { articles, stats } = cloudStatistics();
   renderCloud(articles, stats);
