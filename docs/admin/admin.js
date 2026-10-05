@@ -56,7 +56,7 @@ async function loadContentStatus() {
   const coveredCount = manifest ? manifest.articleCount + unavailableCount : 0;
   els.translationCount.textContent = manifest ? `${coveredCount}/${data.articles.length}` : "產製中";
   els.translationDetail.textContent = manifest
-    ? `${manifest.articleCount} 篇繁中全文；${unavailableCount} 篇隔離`
+    ? `${manifest.articleCount} 篇繁中全文${manifest.partialArticleCount ? `（${manifest.partialArticleCount} 篇部分段落保留英文）` : ""}；${unavailableCount} 篇隔離`
     : "尚未完成全庫稽核";
   els.latestIssue.textContent = latestIssue || "—";
   els.latestIssueCount.textContent = `${latestCount} 篇文章；${data.summaryCount ?? latestCount} 篇摘要；${data.summaryUnavailableCount || 0} 篇隔離`;
@@ -156,16 +156,24 @@ async function loadMaintenanceStatus() {
     const heading = document.createElement("strong");
     heading.textContent = `${incident.title}｜${incident.stage}`;
     const meta = document.createElement("span");
-    const attemptLabel = incident.category === "content_filter"
-      ? "安全攔截後直接隔離"
-      : `嘗試 ${incident.attempts} 次`;
-    meta.textContent = `${incident.status === "skipped" ? "已隔離" : "系統性故障"}・${attemptLabel}・${incident.cause}`;
+    const attemptLabel = incident.status === "partial"
+      ? "拆段重試後只保留被擋段落"
+      : incident.category === "content_filter"
+        ? "安全攔截後直接隔離"
+        : `嘗試 ${incident.attempts} 次`;
+    meta.textContent = `${incidentStatusLabel(incident.status)}・${attemptLabel}・${incident.cause}`;
     const reason = document.createElement("p");
     reason.textContent = incident.message;
     row.append(heading, meta, reason);
     els.incidentList.append(row);
   }
   if (!(status.incidents || []).length) els.incidentList.textContent = "本次沒有失敗或隔離文章。";
+}
+
+function incidentStatusLabel(status) {
+  if (status === "skipped") return "已隔離";
+  if (status === "partial") return "部分段落保留英文";
+  return "系統性故障";
 }
 
 function workflowReasonText(run, record) {
@@ -184,7 +192,7 @@ function workflowReasonText(run, record) {
   else if (record.outcome === "warning") parts.push(`完成但有隔離：${cause}`);
   else return "";
   if (failedStages.length) parts.push(`失敗階段：${failedStages.join("、")}`);
-  if (incident) parts.push(`文章：${incident.title}；結果：${incident.status === "skipped" ? "已隔離" : "未完成"}`);
+  if (incident) parts.push(`文章：${incident.title}；結果：${incident.status === "systemic_failure" ? "未完成" : incidentStatusLabel(incident.status)}`);
   if (record.detail && record.detail !== cause) parts.push(record.detail);
   return parts.join("｜");
 }

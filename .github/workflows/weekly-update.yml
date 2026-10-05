@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      retry_fulltext:
+        description: "沒有新一期也補跑中文全文，並重試被內容安全篩選擋下的文章與段落"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Asia/Taipei 週五 13:17–週六 01:17，每兩小時檢查一次。
     # 避開整點可降低 GitHub Actions 尖峰排隊與延遲機率。
@@ -79,16 +84,18 @@ jobs:
           node scripts/update-latest.mjs 2>&1 | tee .cache/update-latest.log
 
       - name: Translate and edit missing Chinese full text
-        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && steps.process.outputs.content_changed == 'true' }}
+        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && (steps.process.outputs.content_changed == 'true' || inputs.retry_fulltext) }}
         id: translate
         continue-on-error: true
         shell: bash
+        env:
+          RETRY_FILTERED: ${{ inputs.retry_fulltext && '--retry-filtered' || '' }}
         run: |
           set -o pipefail
-          node scripts/translate-fulltext-zh.mjs --workers=5 2>&1 | tee .cache/translate-fulltext.log
+          node scripts/translate-fulltext-zh.mjs --workers=5 $RETRY_FILTERED 2>&1 | tee .cache/translate-fulltext.log
 
       - name: Audit full-text coverage and rebuild the manifest
-        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && steps.process.outputs.content_changed == 'true' && steps.translate.outcome == 'success' }}
+        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && steps.translate.outcome == 'success' }}
         id: audit_fulltext
         continue-on-error: true
         shell: bash
@@ -97,7 +104,7 @@ jobs:
           node scripts/audit-fulltext-zh.mjs 2>&1 | tee .cache/audit-fulltext.log
 
       - name: Build lightweight public catalog and English shards
-        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && (steps.process.outputs.content_changed != 'true' || steps.audit_fulltext.outcome == 'success') }}
+        if: ${{ !inputs.test_azure && steps.process.outcome == 'success' && (steps.translate.outcome == 'skipped' || steps.audit_fulltext.outcome == 'success') }}
         run: node scripts/build-public-data.mjs
 
       - name: Check storage budget
@@ -182,5 +189,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/data/articles.json docs/data/catalog.json docs/data/fulltext docs/data/fulltext-en docs/data/public-manifest.json docs/data/storage-status.json
           git commit -m "Update Economist issue"
-          git pull --rebase origin main
-          git push
+          # 維運診斷已由上一步透過 API 直接寫入 main；本機那份仍是未提交的變更，
+          # 留著會讓 pull --rebase 以「You have unstaged changes」中止（exit 128），整期資料就無法發布。
+          git restore --staged --worktree -- .
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "::warning::發布第 ${attempt} 次失敗，稍後重試。"
+            sleep $((attempt * 15))
+          done
+          echo "::error::網站資料連續 3 次推送失敗；新資料未發布，既有網站保持不變。"
+          exit 1

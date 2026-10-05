@@ -164,10 +164,11 @@ const state = {
   publicManifest: null,
   englishTextByArticle: new Map(),
   englishIssuePromises: new Map(),
+  englishIssueErrors: new Set(),
   fullTextSearchLoading: false,
   readingModes: new Map(),
   chineseTextByArticle: new Map(),
-  chineseTextLoading: new Set(),
+  chineseTextLoading: new Map(),
   pendingSelection: null,
   editingNoteId: null,
   noteAnchorRect: null,
@@ -662,15 +663,12 @@ function deleteCurrentNote() {
 }
 
 async function focusNote(note) {
-  state.readingModes.set(note.articleKey, noteMode(note));
+  const mode = noteMode(note);
+  state.readingModes.set(note.articleKey, mode);
   const article = state.data?.articles.find((item) => articleKey(item) === note.articleKey);
-  if (noteMode(note) === "zh" && article && !state.chineseTextByArticle.has(note.articleKey)) {
-    await loadChineseFullText(article);
-  } else if (noteMode(note) === "en" && article && !englishTextFor(article)) {
-    await loadEnglishIssue(article);
-  } else {
-    render();
-  }
+  const loading = loadReadingMode(article, mode);
+  render();
+  await loading;
   requestAnimationFrame(() => {
     const highlight = document.querySelector(`[data-note-id="${CSS.escape(note.id)}"]`);
     const paragraphSelector = `[data-article-key="${CSS.escape(note.articleKey)}"][data-context-id="${CSS.escape(note.contextId)}"]`;
@@ -681,25 +679,43 @@ async function focusNote(note) {
   });
 }
 
-async function loadChineseFullText(article) {
+// 只負責載入；呼叫端切換模式後自行 render，已載入或載入中時按鈕也會立即反應。
+function loadChineseFullText(article) {
   const key = articleKey(article);
-  if (state.chineseTextByArticle.has(key) || state.chineseTextLoading.has(key)) return;
-  state.chineseTextLoading.add(key);
-  render();
-  try {
-    const issue = encodeURIComponent(issueFor(article));
-    const id = encodeURIComponent(article.id);
-    const response = await fetch(`./data/fulltext/${issue}/${id}.json?v=${encodeURIComponent(article.sourceHash || "1")}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const value = await response.json();
-    if (!Array.isArray(value.paragraphsZh) || !value.paragraphsZh.length) throw new Error("缺少中文段落");
-    state.chineseTextByArticle.set(key, value);
-  } catch {
-    state.chineseTextByArticle.set(key, { unavailable: true });
-  } finally {
-    state.chineseTextLoading.delete(key);
-    render();
-  }
+  const loaded = state.chineseTextByArticle.get(key);
+  if (loaded && !loaded.retryable) return Promise.resolve();
+  if (state.chineseTextLoading.has(key)) return state.chineseTextLoading.get(key);
+  state.chineseTextByArticle.delete(key);
+  const request = (async () => {
+    try {
+      const issue = encodeURIComponent(issueFor(article));
+      const id = encodeURIComponent(article.id);
+      const response = await fetch(`./data/fulltext/${issue}/${id}.json?v=${encodeURIComponent(article.sourceHash || "1")}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const value = await response.json();
+      if (value.unavailable === true) {
+        state.chineseTextByArticle.set(key, { unavailable: true, message: value.unavailableMessageZh || "" });
+        return;
+      }
+      if (!Array.isArray(value.paragraphsZh) || !value.paragraphsZh.length) throw new Error("缺少中文段落");
+      state.chineseTextByArticle.set(key, value);
+    } catch {
+      // 網路中斷或暫時錯誤不可永久記成「尚未完成」；再按一次中文全文就會重新載入。
+      state.chineseTextByArticle.set(key, { unavailable: true, retryable: true });
+    } finally {
+      state.chineseTextLoading.delete(key);
+      renderWhenIdle();
+    }
+  })();
+  state.chineseTextLoading.set(key, request);
+  return request;
+}
+
+function loadReadingMode(article, mode) {
+  if (!article) return Promise.resolve();
+  if (mode === "zh") return loadChineseFullText(article);
+  if (mode === "en") return loadEnglishIssue(article);
+  return Promise.resolve();
 }
 
 function englishTextFor(article) {
@@ -714,7 +730,11 @@ async function loadEnglishIssue(article) {
   const issue = issueFor(article);
   if (state.englishIssuePromises.has(issue)) return state.englishIssuePromises.get(issue);
   const descriptor = state.publicManifest?.englishIssues?.[issue];
-  if (!descriptor?.path) return;
+  if (!descriptor?.path) {
+    state.englishIssueErrors.add(issue);
+    return;
+  }
+  state.englishIssueErrors.delete(issue);
   const request = fetch(`./data/${descriptor.path}?v=${encodeURIComponent(descriptor.version || "1")}`)
     .then((response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -726,14 +746,14 @@ async function loadEnglishIssue(article) {
       }
     })
     .catch(() => {
-      // 單一期英文分片失效時，不影響摘要與中文全文閱讀。
+      // 單一期英文分片失效時，不影響摘要與中文全文閱讀；再按一次英文全文即可重試。
+      state.englishIssueErrors.add(issue);
     })
     .finally(() => {
       state.englishIssuePromises.delete(issue);
-      render();
+      renderWhenIdle();
     });
   state.englishIssuePromises.set(issue, request);
-  render();
   return request;
 }
 
@@ -742,14 +762,15 @@ async function loadAllEnglishIssuesForSearch() {
     || [...state.selectedTags].some((tag) => !state.keywordSet.has(tag));
   if (!needsFullText || !state.publicManifest?.englishIssues || state.fullTextSearchLoading) return;
   state.fullTextSearchLoading = true;
-  render();
   const representatives = new Map();
   for (const article of state.data.articles) {
     if (!representatives.has(issueFor(article))) representatives.set(issueFor(article), article);
   }
-  await Promise.all([...representatives.values()].map(loadEnglishIssue));
+  const loading = Promise.all([...representatives.values()].map(loadEnglishIssue));
+  renderWhenIdle();
+  await loading;
   state.fullTextSearchLoading = false;
-  render();
+  renderWhenIdle();
 }
 
 function updateBackToFiltersVisibility() {
@@ -970,6 +991,7 @@ function renderCard(article) {
   const fragment = els.template.content.cloneNode(true);
   const favoriteButton = fragment.querySelector(".favorite-button");
   const key = articleKey(article);
+  fragment.querySelector(".article-card").dataset.articleKey = key;
   const mode = state.readingModes.get(key) || "guide";
   const isFavorite = state.favorites.has(key);
   favoriteButton.classList.toggle("active", isFavorite);
@@ -1079,6 +1101,9 @@ function renderCard(article) {
   } else if (state.englishIssuePromises.has(issueFor(article))) {
     englishStatus.textContent = "英文全文載入中…";
     englishStatus.hidden = false;
+  } else if (state.englishIssueErrors.has(issueFor(article))) {
+    englishStatus.textContent = "英文全文暫時無法載入，請再按一次「英文全文」重試。";
+    englishStatus.hidden = false;
   } else {
     englishStatus.textContent = "切換後將載入英文全文。";
     englishStatus.hidden = false;
@@ -1088,17 +1113,26 @@ function renderCard(article) {
   const chineseContainer = fragment.querySelector(".chinese-full-text");
   const chineseStatus = fragment.querySelector(".full-text-status");
   if (chineseValue?.paragraphsZh?.length) {
+    const untranslated = new Set(chineseValue.untranslatedParagraphs || []);
     for (const [index, paragraph] of chineseValue.paragraphsZh.entries()) {
       const p = document.createElement("p");
       p.className = "annotatable-paragraph";
+      if (untranslated.has(index)) {
+        // 提示文字放在 CSS ::before，不改動段落文字，筆記定位才不會偏移。
+        p.classList.add("untranslated-paragraph");
+        p.lang = "en";
+      }
       renderAnnotatedText(p, paragraph, key, `zh:p${index + 1}`);
       chineseContainer.append(p);
     }
   } else if (state.chineseTextLoading.has(key)) {
     chineseStatus.textContent = "中文全文載入中…";
     chineseStatus.hidden = false;
+  } else if (chineseValue?.retryable) {
+    chineseStatus.textContent = "中文全文暫時無法載入，請再按一次「中文全文」重試。";
+    chineseStatus.hidden = false;
   } else if (chineseValue?.unavailable) {
-    chineseStatus.textContent = "這篇中文全文尚未完成，請先閱讀英文原文。";
+    chineseStatus.textContent = chineseValue.message || "這篇中文全文尚未完成，請先閱讀英文原文。";
     chineseStatus.hidden = false;
   } else {
     chineseStatus.textContent = "切換後將載入中文全文。";
@@ -1113,9 +1147,8 @@ function renderCard(article) {
     button.addEventListener("click", () => {
       if (button.disabled) return;
       state.readingModes.set(key, buttonMode);
-      if (buttonMode === "zh") loadChineseFullText(article);
-      else if (buttonMode === "en" && !internalEnglish) loadEnglishIssue(article);
-      else render();
+      loadReadingMode(article, buttonMode);
+      render();
     });
   });
   fragment.querySelectorAll(".reading-pane").forEach((pane) => {
@@ -1220,6 +1253,58 @@ function renderPagination(pageCount) {
   }
 }
 
+// 每次 render 都會重建卡片；記住正在閱讀的全文捲動位置，點其他按鈕時才不會跳回開頭。
+function fullTextScrollId(scroller) {
+  const card = scroller.closest(".article-card");
+  const pane = scroller.closest(".reading-pane");
+  return card && pane ? `${card.dataset.articleKey}|${pane.dataset.pane}` : "";
+}
+
+function captureFullTextScroll() {
+  const positions = new Map();
+  for (const scroller of els.articleList.querySelectorAll(".full-text")) {
+    const id = fullTextScrollId(scroller);
+    if (id && scroller.scrollTop > 0) positions.set(id, scroller.scrollTop);
+  }
+  return positions;
+}
+
+function restoreFullTextScroll(positions) {
+  if (!positions.size) return;
+  for (const scroller of els.articleList.querySelectorAll(".full-text")) {
+    const top = positions.get(fullTextScrollId(scroller));
+    if (top) scroller.scrollTop = top;
+  }
+}
+
+// 非同步載入完成時若剛好按住滑鼠，重建卡片會讓 mousedown 與 mouseup 落在不同元素，
+// 瀏覽器就不送出 click（按鈕像是沒反應），反白中的文字也會被清掉；等放開後再重繪。
+let pointerPressed = false;
+let deferredRender = false;
+
+function renderWhenIdle() {
+  if (pointerPressed) {
+    deferredRender = true;
+    return;
+  }
+  render();
+}
+
+function releasePointer() {
+  pointerPressed = false;
+  if (!deferredRender) return;
+  deferredRender = false;
+  // click 緊接在 pointerup 之後送出；排到下一輪，讓原本的按鈕先收到點擊。
+  setTimeout(renderWhenIdle, 0);
+}
+
+document.addEventListener("pointerdown", (event) => {
+  if (event.button === 0) pointerPressed = true;
+}, true);
+document.addEventListener("pointerup", releasePointer, true);
+document.addEventListener("pointercancel", releasePointer, true);
+window.addEventListener("blur", releasePointer);
+
 function render() {
   hideNotePreview();
   const normalizedQuery = state.query.trim().toLocaleLowerCase("zh-Hant");
@@ -1237,7 +1322,9 @@ function render() {
   const pageStart = (state.page - 1) * ARTICLES_PER_PAGE;
   const visibleArticles = filtered.slice(pageStart, pageStart + ARTICLES_PER_PAGE);
 
+  const fullTextScroll = captureFullTextScroll();
   els.articleList.replaceChildren(...visibleArticles.map(renderCard));
+  restoreFullTextScroll(fullTextScroll);
   const rangeStart = filtered.length ? pageStart + 1 : 0;
   const rangeEnd = pageStart + visibleArticles.length;
   const tagStatus = state.selectedTags.size ? `；已選 ${state.selectedTags.size} 個標籤` : "";
@@ -1387,7 +1474,7 @@ els.searchInput.addEventListener("input", (event) => {
   searchInputTimer = setTimeout(() => {
     state.query = query;
     state.page = 1;
-    render();
+    renderWhenIdle();
     loadAllEnglishIssuesForSearch();
   }, 180);
 });

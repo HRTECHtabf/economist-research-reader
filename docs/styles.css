@@ -124,6 +124,8 @@ details summary { padding: 14px 0 0; color: var(--red); cursor: pointer; font-si
 .full-text { max-height: 72vh; padding-right: 10px; overflow-y: auto; color: #34312e; font-size: 15px; line-height: 1.9; scrollbar-width: thin; }
 .english-full-text { color: #3f3c38; font-family: Georgia, "Times New Roman", serif; font-size: 16px; line-height: 1.82; }
 .full-text p { margin: 0 0 1.25em; }
+.full-text .untranslated-paragraph { padding: 10px 12px; border-left: 2px solid #bbb5ac; background: #f2efe9; color: #4b4844; font-family: Georgia, "Times New Roman", serif; }
+.full-text .untranslated-paragraph::before { content: "此段未能自動翻譯，暫以英文原文呈現"; display: block; margin-bottom: 4px; color: var(--muted); font-family: var(--sans); font-size: 11px; font-weight: 750; line-height: 1.5; }
 .translation-notice { margin-bottom: 22px; padding: 14px 16px; border-left: 3px solid var(--red); background: var(--soft-red); color: #583a36; }
 .translation-notice strong { display: block; margin-bottom: 3px; color: var(--red-dark); font-size: 12px; }
 .translation-notice p, .full-text-status { margin: 0; font-size: 12px; line-height: 1.65; }

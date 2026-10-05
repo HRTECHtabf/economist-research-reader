@@ -1099,6 +1099,8 @@ function renderNetwork(articles, stats, relationships) {
     pointerId: null,
     lastX: 0,
     lastY: 0,
+    startX: 0,
+    startY: 0,
     moved: false,
     suppressClickUntil: 0,
     pointers: new Map(),
@@ -1294,6 +1296,8 @@ function renderNetwork(articles, stats, relationships) {
     orbit.pointerId = event.pointerId;
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
+    orbit.startX = event.clientX;
+    orbit.startY = event.clientY;
     orbit.moved = false;
     els.relationshipNetwork.classList.add("dragging");
   };
@@ -1325,14 +1329,17 @@ function renderNetwork(articles, stats, relationships) {
       return;
     }
     if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
+    if (!orbit.moved) {
+      // 點擊時的細微晃動不算拖曳；原本超過 1px 就攔截 click 並抓走指標，節點常常點了沒反應。
+      const threshold = event.pointerType === "mouse" ? 5 : 10;
+      if (Math.hypot(event.clientX - orbit.startX, event.clientY - orbit.startY) < threshold) return;
+      orbit.moved = true;
+      if (!els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.setPointerCapture?.(event.pointerId);
+    }
     const dx = event.clientX - orbit.lastX;
     const dy = event.clientY - orbit.lastY;
     orbit.lastX = event.clientX;
     orbit.lastY = event.clientY;
-    if (Math.hypot(dx, dy) > 1) {
-      orbit.moved = true;
-      if (!els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.setPointerCapture?.(event.pointerId);
-    }
     orbit.targetYaw += dx * .012;
     orbit.targetPitch = Math.max(-1.05, Math.min(1.05, orbit.targetPitch - dy * .009));
     requestOrbitFrame();
