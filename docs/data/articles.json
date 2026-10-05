@@ -5,13 +5,13 @@
   "issueDate": "August 29th 2026",
   "sourceFolderSha": "a04971852c4e104053666ad3f0a9c174ee9eefa1",
   "sourceUpdatedAt": "2026-08-28T04:07:00Z",
-  "generatedAt": "2026-08-31T02:14:43.736Z",
+  "generatedAt": "2026-10-05T08:41:43.138Z",
   "updateCadenceZh": "每週一期；本站於週五下午至深夜偵測新一期",
   "sectionCount": 19,
-  "articleCount": 71,
-  "summaryCount": 71,
-  "featuredCount": 71,
-  "totalArticleCount": 444,
+  "articleCount": 69,
+  "summaryCount": 69,
+  "featuredCount": 69,
+  "totalArticleCount": 439,
   "issueCount": 6,
   "highlightPolicyVersion": "important-content-v1",
   "keywordPolicyVersion": "general-keywords-v1",
@@ -84,42 +84,6 @@
       "keywordPolicyVersion": "general-keywords-v1",
       "highlightTermsZh": [
         "Meta承諾強化未成年執法與每日使用上限，但不承認不法"
-      ],
-      "highlightTermsVersion": "important-content-v1",
-      "humanizerVersion": "economist-humanizer-v4"
-    },
-    {
-      "id": "46387e93-e41b-4773-9f4b-58e0bcb33cca",
-      "issueKey": "2026.08.29",
-      "issueDate": "August 29th 2026",
-      "section": "The world this week",
-      "categoryZh": "國際與政策",
-      "titleEn": "Cartoon: America and Canada stand on the brink of a trade war",
-      "rubricEn": "A lighter take on the news",
-      "publishedEn": "Aug 27th 2026",
-      "sourceUrl": "https://www.economist.com/the-world-this-week/2026/08/27/cartoon-america-and-canada-stand-on-the-brink-of-a-trade-war",
-      "textEn": "Dig deeper into the subjects of this week’s cartoon:\nMark Carney must beware an all-out trade war\nThe costs of defying Donald Trump are mounting for Canada\nAmerica’s new sanctions are unlikely to topple Iran’s regime\nYou can see previous ones here .",
-      "sourceHash": "f72d7787d5b87d118da907df7ee7f3251d9c7c73c4e5a8a587d1a2b4772dedb6",
-      "featured": true,
-      "summaryZh": "漫畫用輕鬆口吻，描繪美國與加拿大站在貿易戰升溫門檻上，並提醒馬克·卡尼要防止衝突失控。文中稱加拿大若不回應川普的政策要求，所承擔的成本正在累積。對美國最新制裁，文中評估較難直接推倒伊朗政權，效果可能不如政權更迭目標。",
-      "keyPointsZh": [
-        "漫畫把美加貿易摩擦畫成升溫門檻，指向衝突惡化可能滑向全面貿易戰。",
-        "文中點名馬克·卡尼要小心全力衝突，因為局勢失控會提高不確定性。",
-        "文中指出加拿大不回應川普的政策要求時，成本與壓力會持續累積。",
-        "文中評估美國最新制裁較難直接推翻伊朗政權，傳導效果可能偏離政權更迭目標。"
-      ],
-      "researchLensZh": "回到原文可檢查三件事：加拿大不回應政策要求後，成本如何量化並擴大；談判破裂時，貿易政策步伐是否會快速升級；制裁的行為影響，是否能與政權更迭目標對齊。",
-      "keywordsZh": [
-        "美國",
-        "台灣",
-        "國際貿易",
-        "國際關係",
-        "法律與監管"
-      ],
-      "keywordPolicyVersion": "general-keywords-v1",
-      "highlightTermsZh": [
-        "政策要求",
-        "最新制裁"
       ],
       "highlightTermsVersion": "important-content-v1",
       "humanizerVersion": "economist-humanizer-v4"
@@ -501,40 +465,6 @@
       "keywordPolicyVersion": "general-keywords-v1",
       "highlightTermsZh": [
         "「外科手術式打擊」口號"
-      ],
-      "highlightTermsVersion": "important-content-v1",
-      "humanizerVersion": "economist-humanizer-v4"
-    },
-    {
-      "id": "e1643488-dc04-42c3-bab0-bdbea6b4fb9d",
-      "issueKey": "2026.08.29",
-      "issueDate": "August 29th 2026",
-      "section": "Asia",
-      "categoryZh": "區域政情",
-      "titleEn": "Nepal flash floods",
-      "rubricEn": "",
-      "publishedEn": "Aug 27th 2026",
-      "sourceUrl": "https://www.economist.com/asia/2026/08/27/nepal-flash-floods",
-      "textEn": "Devastating flash floods struck an area on the border between Nepal and Tibet, apparently triggered by the fall of a huge chunk of ice that broke off a glacier. A destructive torrent tore down the valleys below. Hundreds were dead or missing, including many tourists. ■",
-      "sourceHash": "bc458b710e1e92cdf1e76e06159f9d1dd24a68d4247b64b59c3dc4315dbaa48e",
-      "featured": true,
-      "summaryZh": "尼泊爾與西藏邊境發生毀滅性暴洪，疑似由冰川巨塊崩落觸發，洪流奔入下方山谷。數百人死亡或失蹤，其中包含多名旅客。",
-      "keyPointsZh": [
-        "暴洪發生在尼泊爾與西藏邊境，下方山谷遭破壞性洪流沖刷。",
-        "文中推測是冰川巨塊崩落後引發洪水，冰掉落帶出急速水勢。",
-        "死亡或失蹤人數達數百人，受影響者包含多名旅客。"
-      ],
-      "researchLensZh": "可檢查的因果鏈是「冰川巨塊崩落→形成洪水洪峰→下切山谷」。回到原文可核對是否有影像或通報時點，並比對旅遊端的資訊傳遞。",
-      "keywordsZh": [
-        "亞洲",
-        "氣候與環境",
-        "旅遊",
-        "戰爭與衝突"
-      ],
-      "keywordPolicyVersion": "general-keywords-v1",
-      "highlightTermsZh": [
-        "冰川巨塊崩落",
-        "數百人死亡或失蹤"
       ],
       "highlightTermsVersion": "important-content-v1",
       "humanizerVersion": "economist-humanizer-v4"
@@ -7816,43 +7746,6 @@
       "keywordPolicyVersion": "general-keywords-v1"
     },
     {
-      "id": "8443223c-0ca9-4086-8459-3526e483bfef",
-      "issueKey": "2026.06.27",
-      "issueDate": "June 27th 2026",
-      "section": "The world this week",
-      "categoryZh": "國際與政策",
-      "titleEn": "Cartoon: Russia’s war fatigue grows",
-      "rubricEn": "A lighter take on the news",
-      "publishedEn": "Jun 25th 2026",
-      "sourceUrl": "https://www.economist.com//the-world-this-week/2026/06/25/cartoon-russias-war-fatigue-grows",
-      "textEn": "Dig deeper into the subjects of this week’s cartoon:\nRussia’s Crimean conquest is turning into a deadly mess\nRussia’s war economy has problems—but is not about to crash\nVladimir Putin is losing his grip on Russia\nRussia is stumbling on the battlefield\nYou can see previous ones here .",
-      "sourceHash": "0abba7e7e2bb5295757b753b0afb272243d4ab92b4dd41eb59dc5e79015c50f7",
-      "featured": true,
-      "summaryZh": "本週漫畫以俄羅斯日益加重的戰爭疲態為題，並以較輕鬆的筆法處理新聞。頁面連結四篇延伸報導，分別將俄羅斯在克里米亞的征服形容為正演變成致命亂局，認為戰爭經濟雖有問題但尚未面臨崩潰，並稱普丁對俄羅斯的掌控力正在流失、俄軍在戰場上表現受挫。原文未展示漫畫內容，也未提供支撐這些判斷的事件、數據或時間範圍。",
-      "keyPointsZh": [
-        "本週漫畫聚焦俄羅斯戰爭疲態加重，副標說明以較輕鬆的方式處理新聞；頁面未交代漫畫畫面、人物或所對應的特定事件。",
-        "延伸報導將俄羅斯對克里米亞的征服描述為正轉為致命亂局，但本頁沒有說明當地戰況、傷亡規模或這項判斷的依據。",
-        "延伸報導認為俄羅斯戰爭經濟存在問題，但尚未到崩潰邊緣；本頁未列出財政、產能或其他經濟證據。",
-        "延伸報導稱普丁正在失去對俄羅斯的掌控力，但本頁未界定掌控力所指的政治、社會或治理面向。",
-        "延伸報導稱俄軍在戰場上步履蹣跚，本頁未說明涉及哪些戰場、作戰行動或軍事損失。"
-      ],
-      "researchLensZh": "可分別檢查四篇延伸報導對克里米亞戰況、俄羅斯財政與戰時產能、普丁政治控制力及俄軍戰場表現的證據，並釐清這些面向是否存在可辨識的相互傳導關係。",
-      "keywordsZh": [
-        "俄羅斯與烏克蘭",
-        "戰爭與衝突",
-        "國防安全",
-        "政府治理"
-      ],
-      "highlightTermsZh": [
-        "戰爭疲態",
-        "戰爭經濟雖有問題但尚未面臨崩潰",
-        "普丁對俄羅斯的掌控力正在流失"
-      ],
-      "highlightTermsVersion": "important-content-v1",
-      "humanizerVersion": "economist-humanizer-v3",
-      "keywordPolicyVersion": "general-keywords-v1"
-    },
-    {
       "id": "a2b8cd61-1b26-42cb-82f3-c9604961548c",
       "issueKey": "2026.06.27",
       "issueDate": "June 27th 2026",
@@ -10557,44 +10450,6 @@
         "無人支持降息",
         "市值近2.7兆美元",
         "最快明年才完全復原"
-      ],
-      "highlightTermsVersion": "important-content-v1",
-      "humanizerVersion": "economist-humanizer-v3",
-      "keywordPolicyVersion": "general-keywords-v1"
-    },
-    {
-      "id": "73cc0894-1021-4e5d-8c45-cc3fa753d5e7",
-      "issueKey": "2026.06.20",
-      "issueDate": "June 20th 2026",
-      "section": "The world this week",
-      "categoryZh": "國際與政策",
-      "titleEn": "The weekly cartoon",
-      "rubricEn": "",
-      "publishedEn": "Jun 18th 2026",
-      "sourceUrl": "https://www.economist.com//the-world-this-week/2026/06/18/the-weekly-cartoon",
-      "textEn": "Dig deeper:\nDonald Trump gambles that Iran wants money more than power\nRepublicans are desperate to move on from the Iran war\nWar has strengthened the Islamic Republic. Peace could split it\nIran’s battered economy will take years to recover\nThe editorial cartoon appears weekly in The Economist. You can see last week’s here .",
-      "sourceHash": "b637481c299c326368eb30f703cf120acecd63a767af2ba7b41769133eb129eb",
-      "featured": true,
-      "summaryZh": "《經濟學人》本週社論漫畫頁面未提供漫畫畫面或文字說明，但列出四篇延伸閱讀，議題集中於伊朗戰爭的政治與經濟後果。標題顯示，川普賭伊朗更重視資金而非權力，共和黨急於擺脫伊朗戰爭；其中一篇並主張戰爭強化伊斯蘭共和國，和平可能使其分裂。另一篇標題稱，伊朗受創經濟需多年才能復原。頁面註明社論漫畫每週刊出，並連結上週作品。",
-      "keyPointsZh": [
-        "《經濟學人》本週社論漫畫頁面未附漫畫畫面或文字說明，因此無法據此判定漫畫的具體訊息或立場。",
-        "延伸閱讀標題顯示，川普賭伊朗對資金的需求高於對權力的追求，但頁面未列出這項判斷的依據。",
-        "一篇延伸閱讀標題稱，共和黨急於從伊朗戰爭抽身；此頁未說明相關黨內壓力或政治背景。",
-        "一篇延伸閱讀主張，戰爭強化伊斯蘭共和國，和平則可能使其分裂；頁面未交代其作用機制。",
-        "另一篇延伸閱讀標題稱，伊朗受創經濟需要多年才能復原，但未提供損害規模與復原年限估計。"
-      ],
-      "researchLensZh": "可檢查四篇延伸文章如何界定伊朗對資金與權力的取捨，並核對戰爭強化政權、和平引發分裂的論證機制；伊朗經濟部分則應確認損害指標、比較基期及復原年限的估算。",
-      "keywordsZh": [
-        "美國",
-        "中東",
-        "戰爭與衝突",
-        "國際關係",
-        "選舉與政治"
-      ],
-      "highlightTermsZh": [
-        "戰爭強化伊斯蘭共和國",
-        "和平可能使其分裂",
-        "需多年才能復原"
       ],
       "highlightTermsVersion": "important-content-v1",
       "humanizerVersion": "economist-humanizer-v3",
@@ -13341,42 +13196,6 @@
         "中國5月出口年增19.4%",
         "升息至2.25%",
         "航空業獲利預測減半至230億美元"
-      ],
-      "highlightTermsVersion": "important-content-v1",
-      "humanizerVersion": "economist-humanizer-v3",
-      "keywordPolicyVersion": "general-keywords-v1"
-    },
-    {
-      "id": "7b8480bc-405f-47af-af29-0d30a97ffd46",
-      "issueKey": "2026.06.13",
-      "issueDate": "June 13th 2026",
-      "section": "The world this week",
-      "categoryZh": "國際與政策",
-      "titleEn": "The weekly cartoon",
-      "rubricEn": "",
-      "publishedEn": "Jun 11th 2026",
-      "sourceUrl": "https://www.economist.com//the-world-this-week/2026/06/11/the-weekly-cartoon",
-      "textEn": "Dig deeper\nDonald Trump’s least bad option in Iran\nHow Israel is frustrating Donald Trump’s Iran plans\nIran has lost its fear of war\nThe editorial cartoon appears weekly in The Economist. You can see last week’s here .",
-      "sourceHash": "5d7d16847c1559e42bc50600813d319a074255f5a1b856daac30fed7e8b1d51a",
-      "featured": true,
-      "summaryZh": "《經濟學人》本週社論漫畫頁面未提供畫面、文字說明或事件背景，僅列出三篇伊朗議題延伸閱讀：川普在伊朗的「最不差」選項、以色列如何挫折川普的伊朗計畫，以及伊朗已失去對戰爭的恐懼。頁面並說明社論漫畫每週刊登一次，並提供上週作品連結。由於這些判斷只出現在延伸閱讀標題，本文無從確認其論據、時間範圍與具體政策或軍事意涵。",
-      "keyPointsZh": [
-        "《經濟學人》本週社論漫畫頁面沒有刊載漫畫畫面、說明文字、事件細節或數據，主要功能是提供延伸閱讀入口。",
-        "頁面列出的三篇延伸閱讀均聚焦伊朗，其中兩篇標題分別指向川普的政策選項，以及以色列對其伊朗計畫的影響。",
-        "「川普在伊朗的最不差選項」是延伸文章標題中的評價，本頁未交代可選政策、判斷標準或作者論證。",
-        "「伊朗已失去對戰爭的恐懼」僅為延伸文章標題的判斷，本頁沒有說明所指事件、觀察期間或軍事意涵。",
-        "《經濟學人》說明社論漫畫每週刊登，並在本頁提供連往上週社論漫畫的連結。"
-      ],
-      "researchLensZh": "可檢查三篇延伸文章如何界定川普在伊朗的可行選項，以色列採取何種行動影響其計畫，以及「伊朗已失去對戰爭的恐懼」所依據的事件、時間範圍與證據。",
-      "keywordsZh": [
-        "中東",
-        "國際關係",
-        "戰爭與衝突",
-        "文化與媒體"
-      ],
-      "highlightTermsZh": [
-        "以色列如何挫折川普的伊朗計畫",
-        "伊朗已失去對戰爭的恐懼"
       ],
       "highlightTermsVersion": "important-content-v1",
       "humanizerVersion": "economist-humanizer-v3",

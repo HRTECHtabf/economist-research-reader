@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { lowContentReason } from "./lib/low-content-policy.mjs";
 
 const [epubInput, outputInput = ".cache/articles.raw.json"] = process.argv.slice(2);
 
@@ -131,6 +132,7 @@ const sectionLinks = [...toc.matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*class=["
 );
 
 const articles = [];
+const skippedLowContent = [];
 
 for (const section of sectionLinks) {
   const sectionHtml = readFromEpub(section.path);
@@ -138,8 +140,17 @@ for (const section of sectionLinks) {
 
   for (const link of articleLinks) {
     const article = extractArticle(link[1], section.name, link[2]);
-    if (article.titleEn && article.textEn.length > 200) articles.push(article);
+    if (!article.titleEn || article.textEn.length <= 200) continue;
+    const reason = lowContentReason(article);
+    if (reason) {
+      skippedLowContent.push(`${article.titleEn}（${reason}）`);
+      continue;
+    }
+    articles.push(article);
   }
+}
+if (skippedLowContent.length) {
+  console.log(`略過 ${skippedLowContent.length} 篇圖片型低內容頁面：${skippedLowContent.join("、")}`);
 }
 
 const payload = {
