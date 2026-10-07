@@ -6,13 +6,13 @@ const GRAPH_WIDTH = 1000;
 // 畫布寬固定 1000 單位，高度依外框比例調整，讓關聯圖填滿外框而不是兩側留空。
 let GRAPH_HEIGHT = 560;
 const RELATED_ARTICLES_PREVIEW_LIMIT = 8;
-// 節點大小依文章篇數，但最大與最小只差 1.3 倍；確切篇數看球上的數字。
-const NODE_MIN_RADIUS = 20;
-const NODE_MAX_RADIUS = 26;
-const NODE_COMPOUND_RADIUS = 24;
+// 節點大小依文章篇數，但最大與最小只差約 1.25 倍；確切篇數看球上的數字。
+const NODE_MIN_RADIUS = 30;
+const NODE_MAX_RADIUS = 37;
+const NODE_COMPOUND_RADIUS = 33;
 // 預設視角把整張圖放進這個區域（上方留給說明與縮放鈕，下方留給圖例）。
 function networkFitArea() {
-  return { left: 60, right: GRAPH_WIDTH - 60, top: 70, bottom: GRAPH_HEIGHT - 100 };
+  return { left: 40, right: GRAPH_WIDTH - 40, top: 62, bottom: GRAPH_HEIGHT - 90 };
 }
 
 function measureGraphHeight() {
@@ -22,7 +22,8 @@ function measureGraphHeight() {
 }
 const NETWORK_LABEL_SPACE = 26;
 const NETWORK_MAX_SPREAD = 2.4;
-const NETWORK_MAX_FIT_ZOOM = 1.4;
+// 預設視角最多放大 1.15 倍，各種檢視下球的大小才會一致。
+const NETWORK_MAX_FIT_ZOOM = 1.15;
 const COMMUNITY_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const TOUR_STEPS = [
   {
@@ -901,7 +902,8 @@ function svgElement(name, attributes = {}) {
 
 function graphData(articles, stats, relationships) {
   const counts = new Map(stats.map((item) => [item.tag, item.count]));
-  const limited = relationships.slice(0, state.selectedTags.length ? 10 : 22);
+  // 框較小、球較大，整體圖只放最強的 16 組關聯；其餘仍列在下方排名。
+  const limited = relationships.slice(0, state.selectedTags.length ? 10 : 16);
   const nodeMap = new Map();
   const edges = [];
   const ensureNode = (id, tag, options = {}) => {
@@ -986,15 +988,69 @@ function fitLayoutToCanvas(nodes) {
     node.x = targetX + (node.x - centerX) * spreadX;
     node.y = targetY + (node.y - centerY) * spreadY;
   });
-  const width = (maxX - minX) * spreadX + maxRadius * 2;
-  const height = (maxY - minY) * spreadY + maxRadius * 2 + NETWORK_LABEL_SPACE;
+  resolveNodeCollisions(nodes);
+  const left = Math.min(...nodes.map((node) => node.x - node.radius));
+  const right = Math.max(...nodes.map((node) => node.x + node.radius));
+  const top = Math.min(...nodes.map((node) => node.y - node.radius));
+  const bottom = Math.max(...nodes.map((node) => node.y + node.radius + NETWORK_LABEL_SPACE));
+  const width = right - left;
+  const height = bottom - top;
   const zoom = Math.max(1, Math.min(NETWORK_MAX_FIT_ZOOM, (area.right - area.left) / width, (area.bottom - area.top) / height));
-  // 縮放以畫布中心為基準；補償平移，讓放大後的圖仍落在可用區域中央。
+  // 縮放以畫布中心為基準；補償平移，讓放大後整張圖的中心落在可用區域中央。
+  const boxX = (left + right) / 2, boxY = (top + bottom) / 2;
+  const areaX = (area.left + area.right) / 2, areaY = (area.top + area.bottom) / 2;
   return {
     zoom,
-    panX: (targetX - GRAPH_WIDTH / 2) * (1 - zoom),
-    panY: (targetY - GRAPH_HEIGHT / 2) * (1 - zoom),
+    panX: areaX - GRAPH_WIDTH / 2 - (boxX - GRAPH_WIDTH / 2) * zoom,
+    panY: areaY - GRAPH_HEIGHT / 2 - (boxY - GRAPH_HEIGHT / 2) * zoom,
   };
+}
+
+// 兩球所需的最小中心距離：橫向留 22 單位（吸收 3D 視角的位移），越接近上下排列，越要多留下方標籤的高度。
+function requiredNodeDistance(a, b, dx, dy, distance) {
+  const verticalShare = Math.abs(dy) / Math.max(distance, .01);
+  return a.radius + b.radius + 22 + NETWORK_LABEL_SPACE * verticalShare;
+}
+
+function relaxNodeCollisions(nodes, area, bottom) {
+  for (let pass = 0; pass < 300; pass += 1) {
+    let overlapping = false;
+    for (let first = 0; first < nodes.length; first += 1) {
+      for (let second = first + 1; second < nodes.length; second += 1) {
+        const a = nodes[first], b = nodes[second];
+        if (a.fixed && b.fixed) continue;
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let distance = Math.hypot(dx, dy);
+        if (distance < .01) { dx = first % 2 ? 1 : -1; dy = .5; distance = Math.hypot(dx, dy); }
+        const needed = requiredNodeDistance(a, b, dx, dy, distance);
+        if (distance >= needed) continue;
+        overlapping = true;
+        // 沿兩球連線推開，擁擠時球能互相繞開，不會卡在框邊。
+        const push = needed - distance + .5;
+        const ux = dx / distance, uy = dy / distance;
+        const shareA = a.fixed ? 0 : b.fixed ? 1 : .5;
+        const shareB = 1 - shareA;
+        a.x -= ux * push * shareA; a.y -= uy * push * shareA;
+        b.x += ux * push * shareB; b.y += uy * push * shareB;
+      }
+    }
+    nodes.forEach((node) => {
+      node.x = Math.max(area.left + node.radius, Math.min(area.right - node.radius, node.x));
+      node.y = Math.max(area.top + node.radius, Math.min(bottom - node.radius, node.y));
+    });
+    if (!overlapping) return true;
+  }
+  return false;
+}
+
+// 推開到不重疊為止（固定節點不動）；空間真的不夠時，整張圖的球縮小 6% 再試，最多三次。
+function resolveNodeCollisions(nodes) {
+  const area = networkFitArea();
+  const bottom = area.bottom - NETWORK_LABEL_SPACE;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (relaxNodeCollisions(nodes, area, bottom)) return;
+    if (attempt < 3) nodes.forEach((node) => { node.radius *= .94; });
+  }
 }
 
 function layoutGraph(nodes, edges) {
@@ -1022,12 +1078,12 @@ function layoutGraph(nodes, edges) {
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
     // 深度只用來在旋轉時錯開重疊節點；幅度壓小，避免透視讓同篇數的節點忽大忽小。
-    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) * .22 + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 6;
+    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) * .07 + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 2;
     if (node.id === "focus") { node.x = focusCenter.x; node.y = focusCenter.y; }
     if (node.id === "focus-a") { node.x = GRAPH_WIDTH * .35; node.y = area.top + (areaBottom - area.top) * .22; }
     if (node.id === "focus-b") { node.x = GRAPH_WIDTH * .65; node.y = area.top + (areaBottom - area.top) * .22; }
     if (node.id === "compound") { node.x = focusCenter.x; node.y = middleY + (areaBottom - area.top) * .08; }
-    if (node.fixed) node.z = 24;
+    if (node.fixed) node.z = 10;
     node.layoutIndex = index;
   });
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -1037,7 +1093,7 @@ function layoutGraph(nodes, edges) {
         const a = nodes[first], b = nodes[second];
         let dx = b.x - a.x, dy = b.y - a.y;
         let distance = Math.max(1, Math.hypot(dx, dy));
-        const minimum = a.radius + b.radius + 34;
+        const minimum = a.radius + b.radius + 24;
         const force = distance < minimum ? (minimum - distance) * .055 : 1150 / (distance * distance);
         dx /= distance; dy /= distance;
         if (!a.fixed) { a.vx -= dx * force; a.vy -= dy * force; }
@@ -1047,7 +1103,7 @@ function layoutGraph(nodes, edges) {
     edges.forEach((edge) => {
       const a = nodeMap.get(edge.a), b = nodeMap.get(edge.b);
       const dx = b.x - a.x, dy = b.y - a.y, distance = Math.max(1, Math.hypot(dx, dy));
-      const target = edge.structural ? 125 : 145 - Math.min(35, edge.score * .35);
+      const target = Math.max(a.radius + b.radius + 34, edge.structural ? 125 : 150 - Math.min(35, edge.score * .35));
       const force = (distance - target) * .014;
       if (!a.fixed) { a.vx += (dx / distance) * force; a.vy += (dy / distance) * force; }
       if (!b.fixed) { b.vx -= (dx / distance) * force; b.vy -= (dy / distance) * force; }
