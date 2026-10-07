@@ -6,6 +6,7 @@ const GRAPH_WIDTH = 1000;
 // 畫布寬固定 1000 單位，高度依外框比例調整，讓關聯圖填滿外框而不是兩側留空。
 let GRAPH_HEIGHT = 560;
 const RELATED_ARTICLES_PREVIEW_LIMIT = 8;
+const RANKING_ARTICLES_PREVIEW_LIMIT = 4;
 // 節點大小依文章篇數，但最大與最小只差約 1.25 倍；確切篇數看球上的數字。
 const NODE_MIN_RADIUS = 30;
 const NODE_MAX_RADIUS = 37;
@@ -44,7 +45,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="relationship-ranking"]',
     title: "用分數比較共同出現強度",
-    description: "右側分數衡量兩個 tag 是否比隨機預期更常出現在同一篇文章，並對少量樣本保守降權。分數不是因果關係，也不等於文章重要性。",
+    description: "分數衡量兩個 tag 是否比隨機預期更常出現在同一篇文章，並對少量樣本保守降權。點一列會在下方展開這些文章；想改分析組合時，再按展開區裡的按鈕。分數不是因果關係，也不等於文章重要性。",
   },
   {
     selector: '[data-tour="related-articles"]',
@@ -1710,14 +1711,64 @@ function buildArticlePanel(articles, tags, onClose, onShowTags) {
   return panel;
 }
 
-function renderRelationshipRanking(relationships) {
+// 展開區裡才提供改變分析組合的按鈕；點排名列本身只看文章，不會偷偷換掉已選的 tag。
+function rankingFocusAction(item) {
+  if (!state.selectedTags.length) return { label: `以「${item.tags.join(" × ")}」做雙 tag 分析`, tags: item.tags.slice(0, 2) };
+  if (state.selectedTags.length === 1) return { label: `加入「${item.target}」做雙 tag 分析`, tags: [state.selectedTags[0], item.target] };
+  return { label: `改以「${state.selectedTags[0]} × ${item.target}」分析`, tags: [state.selectedTags[0], item.target] };
+}
+
+function createRankingArticles(articles, item) {
+  const box = document.createElement("div");
+  box.className = "relationship-articles";
+  const matches = articlesWithTags(articles, item.tags);
+  if (!matches.length) {
+    const empty = document.createElement("p");
+    empty.className = "relationship-articles-empty";
+    empty.textContent = "這個資料範圍沒有符合的文章。";
+    box.append(empty);
+  }
+  const list = document.createElement("ol");
+  matches.slice(0, RANKING_ARTICLES_PREVIEW_LIMIT).forEach((article) => {
+    const entry = document.createElement("li");
+    const meta = document.createElement("small");
+    meta.textContent = [issueTitle(issueDate(article)), article.categoryZh || article.section].filter(Boolean).join("｜");
+    const title = document.createElement("a");
+    title.href = articleIndexUrl(item.tags, article.titleEn || "");
+    title.textContent = article.titleEn || "Untitled";
+    const summary = document.createElement("p");
+    summary.textContent = article.summaryZh || "這篇文章目前沒有中文摘要。";
+    entry.append(meta, title, summary);
+    list.append(entry);
+  });
+  if (matches.length) box.append(list);
+  const actions = document.createElement("div");
+  actions.className = "relationship-articles-actions";
+  const indexLink = document.createElement("a");
+  indexLink.href = articleIndexUrl(item.tags);
+  indexLink.textContent = matches.length > RANKING_ARTICLES_PREVIEW_LIMIT ? `在文章索引查看全部 ${matches.length} 篇 →` : "在文章索引查看 →";
+  const focus = rankingFocusAction(item);
+  const focusButton = document.createElement("button");
+  focusButton.type = "button";
+  focusButton.textContent = focus.label;
+  focusButton.addEventListener("click", () => {
+    state.selectedTags = focus.tags;
+    renderAll();
+  });
+  actions.append(indexLink, focusButton);
+  box.append(actions);
+  return box;
+}
+
+function renderRelationshipRanking(articles, relationships) {
   els.relationshipList.replaceChildren();
   const visible = relationships.slice(0, 12);
   if (!visible.length) {
     const empty = document.createElement("p"); empty.className = "chart-empty"; empty.textContent = "目前沒有足夠資料計算穩定關聯。"; els.relationshipList.append(empty); return;
   }
   visible.forEach((item) => {
-    const row = document.createElement("button"); row.type = "button"; row.className = "relationship-row";
+    const entry = document.createElement("div"); entry.className = "relationship-item";
+    const row = document.createElement("button"); row.type = "button"; row.className = "relationship-row"; row.setAttribute("aria-expanded", "false");
     const pair = document.createElement("span"); pair.className = "relation-pair";
     pair.textContent = state.selectedTags.length === 2 ? `${state.selectedTags.join(" × ")} → ${item.target}` : item.tags.join(" × ");
     const score = document.createElement("strong"); score.className = "relation-score"; score.textContent = item.score;
@@ -1725,14 +1776,23 @@ function renderRelationshipRanking(relationships) {
     const support = document.createElement("span"); support.textContent = `共同 ${item.support} 篇`;
     meta.append(support);
     if (item.lowSample) { const low = document.createElement("span"); low.className = "low-sample"; low.textContent = "低樣本"; meta.append(low); }
+    const toggle = document.createElement("span"); toggle.className = "relation-toggle"; toggle.textContent = "查看文章 ▾";
+    meta.append(toggle);
     row.append(pair, score, meta);
     row.addEventListener("click", () => {
-      if (!state.selectedTags.length) state.selectedTags = item.tags.slice(0, 2);
-      else if (state.selectedTags.length === 1) state.selectedTags = [state.selectedTags[0], item.target];
-      else state.selectedTags = [state.selectedTags[0], item.target];
-      renderAll();
+      const opening = row.getAttribute("aria-expanded") !== "true";
+      els.relationshipList.querySelectorAll(".relationship-item").forEach((other) => {
+        other.querySelector(".relationship-articles")?.remove();
+        other.querySelector(".relationship-row").setAttribute("aria-expanded", "false");
+        other.querySelector(".relation-toggle").textContent = "查看文章 ▾";
+      });
+      if (!opening) return;
+      row.setAttribute("aria-expanded", "true");
+      toggle.textContent = "收起 ▴";
+      entry.append(createRankingArticles(articles, item));
     });
-    els.relationshipList.append(row);
+    entry.append(row);
+    els.relationshipList.append(entry);
   });
 }
 
@@ -1749,7 +1809,7 @@ function renderRelationships(articles, stats, relationships) {
     els.relationshipDescription.textContent = `${range}中，黑色節點代表同時包含「${state.selectedTags.join("」與「")}」的文章；外圍節點顯示這些文章還常和哪些 tag 一起出現。`;
   }
   renderNetwork(articles, stats, relationships);
-  renderRelationshipRanking(relationships);
+  renderRelationshipRanking(articles, relationships);
   renderRelatedArticles(articles);
 }
 

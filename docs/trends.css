@@ -140,7 +140,23 @@
 .ranking-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 11px; border-bottom: 2px solid var(--ink); }
 .ranking-heading strong { font-size: 13px; }
 .ranking-heading small { color: var(--muted); font-size: 9px; }
-.relationship-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0 18px; }
+.relationship-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; gap: 0 18px; }
+.relationship-item { min-width: 0; }
+.relation-toggle { margin-left: auto; color: var(--red); font-weight: 800; }
+.relationship-row[aria-expanded="true"] { border-bottom-color: transparent; }
+.relationship-row[aria-expanded="true"] .relation-pair { color: var(--red); }
+.relationship-articles { padding: 4px 10px 12px; border-bottom: 1px solid var(--line); border-left: 2px solid var(--red); background: #faf7f1; }
+.relationship-articles ol { display: grid; gap: 10px; margin: 0; padding: 6px 0 0; list-style: none; }
+.relationship-articles li { display: grid; gap: 3px; padding-bottom: 9px; border-bottom: 1px dashed var(--line); }
+.relationship-articles small { color: var(--red); font-size: 9px; font-weight: 800; }
+.relationship-articles li a { color: var(--ink); font-family: var(--serif); font-size: 14px; font-weight: 700; line-height: 1.25; text-decoration: none; }
+.relationship-articles li a:hover,.relationship-articles li a:focus-visible { color: var(--red); text-decoration: underline; }
+.relationship-articles li p { display: -webkit-box; margin: 0; overflow: hidden; color: #3e3934; font-size: 11px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.relationship-articles-empty { margin: 8px 0; color: var(--muted); font-size: 11px; }
+.relationship-articles-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px; }
+.relationship-articles-actions a { color: var(--red); font-size: 10px; font-weight: 850; text-underline-offset: 3px; }
+.relationship-articles-actions button { border: 1px solid var(--ink); padding: 6px 10px; background: transparent; color: var(--ink); cursor: pointer; font-size: 10px; font-weight: 850; }
+.relationship-articles-actions button:hover,.relationship-articles-actions button:focus-visible { border-color: var(--red); background: var(--red); color: white; outline: 0; }
 .relationship-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 12px; width: 100%; padding: 12px 2px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; text-align: left; }
 .relationship-row:hover .relation-pair, .relationship-row:focus-visible .relation-pair { color: var(--red); }
 .relation-pair { overflow: hidden; font-size: 11px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
