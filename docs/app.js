@@ -48,7 +48,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="trends"]',
     title: "前往趨勢儀表板",
-    description: "趨勢儀表板可用全部資料、每月或每期查看 tag 關聯與熱門 tag；選擇兩個 tag 後，關聯分析下方會直接列出共同文章。",
+    description: "趨勢儀表板可用全部資料、每月或每期查看 tag 關聯與熱門 tag；選一個 tag 會在關聯分析下方列出它的所有文章，選兩個則列出共同文章。",
   },
   {
     selector: '[data-tour="filters"]',
