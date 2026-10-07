@@ -49,8 +49,8 @@ const TOUR_STEPS = [
   },
   {
     selector: '[data-tour="related-articles"]',
-    title: "直接查看共同文章",
-    description: "選滿兩個 tag 後，這裡會列出同時包含兩者的文章、摘要與期數。文章較多時可直接在原頁展開全部結果。",
+    title: "直接查看相關文章",
+    description: "選一個 tag 時，這裡會列出含有這個 tag 的所有文章；選兩個 tag 則列出同時包含兩者的共同文章。每篇都附摘要與期數，文章較多時可直接在原頁展開全部結果。",
   },
   {
     selector: '[data-tour="cloud"]',
@@ -1677,29 +1677,33 @@ function renderRelatedArticles(articles) {
   els.relatedArticlesList.replaceChildren();
   els.relatedArticlesActions.replaceChildren();
 
-  if (state.selectedTags.length < 2) {
-    els.relatedArticlesTitle.textContent = "共同文章";
-    els.relatedArticlesDescription.textContent = state.selectedTags.length
-      ? `再選一個 tag，即可列出與「${state.selectedTags[0]}」同時出現的文章。`
-      : "選擇兩個 tag 後，這裡會列出同時包含兩者的文章。";
+  if (!state.selectedTags.length) {
+    els.relatedArticlesTitle.textContent = "相關文章";
+    els.relatedArticlesDescription.textContent = "選一個 tag 即列出含有它的所有文章；選兩個 tag 則列出同時包含兩者的共同文章。";
     const empty = document.createElement("p");
     empty.className = "related-articles-empty";
-    empty.textContent = state.selectedTags.length ? "還差一個 tag" : "尚未選擇分析組合";
+    empty.textContent = "尚未選擇 tag";
     els.relatedArticlesList.append(empty);
     return;
   }
 
-  const matches = articles
-    .filter((article) => state.selectedTags.every((tag) => (article.keywordsZh || []).includes(tag)))
-    .sort((a, b) => issueDate(b).localeCompare(issueDate(a)) || (a.titleEn || "").localeCompare(b.titleEn || ""));
-  const pair = `「${state.selectedTags.join("」與「")}」`;
-  els.relatedArticlesTitle.textContent = `${pair}共同文章・${matches.length} 篇`;
-  els.relatedArticlesDescription.textContent = `列出${scopeTitle(state.relationshipScope, state.relationshipIssue)}中，同時包含${pair}的文章。`;
+  // 選一個 tag 就列出含有它的全部文章；選兩個才縮小到共同文章。
+  const matches = articlesWithTags(articles, state.selectedTags);
+  const range = scopeTitle(state.relationshipScope, state.relationshipIssue);
+  if (state.selectedTags.length === 1) {
+    const tag = `「${state.selectedTags[0]}」`;
+    els.relatedArticlesTitle.textContent = `${tag}相關文章・${matches.length} 篇`;
+    els.relatedArticlesDescription.textContent = `列出${range}中含有${tag}的所有文章；再選一個 tag 可縮小到兩者的共同文章。`;
+  } else {
+    const pair = `「${state.selectedTags.join("」與「")}」`;
+    els.relatedArticlesTitle.textContent = `${pair}共同文章・${matches.length} 篇`;
+    els.relatedArticlesDescription.textContent = `列出${range}中，同時包含${pair}的文章。`;
+  }
 
   if (!matches.length) {
     const empty = document.createElement("p");
     empty.className = "related-articles-empty";
-    empty.textContent = "這個資料範圍沒有同時包含兩個 tag 的文章。";
+    empty.textContent = state.selectedTags.length === 1 ? "這個資料範圍沒有含這個 tag 的文章。" : "這個資料範圍沒有同時包含兩個 tag 的文章。";
     els.relatedArticlesList.append(empty);
     return;
   }

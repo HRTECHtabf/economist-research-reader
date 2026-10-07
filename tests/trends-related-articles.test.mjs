@@ -4,7 +4,7 @@ import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
 
-test("趨勢關聯頁在兩個 tag 下方列出共同文章", async () => {
+test("趨勢關聯頁選一個 tag 列出全部文章、兩個 tag 列出共同文章", async () => {
   const [html, script, styles] = await Promise.all([
     readFile(new URL("docs/trends.html", projectRoot), "utf8"),
     readFile(new URL("docs/trends.js", projectRoot), "utf8"),
@@ -13,9 +13,12 @@ test("趨勢關聯頁在兩個 tag 下方列出共同文章", async () => {
 
   assert.match(html, /id="related-articles"/);
   assert.match(html, /data-tour="related-articles"/);
-  assert.match(script, /state\.selectedTags\.every\(\(tag\) => \(article\.keywordsZh \|\| \[\]\)\.includes\(tag\)\)/);
+  assert.match(script, /function articlesWithTags\(articles, tags\)[\s\S]*tags\.every\(\(tag\) => \(article\.keywordsZh \|\| \[\]\)\.includes\(tag\)\)/);
+  assert.match(script, /const matches = articlesWithTags\(articles, state\.selectedTags\);/);
+  assert.match(script, /相關文章・\$\{matches\.length\} 篇/);
+  assert.doesNotMatch(script, /還差一個 tag/);
   assert.match(script, /顯示其餘/);
-  assert.match(script, /直接查看共同文章/);
+  assert.match(script, /直接查看相關文章/);
   assert.match(styles, /\.related-articles-list/);
   assert.match(styles, /@media \(max-width: 760px\)[\s\S]*\.related-articles-heading,.related-articles-list \{ grid-template-columns: 1fr; \}/);
 });
@@ -36,7 +39,7 @@ test("全部 tag 可切換每期、每月與全部資料，並同步共同文章
   assert.match(script, /較前月升溫/);
 });
 
-test("首頁功能導覽會說明共同文章功能", async () => {
+test("首頁功能導覽會說明單一 tag 與共同文章功能", async () => {
   const script = await readFile(new URL("docs/app.js", projectRoot), "utf8");
-  assert.match(script, /選擇兩個 tag 後，關聯分析下方會直接列出共同文章/);
+  assert.match(script, /選一個 tag 會在關聯分析下方列出它的所有文章，選兩個則列出共同文章/);
 });
