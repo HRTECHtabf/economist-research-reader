@@ -7,7 +7,7 @@
     <title>關鍵字趨勢儀表板｜《經濟學人》中文研究摘要</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css?v=20260821-12" />
-    <link rel="stylesheet" href="./trends.css?v=20261007-1" />
+    <link rel="stylesheet" href="./trends.css?v=20261007-2" />
   </head>
   <body>
     <a class="skip-link" href="#dashboard">跳至趨勢分析</a>
@@ -61,7 +61,8 @@
               <div><span class="analysis-mode" id="analysis-mode">全部資料</span><p id="relationship-description">找出在同一篇文章中，比隨機情況更常一起出現的 tag。</p><div class="range-controls"><label><span>統計方式</span><select id="relationship-scope" aria-label="選擇關聯圖統計方式"><option value="all">全部資料</option><option value="month">每月</option><option value="issue" selected>每期</option></select></label><label><span id="relationship-period-label">期數</span><select id="relationship-issue" aria-label="選擇關聯圖資料範圍"></select></label></div></div>
             </div>
             <div class="relationship-layout">
-              <div class="relationship-network" id="relationship-network" role="group" aria-label="可旋轉的 tag 3D 空間社群關聯網絡圖" data-tour="relationship-network"></div>
+              <div class="relationship-network" id="relationship-network" role="group" aria-label="tag 社群關聯網絡圖" data-tour="relationship-network"></div>
+              <div class="network-article-slot" id="network-article-slot" aria-live="polite"></div>
               <div class="relationship-ranking" data-tour="relationship-ranking">
                 <div class="ranking-heading"><div><strong id="ranking-title">關聯排名</strong> <small class="ranking-hint">點一列可展開文章</small></div><span class="ranking-metric"><small>強度 0–100</small><span id="relationship-help"></span></span></div>
                 <div class="relationship-list" id="relationship-list"></div>
@@ -143,6 +144,6 @@
         </div>
       </section>
     </div>
-    <script src="./trends.js?v=20261007-1" defer></script>
+    <script src="./trends.js?v=20261007-2" defer></script>
   </body>
 </html>

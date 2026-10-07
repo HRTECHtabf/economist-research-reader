@@ -40,7 +40,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="relationship-network"]',
     title: "旋轉並辨認關聯網絡",
-    description: "按住空白處拖曳可旋轉視角；電腦可用滾輪，手機可用雙指縮放，也可使用右上角按鈕。滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群；點一下圓球就會列出對應的文章。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
+    description: "圖固定置中不會跑掉；可用右上角按鈕、Ctrl＋滾輪或雙指縮放，雙擊回到預設大小。滑到圓球上會顯示 tag 名稱、文章篇數與所屬社群；點一下圓球，圖的下方就會列出對應的文章。圓球顏色是依當下連線密度自動分群，不是固定的主題分類。",
   },
   {
     selector: '[data-tour="relationship-ranking"]',
@@ -125,6 +125,7 @@ const els = {
   analysisMode: document.querySelector("#analysis-mode"),
   rankingTitle: document.querySelector("#ranking-title"),
   relationshipNetwork: document.querySelector("#relationship-network"),
+  networkArticleSlot: document.querySelector("#network-article-slot"),
   relationshipList: document.querySelector("#relationship-list"),
   relationshipHelp: document.querySelector("#relationship-help"),
   relationshipScope: document.querySelector("#relationship-scope"),
@@ -997,17 +998,13 @@ function fitLayoutToCanvas(nodes) {
   const width = right - left;
   const height = bottom - top;
   const zoom = Math.max(1, Math.min(NETWORK_MAX_FIT_ZOOM, (area.right - area.left) / width, (area.bottom - area.top) / height));
-  // 縮放以畫布中心為基準；補償平移，讓放大後整張圖的中心落在可用區域中央。
+  // 整張圖的中心永遠對齊可用區域的中心；縮放只改大小，不會讓圖偏移。
   const boxX = (left + right) / 2, boxY = (top + bottom) / 2;
   const areaX = (area.left + area.right) / 2, areaY = (area.top + area.bottom) / 2;
-  return {
-    zoom,
-    panX: areaX - GRAPH_WIDTH / 2 - (boxX - GRAPH_WIDTH / 2) * zoom,
-    panY: areaY - GRAPH_HEIGHT / 2 - (boxY - GRAPH_HEIGHT / 2) * zoom,
-  };
+  return { zoom, boxX, boxY, areaX, areaY };
 }
 
-// 兩球所需的最小中心距離：橫向留 22 單位（吸收 3D 視角的位移），越接近上下排列，越要多留下方標籤的高度。
+// 兩球所需的最小中心距離：橫向留 22 單位，越接近上下排列，越要多留下方標籤的高度。
 function requiredNodeDistance(a, b, dx, dy, distance) {
   const verticalShare = Math.abs(dy) / Math.max(distance, .01);
   return a.radius + b.radius + 22 + NETWORK_LABEL_SPACE * verticalShare;
@@ -1078,13 +1075,12 @@ function layoutGraph(nodes, edges) {
     node.x = center.x + Math.cos(angle) * distance;
     node.y = center.y + Math.sin(angle) * distance;
     node.vx = 0; node.vy = 0;
-    // 深度只用來在旋轉時錯開重疊節點；幅度壓小，避免透視讓同篇數的節點忽大忽小。
-    node.z = ((stableHash(`${node.id}:depth`) % 360) - 180) * .07 + (Math.min(node.community, COMMUNITY_NAMES.length - 1) - 3.5) * 2;
+    node.z = 0;
     if (node.id === "focus") { node.x = focusCenter.x; node.y = focusCenter.y; }
     if (node.id === "focus-a") { node.x = GRAPH_WIDTH * .35; node.y = area.top + (areaBottom - area.top) * .22; }
     if (node.id === "focus-b") { node.x = GRAPH_WIDTH * .65; node.y = area.top + (areaBottom - area.top) * .22; }
     if (node.id === "compound") { node.x = focusCenter.x; node.y = middleY + (areaBottom - area.top) * .08; }
-    if (node.fixed) node.z = 10;
+
     node.layoutIndex = index;
   });
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -1148,6 +1144,7 @@ function renderNetwork(articles, stats, relationships) {
   state.networkFrame = null;
   els.relationshipNetwork.classList.remove("dragging", "is-moving");
   els.relationshipNetwork.replaceChildren();
+  els.networkArticleSlot.replaceChildren();
   GRAPH_HEIGHT = measureGraphHeight();
   const { nodes, edges } = graphData(articles, stats, relationships);
   if (!nodes.length || !edges.length) {
@@ -1160,7 +1157,6 @@ function renderNetwork(articles, stats, relationships) {
   const fittedView = layoutGraph(nodes, edges);
   const minZoom = fittedView.zoom * .6;
   const maxZoom = fittedView.zoom * 2.2;
-  els.relationshipNetwork.classList.add("network-3d");
   const nodeTooltip = document.createElement("div");
   nodeTooltip.className = "network-node-tooltip";
   nodeTooltip.hidden = true;
@@ -1168,7 +1164,7 @@ function renderNetwork(articles, stats, relationships) {
   const tooltipMeta = document.createElement("span");
   nodeTooltip.append(tooltipTitle, tooltipMeta);
   function positionNodeTooltip(event) {
-    if (!event || nodeTooltip.hidden || orbit.dragging || orbit.pinching) return;
+    if (!event || nodeTooltip.hidden || view.pinching) return;
     const rect = els.relationshipNetwork.getBoundingClientRect();
     const width = nodeTooltip.offsetWidth || 180;
     const height = nodeTooltip.offsetHeight || 50;
@@ -1205,88 +1201,28 @@ function renderNetwork(articles, stats, relationships) {
     edgeElements.push({ edge, path, index });
   });
   const nodeElements = new Map();
-  const orbit = {
-    yaw: -.2,
-    pitch: -.16,
-    targetYaw: -.2,
-    targetPitch: -.16,
+  // 圖固定不旋轉；縮放一律以整張圖的中心為準，點與線永遠留在畫面中央。
+  const view = {
     zoom: fittedView.zoom,
     targetZoom: fittedView.zoom,
-    panX: fittedView.panX,
-    panY: fittedView.panY,
-    targetPanX: fittedView.panX,
-    targetPanY: fittedView.panY,
-    dragging: false,
-    pointerId: null,
-    lastX: 0,
-    lastY: 0,
-    startX: 0,
-    startY: 0,
-    moved: false,
     suppressClickUntil: 0,
     pointers: new Map(),
     pinching: false,
-    pinchStartDistance: 0,
-    pinchStartZoom: 1,
-    pinchStartCenter: null,
-    pinchStartPanX: 0,
-    pinchStartPanY: 0,
+    pinchStartDistance: 1,
+    pinchStartZoom: fittedView.zoom,
   };
-  let clientToGraphMatrix = null;
-  let matrixUpdatedAt = 0;
   let zoomLevel = null;
   let zoomOutButton = null;
   let zoomInButton = null;
-  function clientPointToGraph(clientX, clientY, refreshMatrix = false) {
-    const point = svg.createSVGPoint();
-    point.x = clientX;
-    point.y = clientY;
-    const now = performance.now();
-    if (refreshMatrix || !clientToGraphMatrix || now - matrixUpdatedAt > 250) {
-      const screenMatrix = svg.getScreenCTM();
-      clientToGraphMatrix = screenMatrix ? screenMatrix.inverse() : null;
-      matrixUpdatedAt = now;
-    }
-    if (!clientToGraphMatrix) return { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
-    const graphPoint = point.matrixTransform(clientToGraphMatrix);
-    return { x: graphPoint.x, y: graphPoint.y };
-  }
-  function constrainNetworkPan(panX, panY, zoom) {
-    const maxPanX = GRAPH_WIDTH * Math.max(0, zoom - minZoom) * .5 + Math.abs(fittedView.panX) + panelShift.x;
-    const maxPanY = GRAPH_HEIGHT * Math.max(0, zoom - minZoom) * .5 + Math.abs(fittedView.panY);
+  function projectNode(node) {
     return {
-      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, panY)),
+      x: fittedView.areaX + (node.baseX - fittedView.boxX) * view.zoom,
+      y: fittedView.areaY + (node.baseY - fittedView.boxY) * view.zoom,
+      scale: view.zoom,
     };
   }
-  function zoomPanAtPoint(nextZoom, focus, startZoom = orbit.targetZoom, startPanX = orbit.targetPanX, startPanY = orbit.targetPanY) {
-    const zoomRatio = nextZoom / Math.max(.001, startZoom);
-    const centerX = GRAPH_WIDTH / 2;
-    const centerY = GRAPH_HEIGHT / 2;
-    const nextPan = constrainNetworkPan(
-      focus.x - centerX - (focus.x - centerX - startPanX) * zoomRatio,
-      focus.y - centerY - (focus.y - centerY - startPanY) * zoomRatio,
-      nextZoom,
-    );
-    orbit.targetPanX = nextPan.x;
-    orbit.targetPanY = nextPan.y;
-  }
-  function projectNode(node, rotationX, rotationY) {
-    const x = node.baseX - GRAPH_WIDTH / 2;
-    const y = node.baseY - GRAPH_HEIGHT / 2;
-    const z = node.baseZ;
-    const cosY = Math.cos(rotationY), sinY = Math.sin(rotationY);
-    const x1 = x * cosY + z * sinY;
-    const z1 = -x * sinY + z * cosY;
-    const cosX = Math.cos(rotationX), sinX = Math.sin(rotationX);
-    const y1 = y * cosX - z1 * sinX;
-    const z2 = y * sinX + z1 * cosX;
-    const perspectiveScale = 2400 / (2400 - z2);
-    const scale = perspectiveScale * orbit.zoom;
-    return { x: GRAPH_WIDTH / 2 + orbit.panX + x1 * scale, y: GRAPH_HEIGHT / 2 + orbit.panY + y1 * scale, z: z2, scale: Math.max(.3, Math.min(3.2, scale)) };
-  }
-  function updatePositions(lightweight = false) {
-    const projected = new Map(nodes.map((node) => [node.id, projectNode(node, orbit.pitch, orbit.yaw)]));
+  function updatePositions() {
+    const projected = new Map(nodes.map((node) => [node.id, projectNode(node)]));
     edgeElements.forEach(({ edge, path, index }) => {
       const a = projected.get(edge.a), b = projected.get(edge.b);
       const dx = b.x - a.x, dy = b.y - a.y;
@@ -1295,111 +1231,50 @@ function renderNetwork(articles, stats, relationships) {
       const cx = (a.x + b.x) / 2 - (dy / length) * curve;
       const cy = (a.y + b.y) / 2 + (dx / length) * curve;
       path.setAttribute("d", `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`);
-      path.style.opacity = String(Math.max(.16, Math.min(.82, .42 + ((a.z + b.z) / 900))));
     });
     nodeElements.forEach((group, id) => {
       const point = projected.get(id);
       group.setAttribute("transform", `translate(${point.x} ${point.y}) scale(${point.scale})`);
-      // 用變數而非行內 opacity，滑過節點時 .dimmed 的淡化才會生效。
-      group.style.setProperty("--depth-opacity", String(Math.max(.86, Math.min(1, .94 + point.z / 900))));
-      if (!lightweight) group.style.setProperty("--depth-shadow", `${Math.max(2, 14 * point.scale)}px`);
     });
-    if (!lightweight) {
-      [...nodes]
-        .sort((a, b) => projected.get(a.id).z - projected.get(b.id).z)
-        .forEach((node) => nodeLayer.append(nodeElements.get(node.id)));
-      const activeNode = nodeLayer.querySelector(".network-node.hovered, .network-node:focus");
-      if (activeNode) nodeLayer.append(activeNode);
-    }
   }
-  function orbitIsMoving() {
-    return Math.abs(orbit.targetYaw - orbit.yaw) > .0005
-      || Math.abs(orbit.targetPitch - orbit.pitch) > .0005
-      || Math.abs(orbit.targetZoom - orbit.zoom) > .0005
-      || Math.abs(orbit.targetPanX - orbit.panX) > .01
-      || Math.abs(orbit.targetPanY - orbit.panY) > .01;
-  }
-  function animateOrbit() {
-    const response = orbit.dragging || orbit.pinching ? .42 : .3;
-    orbit.yaw += (orbit.targetYaw - orbit.yaw) * response;
-    orbit.pitch += (orbit.targetPitch - orbit.pitch) * response;
-    orbit.zoom += (orbit.targetZoom - orbit.zoom) * response;
-    orbit.panX += (orbit.targetPanX - orbit.panX) * response;
-    orbit.panY += (orbit.targetPanY - orbit.panY) * response;
-    if (orbitIsMoving()) {
-      updatePositions(true);
-      state.networkFrame = requestAnimationFrame(animateOrbit);
-    } else {
-      orbit.yaw = orbit.targetYaw;
-      orbit.pitch = orbit.targetPitch;
-      orbit.zoom = orbit.targetZoom;
-      orbit.panX = orbit.targetPanX;
-      orbit.panY = orbit.targetPanY;
+  function animateZoom() {
+    view.zoom += (view.targetZoom - view.zoom) * .3;
+    if (Math.abs(view.targetZoom - view.zoom) > .0005) {
       updatePositions();
-      els.relationshipNetwork.classList.remove("is-moving");
-      state.networkFrame = null;
+      state.networkFrame = requestAnimationFrame(animateZoom);
+      return;
     }
+    view.zoom = view.targetZoom;
+    updatePositions();
+    els.relationshipNetwork.classList.remove("is-moving");
+    state.networkFrame = null;
   }
-  function requestOrbitFrame() {
+  function setNetworkZoom(nextZoom) {
+    view.targetZoom = Math.max(minZoom, Math.min(maxZoom, nextZoom));
+    if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round((view.targetZoom / fittedView.zoom) * 100)}%`;
+    if (zoomOutButton) zoomOutButton.disabled = view.targetZoom <= minZoom * 1.001;
+    if (zoomInButton) zoomInButton.disabled = view.targetZoom >= maxZoom * .999;
     els.relationshipNetwork.classList.add("is-moving");
-    if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateOrbit);
-  }
-  function setNetworkZoom(nextZoom, focus = { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, zoomOrigin = null) {
-    const boundedZoom = Math.max(minZoom, Math.min(maxZoom, nextZoom));
-    const origin = zoomOrigin || { zoom: orbit.targetZoom, panX: orbit.targetPanX, panY: orbit.targetPanY };
-    zoomPanAtPoint(boundedZoom, focus, origin.zoom, origin.panX, origin.panY);
-    orbit.targetZoom = boundedZoom;
-    if (zoomLevel) zoomLevel.textContent = `縮放 ${Math.round((orbit.targetZoom / fittedView.zoom) * 100)}%`;
-    if (zoomOutButton) zoomOutButton.disabled = orbit.targetZoom <= minZoom * 1.001;
-    if (zoomInButton) zoomInButton.disabled = orbit.targetZoom >= maxZoom * .999;
-    requestOrbitFrame();
+    if (!state.networkFrame) state.networkFrame = requestAnimationFrame(animateZoom);
   }
   function resetNetworkView() {
-    orbit.targetYaw = -.2;
-    orbit.targetPitch = -.16;
-    orbit.targetPanX = fittedView.panX - panelShift.x;
-    orbit.targetPanY = fittedView.panY;
-    setNetworkZoom(fittedView.zoom, { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 }, { zoom: fittedView.zoom, panX: orbit.targetPanX, panY: orbit.targetPanY });
+    setNetworkZoom(fittedView.zoom);
   }
-  // 點圓球後在右側列出對應文章；圖往左挪，讓文章面板不擋住節點。
-  const panelShift = { x: 0 };
+  // 文章列表放在圖的正下方，圖本身完全不移動。
   function closeArticlePanel() {
-    const panel = els.relationshipNetwork.querySelector(".network-article-panel");
-    if (!panel) return;
-    panel.remove();
+    if (!els.networkArticleSlot.childElementCount) return;
+    els.networkArticleSlot.replaceChildren();
     nodeElements.forEach((element) => element.classList.remove("active"));
-    if (panelShift.x) {
-      orbit.targetPanX += panelShift.x;
-      panelShift.x = 0;
-      requestOrbitFrame();
-    }
-  }
-  function shiftGraphBesidePanel(panel) {
-    if (panelShift.x) return;
-    const networkRect = els.relationshipNetwork.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
-    if (!networkRect.width || panelRect.width > networkRect.width * .6) return;
-    const visibleLeft = clientPointToGraph(networkRect.left, networkRect.top + networkRect.height / 2, true).x;
-    const visibleRight = clientPointToGraph(panelRect.left - 12, networkRect.top + networkRect.height / 2).x;
-    const wanted = (Math.max(0, visibleLeft) + Math.min(GRAPH_WIDTH, visibleRight)) / 2 - GRAPH_WIDTH / 2;
-    // 只往左挪到最左邊的球貼近邊緣為止；球多時寧可讓面板蓋住一點，也不把左側的球推出框外。
-    const leftmost = Math.min(...nodes.map((node) => {
-      const point = projectNode(node, orbit.pitch, orbit.yaw);
-      return point.x - node.radius * point.scale;
-    }));
-    const shift = Math.max(wanted, Math.min(0, Math.max(0, visibleLeft) + 12 - leftmost));
-    if (shift >= 0) return;
-    panelShift.x = -shift;
-    orbit.targetPanX += shift;
-    requestOrbitFrame();
   }
   function openArticlePanel(tags, nodeId = "") {
-    const hadPanel = Boolean(els.relationshipNetwork.querySelector(".network-article-panel"));
-    els.relationshipNetwork.querySelector(".network-article-panel")?.remove();
     nodeElements.forEach((element, id) => element.classList.toggle("active", id === nodeId));
     const panel = buildArticlePanel(articles, tags, closeArticlePanel, (nextTags) => openArticlePanel(nextTags, nodeIdForTags(nextTags)));
-    els.relationshipNetwork.append(panel);
-    if (!hadPanel) shiftGraphBesidePanel(panel);
+    els.networkArticleSlot.replaceChildren(panel);
+    const top = panel.getBoundingClientRect().top;
+    // 列表標題若在畫面下緣之外，只往下捲到看得見標題為止，圖仍留在畫面上。
+    if (top > innerHeight - 140) {
+      window.scrollBy({ top: top - innerHeight + 220, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    }
     panel.querySelector(".network-article-panel-close")?.focus({ preventScroll: true });
   }
   function nodeIdForTags(tags) {
@@ -1436,7 +1311,7 @@ function renderNetwork(articles, stats, relationships) {
     group.addEventListener("focus", () => { nodeLayer.append(group); showNodeTooltip(node); });
     group.addEventListener("blur", hideNodeTooltip);
     group.addEventListener("click", (event) => {
-      if (performance.now() < orbit.suppressClickUntil) { event.preventDefault(); return; }
+      if (performance.now() < view.suppressClickUntil) { event.preventDefault(); return; }
       openArticlePanel(panelTagsForNode(node), node.id);
     });
     group.addEventListener("keydown", (event) => {
@@ -1445,119 +1320,50 @@ function renderNetwork(articles, stats, relationships) {
     nodeLayer.append(group);
     nodeElements.set(node.id, group);
   });
+  // 拖曳不再旋轉或移動圖；觸控只保留雙指縮放。
   els.relationshipNetwork.onpointerdown = (event) => {
-    if (event.target.closest?.(".network-zoom-controls, .network-article-panel")) return;
-    if (event.button !== 0) return;
-    orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (event.pointerType !== "touch") return;
+    view.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (view.pointers.size !== 2) return;
+    const [first, second] = [...view.pointers.values()];
+    view.pinching = true;
+    view.pinchStartDistance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+    view.pinchStartZoom = view.targetZoom;
     hideNodeTooltip();
-    if (orbit.pointers.size >= 2) {
-      orbit.pointers.forEach((_, pointerId) => els.relationshipNetwork.setPointerCapture?.(pointerId));
-      const [first, second] = [...orbit.pointers.values()];
-      orbit.pinching = true;
-      orbit.dragging = false;
-      orbit.pinchStartDistance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
-      orbit.pinchStartZoom = orbit.targetZoom;
-      orbit.pinchStartCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2, true);
-      orbit.pinchStartPanX = orbit.targetPanX;
-      orbit.pinchStartPanY = orbit.targetPanY;
-      orbit.moved = true;
-      els.relationshipNetwork.classList.add("dragging");
-      return;
-    }
-    orbit.dragging = true;
-    orbit.pointerId = event.pointerId;
-    orbit.lastX = event.clientX;
-    orbit.lastY = event.clientY;
-    orbit.startX = event.clientX;
-    orbit.startY = event.clientY;
-    orbit.moved = false;
-    els.relationshipNetwork.classList.add("dragging");
   };
   els.relationshipNetwork.onpointermove = (event) => {
-    if (!orbit.pointers.has(event.pointerId)) return;
-    orbit.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (orbit.pinching && orbit.pointers.size >= 2) {
-      event.preventDefault();
-      const [first, second] = [...orbit.pointers.values()];
-      const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
-      const pinchRatio = distance / orbit.pinchStartDistance;
-      const pinchCenter = clientPointToGraph((first.x + second.x) / 2, (first.y + second.y) / 2);
-      const boundedZoom = Math.max(minZoom, Math.min(maxZoom, orbit.pinchStartZoom * Math.pow(pinchRatio, PINCH_ZOOM_SENSITIVITY)));
-      const startCenter = orbit.pinchStartCenter || { x: GRAPH_WIDTH / 2, y: GRAPH_HEIGHT / 2 };
-      const zoomRatio = boundedZoom / Math.max(.001, orbit.pinchStartZoom);
-      const centerX = GRAPH_WIDTH / 2;
-      const centerY = GRAPH_HEIGHT / 2;
-      const nextPan = constrainNetworkPan(
-        pinchCenter.x - centerX - (startCenter.x - centerX - orbit.pinchStartPanX) * zoomRatio,
-        pinchCenter.y - centerY - (startCenter.y - centerY - orbit.pinchStartPanY) * zoomRatio,
-        boundedZoom,
-      );
-      orbit.targetPanX = nextPan.x;
-      orbit.targetPanY = nextPan.y;
-      orbit.targetZoom = boundedZoom;
-      setNetworkZoom(boundedZoom, pinchCenter, { zoom: boundedZoom, panX: nextPan.x, panY: nextPan.y });
-      orbit.moved = true;
-      orbit.suppressClickUntil = performance.now() + 300;
-      return;
-    }
-    if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
-    if (!orbit.moved) {
-      // 點擊時的細微晃動不算拖曳；原本超過 1px 就攔截 click 並抓走指標，節點常常點了沒反應。
-      const threshold = event.pointerType === "mouse" ? 5 : 10;
-      if (Math.hypot(event.clientX - orbit.startX, event.clientY - orbit.startY) < threshold) return;
-      orbit.moved = true;
-      if (!els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.setPointerCapture?.(event.pointerId);
-    }
-    const dx = event.clientX - orbit.lastX;
-    const dy = event.clientY - orbit.lastY;
-    orbit.lastX = event.clientX;
-    orbit.lastY = event.clientY;
-    orbit.targetYaw += dx * .012;
-    orbit.targetPitch = Math.max(-1.05, Math.min(1.05, orbit.targetPitch - dy * .009));
-    requestOrbitFrame();
-  };
-  function finishOrbitDrag(event) {
-    if (!orbit.pointers.has(event.pointerId)) return;
-    const moved = orbit.moved || orbit.pinching;
-    orbit.pointers.delete(event.pointerId);
-    if (els.relationshipNetwork.hasPointerCapture?.(event.pointerId)) els.relationshipNetwork.releasePointerCapture(event.pointerId);
-    if (orbit.pointers.size === 1) {
-      const [pointerId, position] = [...orbit.pointers.entries()][0];
-      orbit.pinching = false;
-      orbit.dragging = true;
-      orbit.pointerId = pointerId;
-      orbit.lastX = position.x;
-      orbit.lastY = position.y;
-      orbit.moved = true;
-    } else {
-      orbit.pinching = false;
-      orbit.dragging = false;
-      orbit.pointerId = null;
-      orbit.moved = false;
-      els.relationshipNetwork.classList.remove("dragging");
-    }
-    if (moved) {
-      orbit.suppressClickUntil = performance.now() + 300;
-      requestOrbitFrame();
-    }
-  }
-  els.relationshipNetwork.onpointerup = finishOrbitDrag;
-  els.relationshipNetwork.onpointercancel = finishOrbitDrag;
-  els.relationshipNetwork.onwheel = (event) => {
-    if (event.target.closest?.(".network-article-panel")) return;
+    if (!view.pointers.has(event.pointerId)) return;
+    view.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (!view.pinching || view.pointers.size < 2) return;
     event.preventDefault();
-    const factor = Math.exp(-event.deltaY * .0015);
-    setNetworkZoom(orbit.targetZoom * factor, clientPointToGraph(event.clientX, event.clientY));
+    const [first, second] = [...view.pointers.values()];
+    const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+    setNetworkZoom(view.pinchStartZoom * Math.pow(distance / view.pinchStartDistance, PINCH_ZOOM_SENSITIVITY));
+    view.suppressClickUntil = performance.now() + 300;
+  };
+  const releaseTouch = (event) => {
+    view.pointers.delete(event.pointerId);
+    if (view.pinching && view.pointers.size < 2) {
+      view.pinching = false;
+      view.suppressClickUntil = performance.now() + 300;
+    }
+  };
+  els.relationshipNetwork.onpointerup = releaseTouch;
+  els.relationshipNetwork.onpointercancel = releaseTouch;
+  els.relationshipNetwork.onwheel = (event) => {
+    // 一般滾輪照常捲動頁面；按住 Ctrl（觸控板雙指縮放也會帶 Ctrl）才縮放圖。
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    setNetworkZoom(view.targetZoom * Math.exp(-event.deltaY * .0015));
   };
   els.relationshipNetwork.ondblclick = (event) => {
-    if (event.target.closest?.(".network-article-panel")) return;
     event.preventDefault();
     resetNetworkView();
   };
   updatePositions();
   const guide = document.createElement("div");
   guide.className = "network-guide";
-  guide.innerHTML = "<strong>怎麼看空間圖？</strong><span>點圓球看文章 · 拖曳旋轉 · 滾輪／雙指／按鈕縮放 · 雙擊重設</span>";
+  guide.innerHTML = "<strong>怎麼看關聯圖？</strong><span>點圓球看文章 · 右上按鈕或 Ctrl＋滾輪縮放 · 雙擊重設</span>";
   const zoomControls = document.createElement("div");
   zoomControls.className = "network-zoom-controls";
   zoomOutButton = document.createElement("button");
@@ -1568,7 +1374,7 @@ function renderNetwork(articles, stats, relationships) {
   const zoomResetButton = document.createElement("button");
   zoomResetButton.type = "button";
   zoomResetButton.dataset.networkZoom = "reset";
-  zoomResetButton.setAttribute("aria-label", "重設關聯圖視角與縮放");
+  zoomResetButton.setAttribute("aria-label", "回到預設大小");
   zoomResetButton.textContent = "↺";
   zoomInButton = document.createElement("button");
   zoomInButton.type = "button";
@@ -1576,9 +1382,9 @@ function renderNetwork(articles, stats, relationships) {
   zoomInButton.setAttribute("aria-label", "放大關聯圖");
   zoomInButton.textContent = "+";
   [zoomOutButton, zoomResetButton, zoomInButton].forEach((button) => button.addEventListener("pointerdown", (event) => event.stopPropagation()));
-  zoomOutButton.addEventListener("click", () => setNetworkZoom(orbit.targetZoom / 1.22));
+  zoomOutButton.addEventListener("click", () => setNetworkZoom(view.targetZoom / 1.22));
   zoomResetButton.addEventListener("click", resetNetworkView);
-  zoomInButton.addEventListener("click", () => setNetworkZoom(orbit.targetZoom * 1.22));
+  zoomInButton.addEventListener("click", () => setNetworkZoom(view.targetZoom * 1.22));
   zoomControls.append(zoomOutButton, zoomResetButton, zoomInButton);
   zoomLevel = document.createElement("span");
   zoomLevel.className = "network-zoom-level";
@@ -1604,9 +1410,9 @@ function renderNetwork(articles, stats, relationships) {
   });
   if (state.selectedTags.length === 2) appendKeyItem("compound-node", "共同文章");
   const orbitHint = document.createElement("b");
-  orbitHint.textContent = "點圓球看文章 · 拖曳旋轉 · 滾輪或雙指縮放 · 雙擊重設";
+  orbitHint.textContent = "點圓球看文章 · 按鈕、Ctrl＋滾輪或雙指縮放 · 雙擊重設";
   const legendNote = document.createElement("small");
-  legendNote.textContent = "社群是依目前範圍的連線密度自動形成，不是固定主題分類；冒號後列出該群代表 tag。大小＝文章篇數；遠近只用來分開重疊節點。";
+  legendNote.textContent = "社群是依目前範圍的連線密度自動形成，不是固定主題分類；冒號後列出該群代表 tag。大小＝文章篇數。";
   key.append(orbitHint, legendNote);
   els.relationshipNetwork.append(svg, guide, zoomControls, zoomLevel, key, nodeTooltip);
   const modeText = !state.selectedTags.length ? "全站關聯" : state.selectedTags.length === 1 ? `${state.selectedTags[0]}的關聯圈` : `${state.selectedTags.join("與")}的共同延伸`;
