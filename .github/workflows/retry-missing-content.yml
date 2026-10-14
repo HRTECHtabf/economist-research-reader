@@ -1,0 +1,196 @@
+name: Retry missing summaries and full text
+
+# 補做先前被跳過的中文摘要與中文全文：不偵測新期數；已發布的內容會沿用，只對缺少的文章呼叫 Azure。
+on:
+  workflow_dispatch:
+    inputs:
+      include_filtered:
+        description: "也重試被 Azure 內容安全篩選擋下的摘要（通常仍會被擋）"
+        required: false
+        type: boolean
+        default: false
+
+# 與每週更新共用群組，避免兩者同時改寫 docs/data。
+concurrency:
+  group: weekly-economist-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_PATH: /openai/v1/
+      GITHUB_TOKEN: ${{ github.token }}
+      INCLUDE_FILTERED: ${{ inputs.include_filtered && '--include-filtered' || '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Test update safeguards
+        run: node --test tests/*.test.mjs
+
+      # Azure 連不上時，重試會把文章記成失敗；先確認連線再動資料。
+      - name: Test Azure OpenAI connection
+        run: node scripts/test-azure-openai.mjs
+
+      - name: Restore partial summary checkpoints
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            .cache/summaries.checkpoint.json
+            .cache/humanized-summaries.checkpoint.json
+            .cache/fulltext-zh-v2.checkpoint.json
+          key: economist-checkpoints-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            economist-checkpoints-${{ runner.os }}-
+
+      - name: Retry missing Chinese summaries
+        id: process
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p .cache
+          set -o pipefail
+          node scripts/retry-missing-summaries.mjs $INCLUDE_FILTERED 2>&1 | tee .cache/update-latest.log
+
+      - name: Retry missing or failed Chinese full text
+        if: ${{ steps.process.outcome == 'success' }}
+        id: translate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/translate-fulltext-zh.mjs --workers=3 --retry-exhausted 2>&1 | tee .cache/translate-fulltext.log
+
+      - name: Audit full-text coverage and rebuild the manifest
+        if: ${{ steps.process.outcome == 'success' && steps.translate.outcome == 'success' }}
+        id: audit_fulltext
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/audit-fulltext-zh.mjs 2>&1 | tee .cache/audit-fulltext.log
+
+      - name: Build lightweight public catalog and English shards
+        if: ${{ steps.audit_fulltext.outcome == 'success' }}
+        run: node scripts/build-public-data.mjs
+
+      - name: Check storage budget
+        if: ${{ steps.audit_fulltext.outcome == 'success' }}
+        run: node scripts/check-storage-budget.mjs
+
+      - name: Save partial summary checkpoints
+        if: ${{ always() && hashFiles('.cache/*.checkpoint.json') != '' }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .cache/summaries.checkpoint.json
+            .cache/humanized-summaries.checkpoint.json
+            .cache/fulltext-zh-v2.checkpoint.json
+          key: economist-checkpoints-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Write clear run diagnostics
+        if: ${{ always() }}
+        env:
+          PROCESS_OUTCOME: ${{ steps.process.outcome }}
+          TRANSLATE_OUTCOME: ${{ steps.translate.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit_fulltext.outcome }}
+          RUN_WORKFLOW_LABEL: retry-missing-content
+        run: node scripts/write-update-run-summary.mjs
+
+      - name: Publish public maintenance diagnosis
+        if: ${{ always() }}
+        uses: actions/github-script@v9
+        with:
+          retries: 3
+          script: |
+            const fs = require("fs");
+            const path = "docs/data/maintenance-status.json";
+            const nextStatus = JSON.parse(fs.readFileSync(path, "utf8"));
+            let current = null;
+            try {
+              const response = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path,
+                ref: "main",
+              });
+              current = response.data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            const currentContent = current?.content ? Buffer.from(current.content, "base64").toString("utf8") : null;
+            const currentStatus = currentContent ? JSON.parse(currentContent) : null;
+            const mergedHistory = [...(nextStatus.history || []), ...(currentStatus?.history || [])]
+              .filter((item, index, values) => values.findIndex(
+                (candidate) => candidate.runId === item.runId && (candidate.runAttempt || 1) === (item.runAttempt || 1),
+              ) === index)
+              .sort((a, b) => String(b.recordedAt || "").localeCompare(String(a.recordedAt || "")))
+              .slice(0, 30);
+            const nextContent = `${JSON.stringify({ ...nextStatus, history: mergedHistory }, null, 2)}\n`;
+            if (currentContent === nextContent) {
+              core.notice("公開維運診斷內容未變，不建立重複提交。");
+              return;
+            }
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path,
+              branch: "main",
+              message: "Update public maintenance diagnosis",
+              content: Buffer.from(nextContent).toString("base64"),
+              ...(current?.sha ? { sha: current.sha } : {}),
+            });
+            core.notice("已更新公開維運診斷。");
+
+      - name: Stop when retrying, translation or audit failed
+        if: ${{ steps.process.outcome != 'success' || steps.translate.outcome != 'success' || steps.audit_fulltext.outcome != 'success' }}
+        run: exit 1
+
+      - name: Publish updated site data
+        id: publish
+        run: |
+          if [ -z "$(git status --porcelain -- docs/data/articles.json docs/data/catalog.json docs/data/fulltext docs/data/fulltext-en docs/data/public-manifest.json docs/data/storage-status.json)" ]; then
+            echo "沒有需要發布的變更。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/articles.json docs/data/catalog.json docs/data/fulltext docs/data/fulltext-en docs/data/public-manifest.json docs/data/storage-status.json
+          git commit -m "Retry missing Chinese summaries and full text"
+          # 本機的 maintenance-status.json 不在發布範圍；捨棄未提交變更，pull --rebase 才不會中止。
+          git restore --staged --worktree -- .
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              echo "published=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "::warning::發布第 ${attempt} 次失敗，稍後重試。"
+            sleep $((attempt * 15))
+          done
+          echo "::error::連續 3 次推送失敗；既有網站保持不變。"
+          exit 1
+
+      - name: Request a Pages build
+        if: ${{ steps.publish.outputs.published == 'true' }}
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.repos.requestPagesBuild({ owner: context.repo.owner, repo: context.repo.repo });
+            core.notice("已要求 GitHub Pages 重新部署。");

@@ -431,6 +431,8 @@ if (checkpoint.version !== TRANSLATION_VERSION) {
 const maximumCharacters = Math.max(2500, Number(option("chunk-chars", env.TRANSLATION_CHUNK_CHARACTERS)) || DEFAULT_CHUNK_CHARACTERS);
 const force = process.argv.includes("--force");
 const retryFiltered = process.argv.includes("--retry-filtered");
+// 連續 3 次失敗而隔離的全文平常不重跑；明確要求時才再試（例如模型一時拒答或格式錯誤）。
+const retryExhausted = process.argv.includes("--retry-exhausted");
 const auditOnly = process.argv.includes("--audit-only");
 const selectedArticle = option("article");
 const limit = Math.max(0, Number(option("limit")) || 0);
@@ -439,6 +441,7 @@ const workerCount = Math.max(1, Number(option("workers", env.TRANSLATION_WORKERS
 function existingOutputValid(article) {
   const value = readJson(outputPath(article), null);
   if (needsFilterRetry(value, { retryFiltered })) return false;
+  if (retryExhausted && value?.unavailable === true && value.unavailableReason === RETRY_EXHAUSTED_REASON) return false;
   if (
     value?.unavailable === true &&
     ALLOWED_UNAVAILABLE_REASONS.has(value?.unavailableReason) &&
