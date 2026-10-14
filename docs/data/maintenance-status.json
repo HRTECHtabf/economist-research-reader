@@ -13,50 +13,129 @@
     "繁中全文翻譯": "success",
     "全文稽核": "success"
   },
-  "skippedArticleCount": 3,
+  "skippedArticleCount": 4,
   "failedArticleCount": 0,
   "diagnosis": {
-    "category": "content_filter",
-    "cause": "文章觸發 Azure 內容安全篩選",
-    "automaticAction": "隔離單篇並繼續；若超過 10 篇則停止發布並排查是否為模型或設定異常。",
-    "userAction": "可檢查 Azure Content Safety 設定與篩選分類，但不應關閉必要的安全保護。"
+    "category": "transient_service",
+    "cause": "外部服務或網路暫時性錯誤",
+    "automaticAction": "單篇最多嘗試 3 次；大量失敗時停止發布並由看門狗稍後補跑。",
+    "userAction": "通常不需處理；若連續多次發生，檢查 GitHub Actions 與 Azure 區域服務狀態。"
   },
   "incidents": [
     {
       "scope": "summary",
       "stage": "初稿",
       "status": "skipped",
-      "key": "00c65be5-f114-4c43-97ca-e6e20a1451b3",
-      "title": "The changing geography of violent crime in Britain",
-      "attempts": 1,
-      "category": "content_filter",
-      "cause": "文章觸發 Azure 內容安全篩選",
-      "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+      "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
+      "title": "In film and in life, China pursues dragon-restaurant diplomacy",
+      "attempts": 3,
+      "category": "summary_validation",
+      "cause": "少數摘要未通過內容或格式驗證",
+      "message": "摘要長度 105"
+    },
+    {
+      "scope": "summary",
+      "stage": "初稿",
+      "status": "skipped",
+      "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+      "title": "How the Alternative for Germany would govern",
+      "attempts": 3,
+      "category": "summary_validation",
+      "cause": "少數摘要未通過內容或格式驗證",
+      "message": "摘要長度 98"
+    },
+    {
+      "scope": "summary",
+      "stage": "自然化",
+      "status": "skipped",
+      "key": "4387c951-cbd2-4c17-9564-84ea2edde2e3",
+      "title": "Will anybody use AI as much as coders do?",
+      "attempts": 3,
+      "category": "transient_service",
+      "cause": "外部服務或網路暫時性錯誤",
+      "message": "fetch failed"
     },
     {
       "scope": "fulltext",
       "stage": "繁中全文",
       "status": "skipped",
-      "key": "2026.09.05:00c65be5-f114-4c43-97ca-e6e20a1451b3",
-      "title": "The changing geography of violent crime in Britain",
-      "attempts": 1,
-      "category": "content_filter",
-      "cause": "文章觸發 Azure 內容安全篩選",
-      "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-    },
-    {
-      "scope": "fulltext",
-      "stage": "繁中全文",
-      "status": "skipped",
-      "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
-      "title": "Politics",
-      "attempts": 1,
-      "category": "content_filter",
-      "cause": "文章觸發 Azure 內容安全篩選",
-      "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
+      "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+      "title": "How the Alternative for Germany would govern",
+      "attempts": 3,
+      "category": "unknown",
+      "cause": "未分類錯誤",
+      "message": "第 6 段遺失阿拉伯數字（原文含：20）"
     }
   ],
   "history": [
+    {
+      "runId": 38521050576,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38521050576",
+      "commitSha": "4d9ba45a20e0f5e60d3f307e5d65518ee37618b4",
+      "workflow": "weekly-update",
+      "recordedAt": "2026-10-14T06:42:46.628Z",
+      "outcome": "warning",
+      "issueKey": "2026.09.05",
+      "systemicFailure": false,
+      "stages": {
+        "期數偵測與摘要": "success",
+        "繁中全文翻譯": "success",
+        "全文稽核": "success"
+      },
+      "skippedArticleCount": 4,
+      "failedArticleCount": 0,
+      "diagnosis": {
+        "category": "transient_service",
+        "cause": "外部服務或網路暫時性錯誤"
+      },
+      "incidents": [
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
+          "title": "In film and in life, China pursues dragon-restaurant diplomacy",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 105"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+          "title": "How the Alternative for Germany would govern",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 98"
+        },
+        {
+          "scope": "summary",
+          "stage": "自然化",
+          "status": "skipped",
+          "key": "4387c951-cbd2-4c17-9564-84ea2edde2e3",
+          "title": "Will anybody use AI as much as coders do?",
+          "attempts": 3,
+          "category": "transient_service",
+          "cause": "外部服務或網路暫時性錯誤",
+          "message": "fetch failed"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+          "title": "How the Alternative for Germany would govern",
+          "attempts": 3,
+          "category": "unknown",
+          "cause": "未分類錯誤",
+          "message": "第 6 段遺失阿拉伯數字（原文含：20）"
+        }
+      ]
+    },
     {
       "runId": 34208106302,
       "runAttempt": 1,
@@ -1158,5 +1237,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-09-08T09:06:21.027Z"
+  "updatedAt": "2026-10-14T06:42:46.635Z"
 }
