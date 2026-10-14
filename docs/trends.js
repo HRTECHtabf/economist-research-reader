@@ -1330,8 +1330,10 @@ function renderNetwork(articles, stats, relationships) {
     const count = svgElement("text", { y: "4", class: "node-count" }); count.textContent = node.count;
     const label = svgElement("text", { y: node.radius + 17, class: "network-label" }); label.textContent = [...node.tag].length > 9 ? `${[...node.tag].slice(0, 8).join("")}…` : node.tag;
     group.append(title, circle, count, label);
+    // 出場動畫只播一次；之後即使重繪也不會再讓球縮小、淡出。
+    setTimeout(() => group.classList.add("popped"), index * 32 + 700);
+    // 滑過時不搬動節點在 DOM 中的位置：搬動會重播出場動畫並觸發離開／進入事件，造成球不停閃爍。
     group.addEventListener("pointerenter", (event) => {
-      nodeLayer.append(group);
       showNodeTooltip(node, event);
       const neighbors = new Set([node.id]);
       edges.forEach((edge) => { if (edge.a === node.id) neighbors.add(edge.b); if (edge.b === node.id) neighbors.add(edge.a); });
@@ -1344,7 +1346,7 @@ function renderNetwork(articles, stats, relationships) {
       edgeElements.forEach(({ path }) => path.classList.remove("dimmed"));
     });
     group.addEventListener("pointermove", positionNodeTooltip);
-    group.addEventListener("focus", () => { nodeLayer.append(group); showNodeTooltip(node); });
+    group.addEventListener("focus", () => showNodeTooltip(node));
     group.addEventListener("blur", hideNodeTooltip);
     group.addEventListener("click", (event) => {
       if (performance.now() < view.suppressClickUntil) { event.preventDefault(); return; }
