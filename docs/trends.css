@@ -135,7 +135,10 @@
 .network-zoom-controls button:disabled { opacity: .35; cursor: default; }
 .network-zoom-level { position: absolute; top: 54px; right: 11px; z-index: 6; min-width: 118px; color: var(--muted); font-size: 8px; text-align: right; pointer-events: none; }
 .network-node-tooltip { position: absolute; z-index: 5; display: grid; gap: 2px; min-width: 150px; max-width: 230px; padding: 9px 11px; border-left: 3px solid #ff6760; background: rgba(7,12,27,.94); color: #f5f7ff; box-shadow: 0 9px 24px rgba(0,0,0,.32); pointer-events: none; backdrop-filter: blur(7px); }.network-node-tooltip[hidden] { display: none; }.network-node-tooltip strong { font-size: 12px; }.network-node-tooltip span { color: #bdc8e4; font-size: 9px; }
-.network-empty { display: grid; min-height: 480px; place-items: center; color: var(--muted); text-align: center; }
+.network-empty { display: grid; min-height: 480px; place-items: center; padding: 24px; color: var(--muted); text-align: center; }
+.network-empty p { max-width: 460px; margin: 0 auto 14px; font-size: 13px; line-height: 1.7; }
+.network-empty button { border: 1px solid var(--ink); padding: 8px 14px; background: var(--ink); color: white; cursor: pointer; font-size: 11px; font-weight: 850; }
+.network-empty button:hover,.network-empty button:focus-visible { border-color: var(--red); background: var(--red); outline: 0; }
 .relationship-ranking { min-width: 0; border-top: 1px solid var(--line); padding-top: 20px; }
 .ranking-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 11px; border-bottom: 2px solid var(--ink); }
 .ranking-heading strong { font-size: 13px; }
