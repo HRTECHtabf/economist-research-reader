@@ -1,0 +1,24 @@
+{
+  "id": "45b2d5c1-dbf6-47f0-9614-17e51fa8a40b",
+  "issueKey": "2026.10.10",
+  "sourceHash": "28eb4ce52584e2a7aa7accf9c39490e9b7387c5e89979fef7d017aa41654c711",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "translatedAt": "2026-10-14T08:42:31.074Z",
+  "paragraphCount": 8,
+  "paragraphsZh": [
+    "2026年10月8日",
+    "It is a bleak cycle. Every few years a report of sexual assault on campus captures national attention. The latest is at Cornell University, where a former student is accusing seven of her peers of raping her in 2024. Last month the woman filed a lawsuit against the men, their fraternity, Cornell and others, all of whom deny wrongdoing. Despite screenshots of their crude messages, just two of the students were expelled from the university. None was charged with a crime.",
+    "這也引發外界疑問：調查是否遭檢方（紐約州司法總長目前正介入調查）、學校（康乃爾已宣布展開自家調查），或兩方都搞砸了。不過，隨著「對調查的調查」仍在推進，康乃爾這起案件再度提醒：為了讓學生安全而採取的那些迂迴做法，反而如何讓學生承受失望、讓原本的努力失效。",
+    "在這起案件以及其他校園暴力事件的背景之上，懸著《第九條修正案》（Title IX），這是一部已施行了54年的民權法。若有人覺得，原本用來禁止性別歧視的法律，卻拿來調查強姦，聽起來似乎不太合理，那是因為它的適用相對近年才逐步成形。2011年，在各大學校園性侵事件的高調報導層出、而警方行動又偏溫吞之後，時任總統巴拉克・歐巴馬（Barack Obama）援引《第九條修正案》，向學生提供刑事司法體系當時似乎無法給予的保障。",
+    "結果是一套能夠與任何警方調查同步推進的流程，但它的規則既比刑事程序更寬鬆，也比刑事程序更嚴苛。依《第九條修正案》（Title IX）的調查規定，無法強制證人出庭作證，也不能要求在宣誓之下接受訊問；而且證據要求只需達到「較可能」的程度，並非刑法中那種必須在「毫無合理懷疑」之下才能定罪的義務。大學也有很大裁量權自行訂定處罰幅度，康乃爾大學的案例就已顯示這點：制裁從退學到撰寫文章不等。",
+    "《第九條修正案》的規則本就讓大學行政端難以做得妥當，卻又因不同總統政權之間的劇烈變動而更難落實。唐納・川普（Donald Trump）在第一任期要求各大學建立自有的準司法體系，包括舉行聽證、進行交叉詰問，以及增加人力。支持者說這讓程序更嚴謹；反對者則認為，這套繁重的程序使指控人要嘛撤回指控、要嘛乾脆從未提出指控（見圖表）。聯邦層級對大學調查的監督也同時變得更寬鬆。負責多年教育部民權辦公室、並親自處理相關案件的律師貝絲・蓋爾曼-比爾（Beth Gellman-Beer）表示，針對性暴力的已完成調查「幾乎是一路往下掉」。喬・拜登（Joe Biden）希望再次改變規則，但川普先生在9月28日恢復了先前標準，並削減監督人力。",
+    "在規則不斷變動、而行政執行也不可避免地會有瑕疵的情況下，無法確定《第九條修正案》是否真的對降低性侵害有任何影響。全國層級的研究很少。不過，康乃爾大學確實會對學生做民調。去年，35%的女大學生表示在就讀期間遭遇過性侵害；這比十年前的23%更高。犯罪學家說，遏阻犯罪最有效的方式之一，是提高施害者被抓到的確定性。過了15年，《第九條修正案》看起來仍未達到這個效果。■",
+    "想用《The US in brief》掌握美國政治動向：這是每日通訊，提供快速分析，聚焦最重要的政治新聞；另有《Checks and Balance》：每週一則簡報，會檢視美國民主的現況，以及選民在意的議題。"
+  ],
+  "untranslatedParagraphs": [
+    1
+  ],
+  "untranslatedReason": "azure_content_filter",
+  "untranslatedDetailZh": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766",
+  "filterStrategy": "paragraph-split-v1"
+}
