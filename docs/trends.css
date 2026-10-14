@@ -101,6 +101,7 @@
 .network-node.related circle { stroke: var(--red); stroke-width: 4; }
 .network-node.hovered circle { stroke: #171717; stroke-width: 4; transform: scale(1.14); filter: drop-shadow(0 7px 8px rgba(35,28,22,.25)); }
 .network-node.dimmed { opacity: .18; }
+.network-node.popped circle { animation: none; }
 .network-node.active circle { stroke: #171717; stroke-width: 4; filter: drop-shadow(0 0 10px rgba(227,18,11,.45)); }
 .network-article-slot { justify-self: center; width: 100%; max-width: 1000px; }
 .network-article-slot:empty { display: none; }
