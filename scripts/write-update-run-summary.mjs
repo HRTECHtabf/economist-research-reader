@@ -270,7 +270,7 @@ const runIdentity = workflowRunIdentity();
 const runRecord = runIdentity
   ? {
       ...runIdentity,
-      workflow: "weekly-update",
+      workflow: process.env.RUN_WORKFLOW_LABEL || "weekly-update",
       recordedAt: new Date().toISOString(),
       outcome,
       issueKey,

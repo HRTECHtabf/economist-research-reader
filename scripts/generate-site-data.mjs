@@ -9,7 +9,7 @@ import {
   retryAfterMilliseconds,
   withTransientRetries,
 } from "./lib/transient-retry.mjs";
-import { briefLengthProfile } from "./lib/brief-length-profile.mjs";
+import { briefLengthProfile, lengthFeedback } from "./lib/brief-length-profile.mjs";
 import { chooseNaturalizationResult } from "./lib/naturalization-fallback.mjs";
 import { isLowContentArticle } from "./lib/low-content-policy.mjs";
 import {
@@ -277,34 +277,22 @@ function briefValidationFailures(value, article) {
   const failures = [];
   if (!value || typeof value !== "object") return ["不是物件"];
   if (!endsAsCompleteSentence(value.summaryZh)) failures.push("摘要句尾不完整");
-  if (
-    typeof value.summaryZh !== "string" ||
-    value.summaryZh.length < lengthProfile.summaryMin ||
-    value.summaryZh.length > lengthProfile.summaryMax
-  ) {
-    failures.push(`摘要長度 ${value.summaryZh?.length ?? 0}`);
-  }
+  const summaryLength = lengthFeedback("摘要", typeof value.summaryZh === "string" ? value.summaryZh.length : 0, lengthProfile.summaryMin, lengthProfile.summaryMax);
+  if (summaryLength) failures.push(summaryLength);
   if (/^(?:本文指出|文章聚焦|作者認為)/u.test(value.summaryZh || "")) failures.push("摘要以公式化來源提示開場");
   if (aiStylePattern.test(value.summaryZh || "")) failures.push("摘要含公式化 AI 語句");
   if (!endsAsCompleteSentence(value.researchLensZh)) failures.push("研究角度句尾不完整");
-  if (
-    typeof value.researchLensZh !== "string" ||
-    value.researchLensZh.length < 50 ||
-    value.researchLensZh.length > 135
-  ) failures.push(`研究角度長度 ${value.researchLensZh?.length ?? 0}`);
+  // 依篇幅設定判斷（短訊與一般文章門檻不同），與 isCompleteBrief 一致。
+  const lensLength = lengthFeedback("研究角度", typeof value.researchLensZh === "string" ? value.researchLensZh.length : 0, lengthProfile.researchLensMin, lengthProfile.researchLensMax);
+  if (lensLength) failures.push(lensLength);
   if (aiStylePattern.test(value.researchLensZh || "")) failures.push("研究角度含公式化 AI 語句");
   if (!Array.isArray(value.keyPointsZh) || value.keyPointsZh.length < 3 || value.keyPointsZh.length > 5) {
     failures.push(`重點數量 ${value.keyPointsZh?.length ?? 0}`);
   } else {
     value.keyPointsZh.forEach((point, index) => {
       if (!endsAsCompleteSentence(point)) failures.push(`重點 ${index + 1} 句尾不完整`);
-      if (
-        typeof point !== "string" ||
-        point.length < lengthProfile.pointMin ||
-        point.length > lengthProfile.pointMax
-      ) {
-        failures.push(`重點 ${index + 1} 長度 ${point?.length ?? 0}`);
-      }
+      const pointLength = lengthFeedback(`重點 ${index + 1} `, typeof point === "string" ? point.length : 0, lengthProfile.pointMin, lengthProfile.pointMax);
+      if (pointLength) failures.push(pointLength);
       for (const failure of standaloneKeyPointFailures(point)) {
         failures.push(`重點 ${index + 1} ${failure}：${JSON.stringify(point)}`);
       }
@@ -561,6 +549,8 @@ async function processWithWorkers({ items, values, label, processItem, checkpoin
   }
   for (const article of items) {
     const storedHash = values[article.id]?.sourceHash;
+    // 已發布、原文未變的導讀直接沿用，不因後來調整的檢查規則而重做（避免重複付費與覆蓋已上線內容）。
+    if (values[article.id]?.reusedFromPublished && storedHash === articleSourceHash(article)) continue;
     if (
       values[article.id] &&
       (!isCompleteBrief(values[article.id], article) ||
@@ -733,6 +723,30 @@ const summaries = {
   ...summaryCheckpoint,
   ...manualSummaries,
 };
+// 暫存檔（GitHub Actions cache）可能已被清掉；同一期重跑時改從已發布資料沿用原文未變的導讀，只處理缺少或異動的文章。
+const publishedBriefs = new Map();
+for (const article of source.articles) {
+  const previous = previousCurrentArticles.get(article.id);
+  if (
+    !previous?.summaryZh ||
+    previous.summaryStatus === "unavailable" ||
+    changedArticleIds.has(article.id) ||
+    previous.sourceHash !== articleSourceHash(article)
+  ) continue;
+  publishedBriefs.set(article.id, {
+    summaryZh: previous.summaryZh,
+    keyPointsZh: previous.keyPointsZh,
+    researchLensZh: previous.researchLensZh,
+    keywordsZh: previous.keywordsZh,
+    highlightTermsZh: previous.highlightTermsZh || [],
+    sourceHash: previous.sourceHash,
+    reusedFromPublished: true,
+  });
+}
+for (const [id, brief] of publishedBriefs) {
+  if (!summaries[id]) summaries[id] = { ...brief, processingVersion: SUMMARY_VERSION };
+}
+if (publishedBriefs.size) console.log(`沿用已發布的導讀 ${publishedBriefs.size} 篇；只處理缺少或原文異動的文章。`);
 const skippedDrafts = await processWithWorkers({
   items: articlesToProcess,
   values: summaries,
@@ -745,6 +759,9 @@ const skippedDrafts = await processWithWorkers({
 const humanizedSummaries = {
   ...humanizedCheckpoint,
 };
+for (const [id, brief] of publishedBriefs) {
+  if (!humanizedSummaries[id]) humanizedSummaries[id] = { ...brief, processingVersion: HUMANIZER_VERSION };
+}
 const skippedDraftIds = new Set(skippedDrafts.map((failure) => failure.key));
 const articlesWithDrafts = articlesToProcess.filter((article) => !skippedDraftIds.has(article.id));
 const skippedHumanizations = await processWithWorkers({
