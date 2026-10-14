@@ -461,12 +461,15 @@ function globalRelationships(articles) {
 function singleTagRelationships(articles, focusTag) {
   const total = articles.length;
   const focusCount = countContaining(articles, [focusTag]);
-  return state.allTags.filter((tag) => tag !== focusTag).map((tag) => {
+  const candidates = state.allTags.filter((tag) => tag !== focusTag).map((tag) => {
     const tagCount = countContaining(articles, [tag]);
     const support = countContaining(articles, [focusTag, tag]);
     const association = associationStrength(total, focusCount, tagCount, support);
     return { tags: [focusTag, tag], target: tag, support, ...association, lowSample: support < 4 };
-  }).filter((item) => item.support >= 2 && item.score > 0)
+  }).filter((item) => item.support >= 1 && item.score > 0);
+  // 平常只看共同出現至少 2 篇的組合；這個 tag 在範圍內太少、一組都沒有時，改列出 1 篇的組合（皆標示低樣本），圖才不會一片空白。
+  const stable = candidates.filter((item) => item.support >= 2);
+  return (stable.length ? stable : candidates)
     .sort((a, b) => b.score - a.score || b.support - a.support || a.target.localeCompare(b.target, "zh-Hant"));
 }
 
@@ -1139,6 +1142,42 @@ function communitySummaries(nodes) {
   }).filter(Boolean);
 }
 
+// 圖畫不出來時說清楚原因，並提供改看全部資料的捷徑。
+function buildNetworkEmptyState(articles) {
+  const empty = document.createElement("div");
+  empty.className = "network-empty";
+  const box = document.createElement("div");
+  const message = document.createElement("p");
+  const range = scopeTitle(state.relationshipScope, state.relationshipIssue);
+  if (state.selectedTags.length === 1) {
+    const tag = state.selectedTags[0];
+    const count = countContaining(articles, [tag]);
+    message.textContent = count
+      ? `「${tag}」在${range}只有 ${count} 篇文章，而且沒有和其他 tag 一起出現，畫不出關聯。下方仍會列出這${count > 1 ? "些" : "篇"}文章。`
+      : `「${tag}」在${range}沒有文章。`;
+  } else if (state.selectedTags.length === 2) {
+    message.textContent = `「${state.selectedTags.join("」與「")}」在${range}沒有足夠的共同文章，畫不出延伸關聯。`;
+  } else {
+    message.textContent = `${range}沒有足夠的共同出現資料可畫出關聯。`;
+  }
+  box.append(message);
+  if (state.relationshipScope !== "all") {
+    const widen = document.createElement("button");
+    widen.type = "button";
+    widen.textContent = "改看全部資料";
+    widen.addEventListener("click", () => {
+      state.relationshipScope = "all";
+      state.relationshipIssue = "all";
+      state.relationshipRenderKey = "";
+      renderRelationshipPanel();
+      syncUrl();
+    });
+    box.append(widen);
+  }
+  empty.append(box);
+  return empty;
+}
+
 function renderNetwork(articles, stats, relationships) {
   if (state.networkFrame) cancelAnimationFrame(state.networkFrame);
   state.networkFrame = null;
@@ -1148,10 +1187,7 @@ function renderNetwork(articles, stats, relationships) {
   GRAPH_HEIGHT = measureGraphHeight();
   const { nodes, edges } = graphData(articles, stats, relationships);
   if (!nodes.length || !edges.length) {
-    const empty = document.createElement("div");
-    empty.className = "network-empty";
-    empty.textContent = "目前範圍沒有足夠的共同出現資料，請擴大期間或改選 tag。";
-    els.relationshipNetwork.append(empty);
+    els.relationshipNetwork.append(buildNetworkEmptyState(articles));
     return;
   }
   const fittedView = layoutGraph(nodes, edges);
