@@ -1,13 +1,18 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-14T06:31:03.349Z",
-  "issueKey": "2026.09.05",
-  "totalArticleCount": 516,
+  "generatedAt": "2026-10-14T06:54:23.903Z",
+  "issueKey": "2026.09.12",
+  "totalArticleCount": 586,
   "catalog": {
     "path": "catalog.json",
-    "version": "2026-10-14T06:31:03.349Z"
+    "version": "2026-10-14T06:54:23.903Z"
   },
   "englishIssues": {
+    "2026.09.12": {
+      "path": "fulltext-en/2026.09.12.json",
+      "version": "60e32be33e325d17",
+      "articleCount": 70
+    },
     "2026.09.05": {
       "path": "fulltext-en/2026.09.05.json",
       "version": "b1f2c2886f639d48",
