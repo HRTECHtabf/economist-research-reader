@@ -32,7 +32,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
+  pages: write
 
 jobs:
   update:
@@ -180,6 +182,7 @@ jobs:
 
       - name: Publish updated site data
         if: ${{ !inputs.test_azure }}
+        id: publish
         run: |
           if [ -z "$(git status --porcelain -- docs/data/articles.json docs/data/catalog.json docs/data/fulltext docs/data/fulltext-en docs/data/public-manifest.json docs/data/storage-status.json)" ]; then
             echo "No new issue to publish."
@@ -194,6 +197,7 @@ jobs:
           git restore --staged --worktree -- .
           for attempt in 1 2 3; do
             if git pull --rebase origin main && git push; then
+              echo "published=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -202,3 +206,30 @@ jobs:
           done
           echo "::error::網站資料連續 3 次推送失敗；新資料未發布，既有網站保持不變。"
           exit 1
+
+      # GitHub 偶爾不會因推送觸發網站部署（資料進了 main，網站卻停在舊版）；主動再要求一次部署。
+      - name: Request a Pages build
+        if: ${{ steps.publish.outputs.published == 'true' }}
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.repos.requestPagesBuild({ owner: context.repo.owner, repo: context.repo.repo });
+            core.notice("已要求 GitHub Pages 重新部署。");
+
+      # 停擺好幾週時一次只補一期；這期發布成功且還有待補期數，就接著觸發下一輪（concurrency 會排在這輪之後）。
+      - name: Continue with the next missed issue
+        if: ${{ steps.publish.outputs.published == 'true' && steps.process.outputs.backlog_remaining != '' && steps.process.outputs.backlog_remaining != '0' }}
+        uses: actions/github-script@v9
+        env:
+          BACKLOG: ${{ steps.process.outputs.backlog_remaining }}
+        with:
+          retries: 3
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "weekly-update.yml",
+              ref: "main",
+            });
+            core.notice(`已排入下一輪更新；之後還有 ${process.env.BACKLOG} 期待補。`);

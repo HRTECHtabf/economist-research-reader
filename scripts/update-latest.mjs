@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, resolve } from "node:path";
-import { classifyUpdateState } from "./lib/update-state.mjs";
+import { classifyUpdateState, selectTargetIssue } from "./lib/update-state.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const envPath = resolve(projectRoot, ".env.local");
@@ -15,10 +15,11 @@ function githubOutput(name, value) {
   appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`, "utf8");
 }
 
-function recordUpdateOutputs({ contentChanged, siteDataChanged }, issueFolder) {
+function recordUpdateOutputs({ contentChanged, siteDataChanged }, issueFolder, backlogRemaining = 0) {
   githubOutput("content_changed", contentChanged);
   githubOutput("site_data_changed", siteDataChanged);
   githubOutput("issue_folder", issueFolder);
+  githubOutput("backlog_remaining", backlogRemaining);
 }
 
 function readEnv(path) {
@@ -95,17 +96,19 @@ const listingResponse = await fetch(apiUrl, { headers });
 if (!listingResponse.ok) throw new Error(`無法取得來源目錄（HTTP ${listingResponse.status}）`);
 
 const listing = await listingResponse.json();
-const latestEntry = listing
-  .filter((entry) => entry.type === "dir" && /^te_\d{4}\.\d{2}\.\d{2}$/.test(entry.name))
-  .sort((a, b) => a.name.localeCompare(b.name))
-  .at(-1);
-
-if (!latestEntry) throw new Error("來源庫中找不到期數資料夾");
-const latestFolder = latestEntry.name;
-
 const currentData = existsSync(siteDataPath)
   ? JSON.parse(readFileSync(siteDataPath, "utf8"))
   : null;
+const selection = selectTargetIssue(listing, currentData?.issueFolder || "");
+if (!selection) throw new Error("來源庫中找不到期數資料夾");
+// latestEntry／latestFolder 指的是「這次要處理的期數」：落後時是待補的最舊一期，否則是來源最新一期。
+const latestEntry = selection.target;
+const latestFolder = latestEntry.name;
+const { backlogRemaining } = selection;
+if (latestFolder !== selection.latest.name) {
+  console.log(`網站落後來源 ${backlogRemaining + 1} 期；這次先補 ${latestFolder}，完成後接著處理下一期（來源最新為 ${selection.latest.name}）。`);
+}
+
 const updateState = classifyUpdateState({
   currentData,
   latestFolder,
@@ -114,7 +117,7 @@ const updateState = classifyUpdateState({
 });
 
 if (updateState.kind === "none") {
-  recordUpdateOutputs(updateState, latestFolder);
+  recordUpdateOutputs(updateState, latestFolder, backlogRemaining);
   console.log(`目前已是最新一期：${latestFolder}`);
   process.exit(0);
 }
@@ -122,7 +125,7 @@ if (updateState.kind === "none") {
 if (updateState.kind === "metadata") {
   currentData.sourceFolderSha = latestEntry.sha;
   writeFileSync(siteDataPath, `${JSON.stringify(currentData, null, 2)}\n`, "utf8");
-  recordUpdateOutputs(updateState, latestFolder);
+  recordUpdateOutputs(updateState, latestFolder, backlogRemaining);
   console.log(`已記錄目前期數的來源版本：${latestFolder}`);
   process.exit(0);
 }
@@ -161,6 +164,6 @@ execFileSync(process.execPath, [
 
 const updatedData = JSON.parse(readFileSync(siteDataPath, "utf8"));
 validateSiteData(updatedData, latestFolder, latestEntry.sha);
-recordUpdateOutputs(updateState, latestFolder);
+recordUpdateOutputs(updateState, latestFolder, backlogRemaining);
 
 console.log(`網站資料已更新至 ${latestFolder}。`);

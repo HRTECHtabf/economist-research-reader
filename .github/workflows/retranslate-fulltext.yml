@@ -17,6 +17,7 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
 
 jobs:
   retranslate:
@@ -72,6 +73,7 @@ jobs:
         run: node scripts/audit-fulltext-zh.mjs
 
       - name: Publish retranslated full text
+        id: publish
         run: |
           if [ -z "$(git status --porcelain -- docs/data/fulltext)" ]; then
             echo "沒有需要發布的中文全文變更。"
@@ -84,6 +86,7 @@ jobs:
           git restore --staged --worktree -- .
           for attempt in 1 2 3; do
             if git pull --rebase origin main && git push; then
+              echo "published=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -92,3 +95,13 @@ jobs:
           done
           echo "::error::中文全文連續 3 次推送失敗；既有網站保持不變。"
           exit 1
+
+      # GitHub 偶爾不會因推送觸發網站部署（資料進了 main，網站卻停在舊版）；主動再要求一次部署。
+      - name: Request a Pages build
+        if: ${{ steps.publish.outputs.published == 'true' }}
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.repos.requestPagesBuild({ owner: context.repo.owner, repo: context.repo.repo });
+            core.notice("已要求 GitHub Pages 重新部署。");
