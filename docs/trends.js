@@ -55,7 +55,7 @@ const TOUR_STEPS = [
   {
     selector: '[data-tour="cloud"]',
     title: "從熱門 tag 雲看主題分布",
-    description: "越常出現的 tag 字體越大、越靠近中心；顏色比較前一期或前一月的文章占比。這裡也能獨立選擇全部、每月或每期。",
+    description: "越常出現的 tag 字體越大、越靠近中心；顏色比較前一期或前一月的文章占比。點任一個詞，畫面會捲回上方關聯圖並以它為分析焦點。這裡也能獨立選擇全部、每月或每期。",
   },
   {
     selector: '[data-tour="top-tags"]',
@@ -507,6 +507,18 @@ function syncUrl() {
   for (const tag of state.selectedTags) next.append("tag", tag);
   const query = next.toString();
   history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+}
+
+// 從頁面下方（文字雲、熱門 tag 排名）點選 tag：改以它為分析焦點，並捲回上方關聯圖，讓連動看得見。
+function focusTagAndShowAnalysis(tag) {
+  if (!state.allTags.includes(tag)) return;
+  state.selectedTags = [tag];
+  renderAll();
+  const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelector(".relationship-card")?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  els.relationshipNetwork.classList.remove("focus-flash");
+  void els.relationshipNetwork.offsetWidth;
+  els.relationshipNetwork.classList.add("focus-flash");
 }
 
 function toggleFocusTag(tag) {
@@ -1840,8 +1852,8 @@ function renderCloud(articles, stats) {
     button.dataset.trendLevel = trendLevel(item.trend); button.style.fontSize = `${cloudFontSize(item, min, max, cloudWidth)}px`; button.style.visibility = "hidden";
     button.classList.toggle("selected", state.selectedTags.includes(item.tag)); button.textContent = item.tag;
     const trendLabel = cloudTrendFormatter(item.trend);
-    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendLabel}`);
-    button.addEventListener("click", () => toggleFocusTag(item.tag));
+    button.setAttribute("aria-label", `${item.tag}，${item.count} 篇，${trendLabel}；按下在上方關聯圖分析`);
+    button.addEventListener("click", () => focusTagAndShowAnalysis(item.tag));
     button.addEventListener("pointerenter", (event) => highlightTag(item.tag, event, articles, statsByTag, cloudTrendFormatter));
     button.addEventListener("pointermove", positionTooltip); button.addEventListener("pointerleave", clearTagHighlights);
     button.addEventListener("focus", (event) => highlightTag(item.tag, event, articles, statsByTag, cloudTrendFormatter)); button.addEventListener("blur", clearTagHighlights);
@@ -1889,11 +1901,7 @@ function createTopTagRow(tag) {
   const trend = document.createElement("span"); trend.className = "top-tag-trend";
   metrics.append(count, rate, trend);
   button.append(rank, tagLabel, barTrack, metrics);
-  button.addEventListener("click", () => {
-    state.selectedTags = [row.dataset.tag];
-    renderAll();
-    document.querySelector("#relationship-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  button.addEventListener("click", () => focusTagAndShowAnalysis(row.dataset.tag));
   row.append(button);
   return row;
 }
