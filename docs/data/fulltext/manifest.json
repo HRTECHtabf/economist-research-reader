@@ -1,11 +1,12 @@
 {
   "translationVersion": "fulltext-zh-tw-v2",
-  "articleCount": 585,
-  "unavailableCount": 1,
-  "coveredArticleCount": 586,
+  "articleCount": 657,
+  "unavailableCount": 3,
+  "coveredArticleCount": 660,
   "partialArticleCount": 2,
-  "paragraphCount": 6708,
+  "paragraphCount": 7586,
   "issueCounts": {
+    "2026.09.19": 72,
     "2026.09.12": 70,
     "2026.09.05": 76,
     "2026.08.29": 69,
@@ -15,5 +16,5 @@
     "2026.06.20": 74,
     "2026.06.13": 78
   },
-  "generatedAt": "2026-10-14T07:07:31.092Z"
+  "generatedAt": "2026-10-14T07:30:21.001Z"
 }
