@@ -16,6 +16,7 @@ concurrency:
 permissions:
   actions: write
   contents: write
+  pages: write
 
 jobs:
   verify:
@@ -81,13 +82,23 @@ jobs:
             });
             core.notice("已自動觸發 Weekly Economist update 補跑。");
 
+      # 主資料已是最新、只有公開網站落後時，代表部署沒被觸發；直接要求重新部署。
+      - name: Request a Pages build when only the public site is stale
+        if: ${{ failure() && steps.health.outputs.source_current == 'true' && steps.health.outputs.site_current == 'false' }}
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.repos.requestPagesBuild({ owner: context.repo.owner, repo: context.repo.repo });
+            core.notice("公開網站落後於 GitHub 主資料，已要求 GitHub Pages 重新部署。");
+
       - name: Record maintenance guidance
         if: ${{ failure() }}
         shell: bash
         run: |
           echo "## Economist 更新防呆：需要處理" >> "$GITHUB_STEP_SUMMARY"
           echo "看門狗發現上游、GitHub 資料、繁中全文覆蓋率或公開網站不同步。" >> "$GITHUB_STEP_SUMMARY"
-          echo "若 GitHub 主資料落後，看門狗會自動觸發 Weekly Economist update；若只有公開網站落後，請重新執行 Pages build。" >> "$GITHUB_STEP_SUMMARY"
+          echo "若 GitHub 主資料落後，看門狗會自動觸發 Weekly Economist update（落後多期時會一期一期補齊）；若只有公開網站落後，看門狗已自動要求重新部署。" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save watchdog result and failure reason
         if: ${{ always() }}
