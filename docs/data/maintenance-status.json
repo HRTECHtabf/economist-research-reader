@@ -388,6 +388,25 @@
   ],
   "history": [
     {
+      "runId": 38713096327,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38713096327",
+      "commitSha": "f8d3b2d414ade06245ddf8317ace784ddf30dc1b",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-15T09:27:51.246Z",
+      "outcome": "success",
+      "issueKey": "2026.10.10",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.10；GitHub 資料 te_2026.10.10；中文全文 874 篇、隔離 4 篇，共 878/878；公開網站 te_2026.10.10",
+      "incidents": []
+    },
+    {
       "runId": 38538451091,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38538451091",
@@ -2918,41 +2937,6 @@
       "diagnosis": null,
       "detail": "上游 te_2026.08.29；GitHub 資料 te_2026.08.29；中文全文 443 篇、隔離 1 篇，共 444/444；公開網站 te_2026.08.29",
       "incidents": []
-    },
-    {
-      "runId": 33370754773,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33370754773",
-      "commitSha": "7b58021d2b6ba11ad7f01eb3c4c402a6ff48e827",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-08-31T07:58:58.592Z",
-      "outcome": "warning",
-      "issueKey": "2026.08.29",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "success",
-        "繁中全文翻譯": "skipped",
-        "全文稽核": "skipped"
-      },
-      "skippedArticleCount": 1,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "content_filter",
-        "cause": "文章觸發 Azure 內容安全篩選"
-      },
-      "incidents": [
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
-          "title": "Politics",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
-        }
-      ]
     }
   ],
   "updatedAt": "2026-10-14T08:54:31.883Z"
