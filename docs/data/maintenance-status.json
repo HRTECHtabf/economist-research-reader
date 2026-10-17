@@ -432,6 +432,25 @@
   ],
   "history": [
     {
+      "runId": 39029967527,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/39029967527",
+      "commitSha": "a53738ac6ec15e8462dcad3a49cd3f763b7baab3",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-17T11:46:30.052Z",
+      "outcome": "success",
+      "issueKey": "2026.10.17",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.17；GitHub 資料 te_2026.10.17；中文全文 945 篇、隔離 5 篇，共 950/950；公開網站 te_2026.10.17",
+      "incidents": []
+    },
+    {
       "runId": 39018920522,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/39018920522",
@@ -4819,41 +4838,6 @@
           "cause": "文章觸發 Azure 內容安全篩選",
           "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
         },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
-          "title": "Politics",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
-        }
-      ]
-    },
-    {
-      "runId": 33886856697,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/33886856697",
-      "commitSha": "205da4846907df79cd532312309584f1577188c4",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-09-04T14:59:19.753Z",
-      "outcome": "failure",
-      "issueKey": "2026.08.29",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "failure",
-        "繁中全文翻譯": "skipped",
-        "全文稽核": "skipped"
-      },
-      "skippedArticleCount": 1,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "azure_configuration",
-        "cause": "Azure OpenAI 認證或部署設定錯誤"
-      },
-      "incidents": [
         {
           "scope": "fulltext",
           "stage": "繁中全文",
