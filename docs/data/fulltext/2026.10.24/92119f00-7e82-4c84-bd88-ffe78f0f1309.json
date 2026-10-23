@@ -1,0 +1,11 @@
+{
+  "id": "92119f00-7e82-4c84-bd88-ffe78f0f1309",
+  "issueKey": "2026.10.24",
+  "sourceHash": "5722f4c96f254e391e5af7a3f9f0f9ddb9c3450fe27e83bb4614c90814def7b8",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "unavailable": true,
+  "unavailableReason": "retry_exhausted_after_3_attempts",
+  "unavailableMessageZh": "繁中全文連續 3 次處理失敗，請先閱讀英文原文。",
+  "unavailableDetailZh": "Unterminated string in JSON at position 3093 (line 81 column 35)",
+  "recordedAt": "2026-10-23T09:56:35.624Z"
+}
