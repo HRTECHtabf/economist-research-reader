@@ -465,6 +465,25 @@
   ],
   "history": [
     {
+      "runId": 40093147451,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40093147451",
+      "commitSha": "035275393b74fdce0c4c0aa9463e88f3ff970060",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-24T12:15:06.043Z",
+      "outcome": "success",
+      "issueKey": "2026.10.24",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.24；GitHub 資料 te_2026.10.24；中文全文 1017 篇、隔離 6 篇，共 1023/1023；公開網站 te_2026.10.24",
+      "incidents": []
+    },
+    {
       "runId": 40080826181,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40080826181",
@@ -6768,63 +6787,6 @@
           "category": "unknown",
           "cause": "未分類錯誤",
           "message": "第 6 段遺失阿拉伯數字（原文含：20）"
-        }
-      ]
-    },
-    {
-      "runId": 34208106302,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/34208106302",
-      "commitSha": "8729822e20b48db431e66c7f73353d3b639a523c",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-09-08T09:06:21.019Z",
-      "outcome": "warning",
-      "issueKey": "2026.09.05",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "success",
-        "繁中全文翻譯": "success",
-        "全文稽核": "success"
-      },
-      "skippedArticleCount": 3,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "content_filter",
-        "cause": "文章觸發 Azure 內容安全篩選"
-      },
-      "incidents": [
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "00c65be5-f114-4c43-97ca-e6e20a1451b3",
-          "title": "The changing geography of violent crime in Britain",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.05:00c65be5-f114-4c43-97ca-e6e20a1451b3",
-          "title": "The changing geography of violent crime in Britain",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.08.29:f5aa9067-33f4-498e-aa94-e5ac8a8923ef",
-          "title": "Politics",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "Azure 內容安全篩選拒絕；當次舊版紀錄未保存觸發分類，無法回溯確定。"
         }
       ]
     }
