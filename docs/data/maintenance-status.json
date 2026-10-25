@@ -465,6 +465,25 @@
   ],
   "history": [
     {
+      "runId": 40180657669,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40180657669",
+      "commitSha": "bc63316261ef42103031aa6e4f98a4a4183abb84",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-25T09:26:44.944Z",
+      "outcome": "success",
+      "issueKey": "2026.10.24",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.24；GitHub 資料 te_2026.10.24；中文全文 1017 篇、隔離 6 篇，共 1023/1023；公開網站 te_2026.10.24",
+      "incidents": []
+    },
+    {
       "runId": 40093147451,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40093147451",
@@ -6718,74 +6737,6 @@
           "attempts": 3,
           "category": "fulltext_validation",
           "cause": "繁中全文連續 3 次仍未通過",
-          "message": "第 6 段遺失阿拉伯數字（原文含：20）"
-        }
-      ]
-    },
-    {
-      "runId": 38521050576,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38521050576",
-      "commitSha": "4d9ba45a20e0f5e60d3f307e5d65518ee37618b4",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-10-14T06:42:46.628Z",
-      "outcome": "warning",
-      "issueKey": "2026.09.05",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "success",
-        "繁中全文翻譯": "success",
-        "全文稽核": "success"
-      },
-      "skippedArticleCount": 4,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "transient_service",
-        "cause": "外部服務或網路暫時性錯誤"
-      },
-      "incidents": [
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
-          "title": "In film and in life, China pursues dragon-restaurant diplomacy",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 105"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 98"
-        },
-        {
-          "scope": "summary",
-          "stage": "自然化",
-          "status": "skipped",
-          "key": "4387c951-cbd2-4c17-9564-84ea2edde2e3",
-          "title": "Will anybody use AI as much as coders do?",
-          "attempts": 3,
-          "category": "transient_service",
-          "cause": "外部服務或網路暫時性錯誤",
-          "message": "fetch failed"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "unknown",
-          "cause": "未分類錯誤",
           "message": "第 6 段遺失阿拉伯數字（原文含：20）"
         }
       ]
