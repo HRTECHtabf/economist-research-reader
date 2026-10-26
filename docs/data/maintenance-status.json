@@ -465,6 +465,25 @@
   ],
   "history": [
     {
+      "runId": 40308381272,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40308381272",
+      "commitSha": "3787e74c1b6646cb1496542c8afc6ad5e4b94ba3",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-26T10:33:57.287Z",
+      "outcome": "success",
+      "issueKey": "2026.10.24",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.24；GitHub 資料 te_2026.10.24；中文全文 1017 篇、隔離 6 篇，共 1023/1023；公開網站 te_2026.10.24",
+      "incidents": []
+    },
+    {
       "runId": 40180657669,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40180657669",
@@ -6582,129 +6601,6 @@
           "category": "summary_validation",
           "cause": "少數摘要未通過內容或格式驗證",
           "message": "重點 4 長度 87、重點 5 長度 87、重點 5 使用超過一個分號：\"研究角度：先用BLS就業與失業率檢驗「AI大規模失業」是否已在總量浮現；再用資料中心擴建的人力需求、職缺與相對薪資追蹤需求轉移；最後拆解為新AI職務、替代後再就業與生產力促。\""
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
-          "title": "In film and in life, China pursues dragon-restaurant diplomacy",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 105"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 98"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "fulltext_validation",
-          "cause": "繁中全文連續 3 次仍未通過",
-          "message": "第 6 段遺失阿拉伯數字（原文含：20）"
-        }
-      ]
-    },
-    {
-      "runId": 38523832472,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38523832472",
-      "commitSha": "3edded7d5abf8db983f987d741f7e112332168c5",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-10-14T07:07:32.252Z",
-      "outcome": "warning",
-      "issueKey": "2026.09.12",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "success",
-        "繁中全文翻譯": "success",
-        "全文稽核": "success"
-      },
-      "skippedArticleCount": 7,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "content_filter",
-        "cause": "文章觸發 Azure 內容安全篩選"
-      },
-      "incidents": [
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
-          "title": "The truth and the lies about Islam in Europe",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "d3899194-4240-43bc-bdbf-61c9f99d6e14",
-          "title": "Too many Nigerian women are still dying in childbirth",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 111"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "c1ca4f93-6d4b-4763-aa3a-b14d760b41a3",
-          "title": "World leaders are losing their terror of nuclear war",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 111"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "bfccb886-c290-45fb-bba5-314a25b591f6",
-          "title": "The jobs apocalypse is postponed. An AI jobs boom is here",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "重點 4 長度 87、重點 5 長度 87、重點 5 使用超過一個分號：\"研究角度：先用BLS就業與失業率檢驗「AI大規模失業」是否已在總量浮現；再用資料中心擴建的人力需求、職缺與相對薪資追蹤需求轉移；最後拆解為新AI職務、替代後再就業與生產力促。\""
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "partial",
-          "key": "2026.09.12:c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
-          "title": "The truth and the lies about Islam in Europe",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "Azure 內容安全篩選擋下 2 段，其餘段落已翻譯",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "partial",
-          "key": "2026.09.12:cbe83c76-7b12-4877-aeac-7c57d95d56ac",
-          "title": "The good news: few Muslims want to subvert European democracy",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "Azure 內容安全篩選擋下 3 段，其餘段落已翻譯",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
         },
         {
           "scope": "summary",
