@@ -465,6 +465,25 @@
   ],
   "history": [
     {
+      "runId": 40485608655,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40485608655",
+      "commitSha": "03ca0fd72479a0cbfef4fb296f15bdee698d546a",
+      "workflow": "watchdog",
+      "recordedAt": "2026-10-27T10:04:23.556Z",
+      "outcome": "success",
+      "issueKey": "2026.10.24",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.24；GitHub 資料 te_2026.10.24；中文全文 1017 篇、隔離 6 篇，共 1023/1023；公開網站 te_2026.10.24",
+      "incidents": []
+    },
+    {
       "runId": 40308381272,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/40308381272",
@@ -6356,184 +6375,6 @@
           "attempts": 3,
           "category": "fulltext_validation",
           "cause": "繁中全文連續 3 次仍未通過",
-          "message": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
-          "title": "The truth and the lies about Islam in Europe",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "partial",
-          "key": "2026.09.12:c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
-          "title": "The truth and the lies about Islam in Europe",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "Azure 內容安全篩選擋下 2 段，其餘段落已翻譯",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "partial",
-          "key": "2026.09.12:cbe83c76-7b12-4877-aeac-7c57d95d56ac",
-          "title": "The good news: few Muslims want to subvert European democracy",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "Azure 內容安全篩選擋下 3 段，其餘段落已翻譯",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "d3899194-4240-43bc-bdbf-61c9f99d6e14",
-          "title": "Too many Nigerian women are still dying in childbirth",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 111"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "c1ca4f93-6d4b-4763-aa3a-b14d760b41a3",
-          "title": "World leaders are losing their terror of nuclear war",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 111"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "bfccb886-c290-45fb-bba5-314a25b591f6",
-          "title": "The jobs apocalypse is postponed. An AI jobs boom is here",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "重點 4 長度 87、重點 5 長度 87、重點 5 使用超過一個分號：\"研究角度：先用BLS就業與失業率檢驗「AI大規模失業」是否已在總量浮現；再用資料中心擴建的人力需求、職缺與相對薪資追蹤需求轉移；最後拆解為新AI職務、替代後再就業與生產力促。\""
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
-          "title": "In film and in life, China pursues dragon-restaurant diplomacy",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 105"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 98"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
-          "title": "How the Alternative for Germany would govern",
-          "attempts": 3,
-          "category": "fulltext_validation",
-          "cause": "繁中全文連續 3 次仍未通過",
-          "message": "第 6 段遺失阿拉伯數字（原文含：20）"
-        }
-      ]
-    },
-    {
-      "runId": 38526342108,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38526342108",
-      "commitSha": "82a2f6a53e4633044e397d2da12a6b53ab2a7cd5",
-      "workflow": "weekly-update",
-      "recordedAt": "2026-10-14T07:30:22.237Z",
-      "outcome": "warning",
-      "issueKey": "2026.09.19",
-      "systemicFailure": false,
-      "stages": {
-        "期數偵測與摘要": "success",
-        "繁中全文翻譯": "success",
-        "全文稽核": "success"
-      },
-      "skippedArticleCount": 12,
-      "failedArticleCount": 0,
-      "diagnosis": {
-        "category": "content_filter",
-        "cause": "文章觸發 Azure 內容安全篩選"
-      },
-      "incidents": [
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "3dcca006-a510-47b1-ab42-b023e93eadbd",
-          "title": "The selfish case for helping Ukraine has never been stronger",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 255、研究角度長度 184"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "0636f889-39d9-49a3-ad69-3a0669d351d6",
-          "title": "Why Europe’s populists forget to bash China",
-          "attempts": 3,
-          "category": "summary_validation",
-          "cause": "少數摘要未通過內容或格式驗證",
-          "message": "摘要長度 98"
-        },
-        {
-          "scope": "summary",
-          "stage": "初稿",
-          "status": "skipped",
-          "key": "0c23ddbe-988f-4b85-adff-aa7431415ebf",
-          "title": "Gloria Steinem changed the world for American women",
-          "attempts": 1,
-          "category": "content_filter",
-          "cause": "文章觸發 Azure 內容安全篩選",
-          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.19:941d24dd-4e20-4dad-9b7f-f678fb3b05ef",
-          "title": "Women lead brutal lives in Colombia’s illegal gold-mining regions",
-          "attempts": 3,
-          "category": "unknown",
-          "cause": "未分類錯誤",
-          "message": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON"
-        },
-        {
-          "scope": "fulltext",
-          "stage": "繁中全文",
-          "status": "skipped",
-          "key": "2026.09.19:0c23ddbe-988f-4b85-adff-aa7431415ebf",
-          "title": "Gloria Steinem changed the world for American women",
-          "attempts": 3,
-          "category": "unknown",
-          "cause": "未分類錯誤",
           "message": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON"
         },
         {
