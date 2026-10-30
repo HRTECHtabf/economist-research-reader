@@ -509,6 +509,514 @@
   ],
   "history": [
     {
+      "runId": 41108660405,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/41108660405",
+      "commitSha": "d49cd6cd6d457cb5de88820569f6d430c6ca7fb6",
+      "workflow": "weekly-update",
+      "recordedAt": "2026-10-30T18:38:49.639Z",
+      "outcome": "warning",
+      "issueKey": "2026.10.31",
+      "systemicFailure": false,
+      "stages": {
+        "期數偵測與摘要": "success",
+        "繁中全文翻譯": "skipped",
+        "全文稽核": "skipped"
+      },
+      "skippedArticleCount": 38,
+      "failedArticleCount": 0,
+      "diagnosis": {
+        "category": "content_filter",
+        "cause": "文章觸發 Azure 內容安全篩選"
+      },
+      "incidents": [
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "2b1eb332-b001-414c-8f86-5ccd6b9a89d6",
+          "title": "Do immigrants from some countries commit more sex crimes?",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.10.31:2b1eb332-b001-414c-8f86-5ccd6b9a89d6",
+          "title": "Do immigrants from some countries commit more sex crimes?",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 2 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "77f88357-c1e5-4952-95ed-895f251602bb",
+          "title": "To understand African politics, just listen to the music",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "重點 5 以名詞式短標題加冒號開頭：\"安哥拉與盧安達的案例凸顯風險：饒舌與福音歌手曾被以陰謀指控羈押，隨後死亡或被迫流亡。\""
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "e1953d4a-141a-4a72-bca4-d7c5e0e40716",
+          "title": "The never-ending absurdity of global oil markets",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 272 字，太長，需要刪減 22 字以上；請刪除重複與次要細節（須介於 130–250 字）、研究角度長度 136 字，太長，需要刪減 1 字以上；請刪除重複與次要細節（須介於 50–135 字）"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "31c14c79-9c02-48e3-949e-d8c2a6cb2297",
+          "title": "India is pouring money and concrete into its border with China",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "研究角度長度 148 字，太長，需要刪減 13 字以上；請刪除重複與次要細節（須介於 50–135 字）"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.10.24:92119f00-7e82-4c84-bd88-ffe78f0f1309",
+          "title": "A genocidal militia was coming for his city. He was one of the last doctors left",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "Unterminated string in JSON at position 3093 (line 81 column 35)"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "77006634-f539-46f6-b484-8a10f9027969",
+          "title": "How the 2010s remade business",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "研究角度長度 139 字，太長，需要刪減 4 字以上；請刪除重複與次要細節（須介於 50–135 字）、重點 5 以依賴前文的語句開頭：\"本文同時提到修正點：2022年後央行使利率不再維持在接近零、企業社會正義攻勢降溫，但PE與ESG仍讓2010年代邏輯留存。\""
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "9ee707a4-843c-43a8-9cf0-2031a2bdfee2",
+          "title": "Mark Carney shows middle powers how to handle a dangerous world",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "研究角度長度 136 字，太長，需要刪減 1 字以上；請刪除重複與次要細節（須介於 50–135 字）、重點 5 以依賴前文的語句開頭：\"文章也用支持度變化作為政治可行性線索：Carney改革推進中，民調顯示核准率接近70%。\""
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.10.17:23fa23fe-c6ad-461a-ae2d-ceae93561b60",
+          "title": "Millennials’ success deserves a toast (not the avocado sort)",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "第 5 段遺失阿拉伯數字（原文含：19）"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "5a4e959b-cd70-4745-872f-bb183955ee35",
+          "title": "The AI boom is threatened by an epidemic of unreliable numbers",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "研究角度長度 137 字，太長，需要刪減 2 字以上；請刪除重複與次要細節（須介於 50–135 字）"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "5ecbb5d8-0812-402d-8d41-f81684abf74c",
+          "title": "Don’t feel sorry for millennials. They are living it up now",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "研究角度長度 160 字，太長，需要刪減 25 字以上；請刪除重複與次要細節（須介於 50–135 字）"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "acffb28d-15dd-4211-9636-33c5ca4e753f",
+          "title": "Will bonds blow up?",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 118"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "58f9d238-65c8-40a8-aaca-36989f438c1a",
+          "title": "Britain’s Greens have voted, shamefully, to say Zionism is racism",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.10.10:58f9d238-65c8-40a8-aaca-36989f438c1a",
+          "title": "Britain’s Greens have voted, shamefully, to say Zionism is racism",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 2 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "e3590318-1d63-48ee-a1ea-972d79e23de7",
+          "title": "Liability law will not tame AI",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 108"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "1df7a3a3-fb84-4861-9536-625d609db7da",
+          "title": "Will Congress ever assert itself on Iran?",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 124"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "45b2d5c1-dbf6-47f0-9614-17e51fa8a40b",
+          "title": "How not to make campuses safer",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.10.10:45b2d5c1-dbf6-47f0-9614-17e51fa8a40b",
+          "title": "How not to make campuses safer",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 1 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "9bdd960f-4a1f-4a5f-9392-e504a98c1b6a",
+          "title": "America’s blockade is breaking Iran’s economy",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 118"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "6b90831c-4cd8-4e5c-9437-40a2322a8ecf",
+          "title": "Trophies and assets",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 103"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "91a0f48b-ec1d-4840-a972-495ce95f5ea0",
+          "title": "Indian celebrations will be more expensive this year",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 97"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "40b019be-bf49-4725-859f-151a7bd0816c",
+          "title": "Authoritarians have a secret Achilles heel: City Hall",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 122"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "e40a06c6-2463-46fe-8100-04231d81e2b7",
+          "title": "Chinese students abroad are more liberal than at home",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "重點 4 以依賴前文的語句開頭：\"文章也提出性別結構可能的影響：在西方就學的女性相對多，且部分女性可能因中國社會與就業市場的性別偏見而較不傳統。\"、重點 4 以名詞式短標題加冒號開頭：\"文章也提出性別結構可能的影響：在西方就學的女性相對多，且部分女性可能因中國社會與就業市場的性別偏見而較不傳統。\""
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.10.03:0fb0e728-f474-45c4-adb2-97c938de7173",
+          "title": "Financial astrology is a serious business in India",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "第 8 段遺失阿拉伯數字（原文含：19）"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "2725c6eb-08c5-4c05-bac8-d69e2f7a8334",
+          "title": "Can you really perform a tracheotomy with a pen?",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.10.03:2725c6eb-08c5-4c05-bac8-d69e2f7a8334",
+          "title": "Can you really perform a tracheotomy with a pen?",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 1 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "4292d9c7-ab15-4b53-93ff-3eb4ecca67f1",
+          "title": "Business",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 259"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "f4845d20-f061-4fd1-8bbb-7856972e1d94",
+          "title": "India’s education system is failing in new ways",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 118"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "13d12d44-d6c8-4f03-b76d-e9502880422e",
+          "title": "The love-in between Donald Trump and Delcy Rodríguez",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 129"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "7a9b964d-a3d0-4c90-a524-8cd640db0737",
+          "title": "Donald Trump drops demands to own Greenland, but the harm has been done",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 119"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "3dcca006-a510-47b1-ab42-b023e93eadbd",
+          "title": "The selfish case for helping Ukraine has never been stronger",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 255、研究角度長度 184"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.19:941d24dd-4e20-4dad-9b7f-f678fb3b05ef",
+          "title": "Women lead brutal lives in Colombia’s illegal gold-mining regions",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "0636f889-39d9-49a3-ad69-3a0669d351d6",
+          "title": "Why Europe’s populists forget to bash China",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 98"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "0c23ddbe-988f-4b85-adff-aa7431415ebf",
+          "title": "Gloria Steinem changed the world for American women",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.19:0c23ddbe-988f-4b85-adff-aa7431415ebf",
+          "title": "Gloria Steinem changed the world for American women",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
+          "title": "The truth and the lies about Islam in Europe",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "文章觸發 Azure 內容安全篩選",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.09.12:c46dbb7b-df3e-4884-8ccd-955ba7fc87e8",
+          "title": "The truth and the lies about Islam in Europe",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 2 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "partial",
+          "key": "2026.09.12:cbe83c76-7b12-4877-aeac-7c57d95d56ac",
+          "title": "The good news: few Muslims want to subvert European democracy",
+          "attempts": 1,
+          "category": "content_filter",
+          "cause": "Azure 內容安全篩選擋下 3 段，其餘段落已翻譯",
+          "message": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "d3899194-4240-43bc-bdbf-61c9f99d6e14",
+          "title": "Too many Nigerian women are still dying in childbirth",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 111"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "c1ca4f93-6d4b-4763-aa3a-b14d760b41a3",
+          "title": "World leaders are losing their terror of nuclear war",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 111"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "bfccb886-c290-45fb-bba5-314a25b591f6",
+          "title": "The jobs apocalypse is postponed. An AI jobs boom is here",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "重點 4 長度 87、重點 5 長度 87、重點 5 使用超過一個分號：\"研究角度：先用BLS就業與失業率檢驗「AI大規模失業」是否已在總量浮現；再用資料中心擴建的人力需求、職缺與相對薪資追蹤需求轉移；最後拆解為新AI職務、替代後再就業與生產力促。\""
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "8fcf28c8-53ba-4a64-a27b-3fbf49fef862",
+          "title": "In film and in life, China pursues dragon-restaurant diplomacy",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 105"
+        },
+        {
+          "scope": "summary",
+          "stage": "初稿",
+          "status": "skipped",
+          "key": "603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+          "title": "How the Alternative for Germany would govern",
+          "attempts": 3,
+          "category": "summary_validation",
+          "cause": "少數摘要未通過內容或格式驗證",
+          "message": "摘要長度 98"
+        },
+        {
+          "scope": "fulltext",
+          "stage": "繁中全文",
+          "status": "skipped",
+          "key": "2026.09.05:603cc4e9-6189-4c6b-a030-ea0f32a0b754",
+          "title": "How the Alternative for Germany would govern",
+          "attempts": 3,
+          "category": "fulltext_validation",
+          "cause": "繁中全文連續 3 次仍未通過",
+          "message": "第 6 段遺失阿拉伯數字（原文含：20）"
+        }
+      ]
+    },
+    {
       "runId": 41048116720,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/41048116720",
@@ -6283,29 +6791,7 @@
           "message": "第 6 段遺失阿拉伯數字（原文含：20）"
         }
       ]
-    },
-    {
-      "runId": 38879693917,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/38879693917",
-      "commitSha": "14df82655b01f5d002413209092e97a97ca7c32a",
-      "workflow": "watchdog",
-      "recordedAt": "2026-10-16T09:19:56.799Z",
-      "outcome": "failure",
-      "issueKey": "2026.10.10",
-      "systemicFailure": false,
-      "stages": {
-        "防呆核對": "failure"
-      },
-      "skippedArticleCount": 0,
-      "failedArticleCount": 1,
-      "diagnosis": {
-        "category": "watchdog_sync",
-        "cause": "上游已有更新，但 GitHub 資料或全文覆蓋率仍落後"
-      },
-      "detail": "上游 te_2026.10.17；GitHub 資料 te_2026.10.10；中文全文 874 篇、隔離 4 篇，共 878/878；公開網站 te_2026.10.10",
-      "incidents": []
     }
   ],
-  "updatedAt": "2026-10-30T11:26:50.599Z"
+  "updatedAt": "2026-10-30T18:38:49.649Z"
 }
