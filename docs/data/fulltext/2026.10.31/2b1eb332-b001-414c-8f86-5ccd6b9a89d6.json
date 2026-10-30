@@ -1,0 +1,32 @@
+{
+  "id": "2b1eb332-b001-414c-8f86-5ccd6b9a89d6",
+  "issueKey": "2026.10.31",
+  "sourceHash": "7ad47fec0df2db677a08963c2433378f3cdd53d5dfe7eb8a83ce0780c2d0bcb0",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "translatedAt": "2026-10-30T11:15:48.880Z",
+  "paragraphCount": 15,
+  "paragraphsZh": [
+    "2026年10月29日",
+    "In Bristol last November three men and a 17-year-old boy, all Afghans, gang-raped a 17-year-old girl over several hours. Beforehand they had groomed her on Snapchat and plied her with alcohol; afterwards they fled to France in a lorry. The French authorities returned them to Britain, where they were convicted and, on October 6th, sentenced to long jail terms. In court the girl described how “listening to it all again from the lawyers kept me reliving everything that happened to me”.",
+    "Such horrors fuel suspicion of migrants. So did a recent state-issued booklet about Britain for asylum-seekers. Page five clarified that the legal age of consent is 16 and that rape is a serious crime. “I’ve never heard of someone who decided not to rape because they received a leaflet,” said Kemi Badenoch , the Tory leader. The clumsy campaign fed the idea that some immigrants—notably men seeking asylum—are responsible for a disproportionate share of sex offences. Nick Timothy, the shadow justice secretary, claims that “Afghans are over TWENTY times more likely to commit sex crimes than Brits.”",
+    "真的是這樣嗎？政府並不會依移民身分公布犯罪率。它目前願意釋出的有限資料，僅是根據全國性的警政資料庫，按各國國籍分列的犯罪案件原始統計數字。「多達20倍」的說法，則是建立在英國境內有13,000名阿富汗人這一前提之上；該估計來自英國國家統計局（Office for National Statistics, ONS）的年度人口調查（Annual Population Survey）。不過，這項數字並不可靠，因為它是由不到60名受訪者的樣本外推得來。到2021年，ONS 因為調查回覆率驟降而停止公布這項人口估計。",
+    "《經濟學人》的分析認為，「20倍」這個說法誇張得離譜。但我們的數字也同樣談不上令人安心。",
+    "由牛津大學所屬智庫 Migration Observatory（移民觀察站）透過向英國司法部提出資訊公開（freedom-of-information）申請取得統計。這些資料涵蓋2010到2024年間英格蘭與威爾斯的警示（cautions）與定罪（convictions），並依犯罪者的國籍分組。資料共列出800萬起犯罪，其中10.6萬起屬性犯罪，範圍從強姦到在公共場所發生的雙方同意性行為。警方在記錄犯罪者國籍時確實有些混亂，但我們發現，五分之四的性犯罪是由英國人所犯。在這15年期間，只有0.39%（409起）是由自述為阿富汗人的人犯下。",
+    "到底409起罪行算多還是算少，端看英國境內有多少阿富汗人。2021年3月的最後一次人口普查顯示，居住在英格蘭與威爾斯的阿富汗護照持有人有14,300人；另有7,100名未持護照、但表示自己是阿富汗人的人。合計為21,400人。",
+    "人口普查只是一時點的快照。自2021年以來，約有300萬人定居英國，外國出生人口占總人口的比重也從16%上升到19%。在2021年8月塔利班奪取喀布爾之後，接下來的一年半之間，約有38,000名阿富汗人湧向英國。再扣除後來離開的人以及已入籍者，我們估計到2022年底，英格蘭與威爾斯的阿富汗人口已翻倍至45,000人。",
+    "為了掌握的不只是我們分析的那個截面，我們使用 2020-22 這三年間的定罪資料，並把人口估算值在三年之間取平均。接著，我們把估算標準化，以納入年齡與性別的差異（例如，男性犯下 98% 的性犯罪；而阿富汗人的平均年齡大約比整體人口小 10 歲）。這表示阿富汗人因性犯罪而遭定罪的比例約為英國比率的 7 倍——離 Timothy 先生所說的「超過 20 倍」仍有距離，但依然令人不安（見圖表）。我們的數字仍可能有偏差：例如可能被少數多次犯罪者（serial offenders）影響，或是受到這類罪行在通報與偵測上的差異所左右。",
+    "來自其他國家的證據、採用不同方法，顯示這也許不只是英國的問題；這種印象當然不是無稽之談。德國民粹政黨另類德國（Alternative for Germany）黨魁 Alice Weidel 對《經濟學人》表示：「在最嚴重的犯罪中，例如強姦、例如殺人……主要的類別，就是敘利亞人與阿富汗人。」在奧地利、丹麥、芬蘭、德國與瑞典，來自中東、北非、中亞以及非洲之角的移民，在嫌疑人與被定罪者中都呈現過度代表——尤其是性犯罪。若這些國家也有進行年齡標準化分析，過度代表會如同英國一樣縮小，但不會消失。",
+    "若改以族裔而非國籍來看定罪情況，則不那麼令人不安。英國司法部提供針對 18 種族裔、依年齡與性別細分的起訴與定罪詳盡資料。我們據此在同一個 2020-22 的期間內，重複進行年齡標準化分析。結果顯示：巴基斯坦人（在這些資料中是族裔，而非國籍）、其他亞洲族裔，以及其他非黑人少數族裔的男性，被定罪為性犯罪的可能性，並不比白人英國男性更高。",
+    "不同國籍之間的定罪率出現差異，並不意外。Migration Observatory 的 Ben Brindle 指出，許多移民在移入之前就曾見過暴力，或是出身於相對貧困的環境。這會帶來犯罪行為；而在英國若社會上缺乏連結、又沒有工作，也不會有所幫助。他說：「就如同英國公民之間存在很大的定罪率差距，這些差距也會出現在不同國籍之間。」",
+    "而這些數字也必須放回正確的尺度來理解。2010-12 年，阿富汗籍人士的性犯罪定罪共有 92 件；到了 2022-24 年，總數為 102 件。在阿富汗人口大致已翻了約三倍的情況下，增加 10 件性犯罪，並不構成一場流行病。■",
+    "編者註（2026 年 10 月 26 日）：本文已做修改，以釐清關於族裔層面性犯罪的用語。",
+    "想看英國最大新聞的更多專家分析，訂閱我們的每週付費限定電子報 Blighty。"
+  ],
+  "untranslatedParagraphs": [
+    1,
+    2
+  ],
+  "untranslatedReason": "azure_content_filter",
+  "untranslatedDetailZh": "The response was filtered due to the prompt triggering Azure OpenAI’s content management policy. Please modify your prompt and retry. To learn more about our content filtering policies please read our documentation: https://go.microsoft.com/fwlink/?linkid=2198766",
+  "filterStrategy": "paragraph-split-v1"
+}
