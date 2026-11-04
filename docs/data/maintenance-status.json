@@ -509,6 +509,25 @@
   ],
   "history": [
     {
+      "runId": 41830675129,
+      "runAttempt": 1,
+      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/41830675129",
+      "commitSha": "c0f9b44968b5bebc34778f2b12c87cf8a9e2213a",
+      "workflow": "watchdog",
+      "recordedAt": "2026-11-04T12:36:16.819Z",
+      "outcome": "success",
+      "issueKey": "2026.10.31",
+      "systemicFailure": false,
+      "stages": {
+        "防呆核對": "success"
+      },
+      "skippedArticleCount": 0,
+      "failedArticleCount": 0,
+      "diagnosis": null,
+      "detail": "上游 te_2026.10.31；GitHub 資料 te_2026.10.31；中文全文 1091 篇、隔離 6 篇，共 1097/1097；公開網站 te_2026.10.31",
+      "incidents": []
+    },
+    {
       "runId": 41635483580,
       "runAttempt": 1,
       "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/41635483580",
@@ -5234,25 +5253,6 @@
       "commitSha": "09304b787d9c6f9867a04c1f89510f2a12dba599",
       "workflow": "watchdog",
       "recordedAt": "2026-10-17T14:28:28.055Z",
-      "outcome": "success",
-      "issueKey": "2026.10.17",
-      "systemicFailure": false,
-      "stages": {
-        "防呆核對": "success"
-      },
-      "skippedArticleCount": 0,
-      "failedArticleCount": 0,
-      "diagnosis": null,
-      "detail": "上游 te_2026.10.17；GitHub 資料 te_2026.10.17；中文全文 945 篇、隔離 5 篇，共 950/950；公開網站 te_2026.10.17",
-      "incidents": []
-    },
-    {
-      "runId": 39029967527,
-      "runAttempt": 1,
-      "runUrl": "https://github.com/HRTECHtabf/economist-research-reader/actions/runs/39029967527",
-      "commitSha": "a53738ac6ec15e8462dcad3a49cd3f763b7baab3",
-      "workflow": "watchdog",
-      "recordedAt": "2026-10-17T11:46:30.052Z",
       "outcome": "success",
       "issueKey": "2026.10.17",
       "systemicFailure": false,
