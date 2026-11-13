@@ -1,0 +1,11 @@
+{
+  "id": "3ff70a21-d851-4aa3-9fc6-8f410cdd9e66",
+  "issueKey": "2026.11.14",
+  "sourceHash": "fd03ce8220987652258c9bb36d6bbfcb3542ea1cf428dddabd446b32c0f582f0",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "unavailable": true,
+  "unavailableReason": "retry_exhausted_after_3_attempts",
+  "unavailableMessageZh": "繁中全文連續 3 次處理失敗，請先閱讀英文原文。",
+  "unavailableDetailZh": "Unexpected token 'I', \"I'm sorry,\"... is not valid JSON",
+  "recordedAt": "2026-11-13T12:55:28.773Z"
+}
