@@ -1,0 +1,11 @@
+{
+  "id": "d786f126-30cf-4f6c-91fb-5745b56aeb07",
+  "issueKey": "2026.11.21",
+  "sourceHash": "d1dd0e80ea534b801addace2eb6bff84ee5df6ae84079f8d763d8cb11371077b",
+  "translationVersion": "fulltext-zh-tw-v2",
+  "unavailable": true,
+  "unavailableReason": "retry_exhausted_after_3_attempts",
+  "unavailableMessageZh": "繁中全文連續 3 次處理失敗，請先閱讀英文原文。",
+  "unavailableDetailZh": "第 2 段遺失阿拉伯數字（原文含：19）",
+  "recordedAt": "2026-11-20T13:55:10.074Z"
+}
