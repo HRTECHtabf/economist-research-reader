@@ -8,10 +8,10 @@
     "publicCritical": 900
   },
   "sizes": {
-    "sourceMiB": 10.29,
-    "catalogMiB": 3.32,
-    "publicDataMiB": 28.54
+    "sourceMiB": 10.84,
+    "catalogMiB": 3.49,
+    "publicDataMiB": 29.99
   },
   "recommendations": [],
-  "checkedAt": "2026-11-21T11:06:13.030Z"
+  "checkedAt": "2026-11-27T14:41:15.990Z"
 }
